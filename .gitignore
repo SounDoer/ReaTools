@@ -1,0 +1,29 @@
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local runtime state and staging
+**/_state/
+**/_staging/
+**/config.local.json
+
+# Validation output
+**/.last-result
+**/.validation-*
+**/.runner-project.rpp
+**/.manual-runner-project.rpp
+
+# Build and release output
+dist/
+build/
+artifacts/

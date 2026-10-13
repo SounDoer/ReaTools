@@ -1,0 +1,23 @@
+[project]
+name = "rea-asset-flow"
+version = "0.1.0"
+description = "REAPER game-audio asset preparation and Wwise transfer workflow"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "waapi-client==0.8.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4,<9", "ruff>=0.4"]
+llm = ["ollama>=0.4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["E402"]

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# 本地配置（含本机路径，不共享）
+config.local.json
+
+# Wwise 生成文件
+*.cache/
+.cache/
+GeneratedSoundBanks/
+*.akd
+*.wem
+
+# Reaper 临时文件
+*.RPP-bak
+*.reapeaks
+
+# 渲染输出（WAV 不进仓库）
+*.wav
+*.aif
+*.aiff
+
+# Staging (auto-cleaned after import)
+_staging/
+
+# Runtime IPC and UI state files
+_state/
+
+# Transfer Panel presets (local only; may contain machine-specific paths)
+/presets/
+
+# Claude
+.claude/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini

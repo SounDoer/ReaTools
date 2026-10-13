@@ -63,3 +63,23 @@ Copying, renaming, extracting shared UI code, and standardizing distribution do
 not authorize changes to product workflows, persisted data, Wwise or WAAPI
 behavior, or ReaProjectLink delivery semantics. Such changes require their own
 product decisions and tests.
+
+### M007 — Declare and verify every release inventory
+
+Confirmed: 2026-10-13.
+
+Every tool has a machine-readable declaration containing its independent
+version, entry point, exact ReaToolUI contract, and release file set. Release
+trees contain only declared, Git-tracked source and include a SHA-256 inventory.
+When a product changes its ReaToolUI usage to `runtime`, the builder vendors the
+pinned shared package into that product's self-contained release.
+
+### M008 — Separate ReaPack updates from Python environment setup
+
+Confirmed: 2026-10-13.
+
+ReaPack installs and updates ReaAssetFlow's shipped files and registers its main
+ReaScript. It does not silently execute `pip` or install Ollama. Required Python
+and WAAPI dependencies use an explicit, visible prerequisite flow; LLM support
+remains optional. User state and presets must live outside the managed package
+tree before public ReaPack migration.

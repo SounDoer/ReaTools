@@ -40,5 +40,9 @@ Invoke-Step 'ReaAssetFlow' {
   }
 }
 
+Invoke-Step 'Release inventories' {
+  & (Join-Path $PSScriptRoot 'test_release.ps1')
+}
+
 Write-Output '==> Summary'
 $results | ForEach-Object { Write-Output $_ }

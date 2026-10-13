@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "reaui",
+  "displayName": "ReaToolUI",
+  "version": "0.1.0",
+  "kind": "shared-lua-package",
+  "namespace": "reaui",
+  "publicEntry": "lib/reaui.lua"
+}

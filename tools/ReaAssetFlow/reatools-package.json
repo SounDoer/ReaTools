@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "reaassetflow",
+  "displayName": "ReaAssetFlow",
+  "version": "0.1.0",
+  "kind": "reaper-tool",
+  "entry": "scripts/ReaAssetFlow.lua",
+  "uiContract": {
+    "package": "reaui",
+    "version": "0.1.0",
+    "usage": "planned"
+  },
+  "release": {
+    "files": [
+      {
+        "source": "scripts",
+        "target": "scripts"
+      },
+      {
+        "source": "requirements.txt",
+        "target": "requirements.txt"
+      },
+      {
+        "source": "setup.bat",
+        "target": "setup.bat"
+      },
+      {
+        "source": "setup-llm.bat",
+        "target": "setup-llm.bat"
+      },
+      {
+        "source": "README.md",
+        "target": "README.md"
+      },
+      {
+        "source": "LICENSE",
+        "target": "LICENSE"
+      }
+    ]
+  }
+}

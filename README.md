@@ -33,4 +33,6 @@ self-contained so installing or updating one tool does not silently alter
 another tool.
 
 See `docs/decisions.md` for confirmed cross-tool decisions and
-`docs/monorepo-migration.md` for the migration sequence.
+`docs/monorepo-migration.md` for the migration sequence. Distribution,
+ReaPack, and Python-prerequisite boundaries are defined in
+`docs/distribution.md`.

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "reaprojectlink",
+  "displayName": "ReaProjectLink",
+  "version": "0.1.0",
+  "kind": "reaper-tool",
+  "entry": "ReaProjectLink/ReaProjectLink.lua",
+  "uiContract": {
+    "package": "reaui",
+    "version": "0.1.0",
+    "usage": "validation-only"
+  },
+  "release": {
+    "files": [
+      {
+        "source": "ReaProjectLink",
+        "target": "ReaProjectLink"
+      },
+      {
+        "source": "README.md",
+        "target": "README.md"
+      }
+    ]
+  }
+}

@@ -45,5 +45,9 @@ Invoke-Step 'Release inventories' {
   & (Join-Path $PSScriptRoot 'test_release.ps1')
 }
 
+Invoke-Step 'ReaPack repository' {
+  & (Join-Path $PSScriptRoot 'test_reapack_repository.ps1')
+}
+
 Write-Output '==> Summary'
 $results | ForEach-Object { Write-Output $_ }

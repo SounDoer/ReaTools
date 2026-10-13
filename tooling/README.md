@@ -18,3 +18,8 @@ ReaImGui, Python, and test environment already required by the copied tools.
 - `build_release.ps1` creates deterministic release trees from each tool's
   declaration.
 - `test_release.ps1` rebuilds both trees and verifies their SHA-256 inventories.
+- `build_reapack_repository.ps1` arranges both verified packages into the final
+  ReaPack category layout.
+- `test_reapack_repository.ps1` validates package headers, layout, and excluded
+  state; it also runs `reapack-index --check` when that optional release tool is
+  installed.

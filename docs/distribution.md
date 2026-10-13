@@ -38,8 +38,10 @@ version, UI contract, byte size, and SHA-256 hash of every file. Run
 `tooling/test_release.ps1` to rebuild and verify both inventories.
 
 Generated `dist/` content is never canonical source and is not committed. The
-future ReaPack publishing job will consume these verified trees, arrange them in
-the ReaPack category layout, run `reapack-index --check`, and publish the index.
+ReaPack staging command consumes these verified trees and arranges them under
+`ReaTools/<Product>/`. Its validation checks headers and package boundaries, and
+runs `reapack-index --check` when that optional release tool is installed. The
+future publishing job will publish this staged source and its generated index.
 
 ## ReaAssetFlow installation boundary
 

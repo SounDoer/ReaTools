@@ -4,7 +4,7 @@
   "displayName": "ReaProjectLink",
   "version": "0.1.0",
   "kind": "reaper-tool",
-  "entry": "ReaProjectLink/ReaProjectLink.lua",
+  "entry": "ReaProjectLink.lua",
   "uiContract": {
     "package": "reaui",
     "version": "0.1.0",
@@ -14,7 +14,7 @@
     "files": [
       {
         "source": "ReaProjectLink",
-        "target": "ReaProjectLink"
+        "target": "."
       },
       {
         "source": "README.md",

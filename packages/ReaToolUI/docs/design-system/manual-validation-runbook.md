@@ -7,10 +7,10 @@ settings.
 
 ## Start a scene
 
-From the ReaProjectLink repository, run:
+From the ReaTools repository, run:
 
 ```powershell
-./tests/open_design_system_gallery.ps1 `
+./packages/ReaToolUI/gallery/open_gallery.ps1 `
   -Section Components `
   -Theme light `
   -Preview wide
@@ -127,7 +127,7 @@ change system settings merely to turn an unavailable matrix cell into a pass.
 - Not applicable is used only when the contract states that the state or
   interaction has no coherent meaning for that item.
 
-After fixes, rerun `tests/run_design_system_validation.ps1` and repeat only the
+After fixes, rerun `packages/ReaToolUI/tests/run_validation.ps1` and repeat only the
 manual cells affected by the change plus any shared Foundation cells it can
 influence. Product migration begins only when the applicable cells are Pass or
 an accepted non-blocking platform variation is documented.

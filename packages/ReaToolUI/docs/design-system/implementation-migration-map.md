@@ -69,8 +69,8 @@ The current files are:
   validation, canonical IDs, and theme-aware resolution;
 - `packages/ReaToolUI/lib/reaui/design_adapter.lua` for font, color, spacing,
   sizing, border, and shape mappings into ReaImGui;
-- `tests/design_system_gallery.lua` for the side-effect-free Gallery shell;
-- `tests/ReaProjectLink_DesignSystemGallery.lua` for the development ReaScript
+- `gallery/design_system_gallery.lua` for the side-effect-free Gallery shell;
+- `gallery/ReaToolUI_DesignSystemGallery.lua` for the development ReaScript
   entry point;
 - `tests/ui_design_tokens_spec.lua` and `tests/ui_design_adapter_spec.lua` for
   the initial structural checks.

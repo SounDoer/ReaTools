@@ -5,6 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+$reatoolui = Join-Path $root 'packages\ReaToolUI'
 $reaprojectlink = Join-Path $root 'tools\ReaProjectLink'
 $reaassetflow = Join-Path $root 'tools\ReaAssetFlow'
 $results = [System.Collections.Generic.List[string]]::new()
@@ -18,8 +19,13 @@ function Invoke-Step([string]$Name, [scriptblock]$Action) {
   $results.Add("PASS $Name")
 }
 
+Invoke-Step 'ReaToolUI' {
+  & (Join-Path $reatoolui 'tests\run_validation.ps1') `
+    -ReaperPath $ReaperPath -TimeoutSeconds $TimeoutSeconds
+}
+
 Invoke-Step 'ReaProjectLink' {
-  & (Join-Path $reaprojectlink 'tests\run_design_system_validation.ps1') `
+  & (Join-Path $reaprojectlink 'tests\run_validation.ps1') `
     -ReaperPath $ReaperPath -TimeoutSeconds $TimeoutSeconds
 }
 

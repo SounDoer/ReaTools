@@ -6,10 +6,7 @@ if not root then
   return
 end
 
-local monorepo_root = root:match("^(.*)[/\\]tools[/\\]ReaProjectLink$")
-local shared_path = monorepo_root and
-  (monorepo_root .. "/packages/ReaToolUI/lib/?.lua;") or ""
-package.path = shared_path .. root .. "/ReaProjectLink/lib/?.lua;" .. package.path
+package.path = root .. "/ReaProjectLink/lib/?.lua;" .. package.path
 
 assert(require("reaprojectlink.runtime_requirements").check_reaper(reaper))
 

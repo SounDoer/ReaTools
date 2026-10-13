@@ -747,7 +747,7 @@ function M.create(deps)
     ImGui.SetNextWindowSize(ctx, 900, 640, ImGui.Cond_FirstUseEver)
     adapter.push_base()
     local visible
-    visible, shell.open = ImGui.Begin(ctx, "ReaProjectLink Design System Gallery", shell.open)
+    visible, shell.open = ImGui.Begin(ctx, "ReaToolUI Design System Gallery", shell.open)
     if visible then
       ImGui.Text(ctx, "Development-only reference environment")
       theme_controls()

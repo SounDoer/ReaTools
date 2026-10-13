@@ -4,8 +4,6 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $PSScriptRoot
-$galleryScript = Join-Path $PSScriptRoot 'ReaProjectLink_DesignSystemGallery.lua'
 $coreScript = Join-Path $PSScriptRoot 'run_in_reaper.lua'
 $uiScript = Join-Path $PSScriptRoot 'run_ui_smoke.lua'
 $results = [System.Collections.Generic.List[string]]::new()
@@ -43,13 +41,6 @@ function Assert-Pass([string]$Name, [string]$Text) {
   $results.Add("$Name`: $Text")
 }
 
-function Assert-ExactPass([string]$Name, [string]$Text, [string]$Expected) {
-  if ($Text -ne $Expected) {
-    throw "$Name did not cover the expected matrix:`nExpected: $Expected`nActual: $Text"
-  }
-  $results.Add("$Name`: $Text")
-}
-
 try {
   $coreResult = Join-Path $PSScriptRoot '.last-result'
   $temporaryFiles.Add($coreResult)
@@ -58,17 +49,6 @@ try {
   $coreText = Wait-ValidationResult $coreResult
   Wait-ReaperExit $coreProcess 'Core'
   Assert-Pass 'Core' $coreText
-
-  $galleryResult = Join-Path $PSScriptRoot '.validation-gallery-matrix'
-  $temporaryFiles.Add($galleryResult)
-  if (Test-Path -LiteralPath $galleryResult) { Remove-Item -LiteralPath $galleryResult -Force }
-  $env:REAPROJECTLINK_GALLERY_SMOKE_BATCH = '1'
-  $env:REAPROJECTLINK_GALLERY_SMOKE_RESULT = $galleryResult
-  $galleryProcess = Start-ReaperValidation $galleryScript
-  $galleryText = Wait-ValidationResult $galleryResult
-  Wait-ReaperExit $galleryProcess 'Gallery'
-  Assert-ExactPass 'Gallery' $galleryText `
-    'PASS Design System Gallery matrix (30 scenarios)'
 
   $uiResult = Join-Path $PSScriptRoot '.validation-ui-smoke'
   $temporaryFiles.Add($uiResult)
@@ -81,11 +61,6 @@ try {
 
   $results | ForEach-Object { Write-Output $_ }
 } finally {
-  Remove-Item Env:REAPROJECTLINK_GALLERY_SECTION -ErrorAction SilentlyContinue
-  Remove-Item Env:REAPROJECTLINK_GALLERY_THEME -ErrorAction SilentlyContinue
-  Remove-Item Env:REAPROJECTLINK_GALLERY_PREVIEW -ErrorAction SilentlyContinue
-  Remove-Item Env:REAPROJECTLINK_GALLERY_SMOKE_BATCH -ErrorAction SilentlyContinue
-  Remove-Item Env:REAPROJECTLINK_GALLERY_SMOKE_RESULT -ErrorAction SilentlyContinue
   Remove-Item Env:REAPROJECTLINK_UI_SMOKE_RESULT -ErrorAction SilentlyContinue
   foreach ($process in $validationProcesses) {
     if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }

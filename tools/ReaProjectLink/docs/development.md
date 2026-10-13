@@ -36,9 +36,9 @@ Load these files from REAPER's Action List:
 - `ReaProjectLink/ReaProjectLink.lua` opens the current development UI;
 - `tests/ReaProjectLink_RunTests.lua` runs the Lua unit tests and reports the
   result in both the REAPER console and a message box;
-- `tests/ReaProjectLink_DesignSystemGallery.lua` opens the development-only
-  design-system Gallery. The Gallery uses deterministic local fixtures and does
-  not connect to product services or mutate REAPER project data.
+- `../../packages/ReaToolUI/gallery/ReaToolUI_DesignSystemGallery.lua` opens the
+  development-only shared Gallery. It uses deterministic local fixtures and
+  does not connect to product services or mutate REAPER project data.
 
 The test action creates and closes an isolated temporary Project Tab. It does not
 run adapter mutation tests against the user's active project.

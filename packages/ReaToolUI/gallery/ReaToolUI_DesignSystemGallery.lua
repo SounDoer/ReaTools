@@ -1,28 +1,18 @@
--- @description ReaProjectLink - Design System Gallery (Development)
--- @author ReaProjectLink contributors
+-- @description ReaToolUI - Design System Gallery (Development)
+-- @author ReaTools contributors
 -- @about
 --   Development-only design-system reference environment. It does not connect
 --   to product services or mutate REAPER project data.
 
 local source = debug.getinfo(1, "S").source:sub(2)
-local tests_dir = source:match("^(.*)[/\\]")
-local root = tests_dir and tests_dir:match("^(.*)[/\\]tests$")
+local gallery_dir = source:match("^(.*)[/\\]")
+local root = gallery_dir and gallery_dir:match("^(.*)[/\\]gallery$")
 if not root then
   reaper.ShowMessageBox("Could not resolve the repository path.", "Design System Gallery", 0)
   return
 end
 
-local monorepo_root = root:match("^(.*)[/\\]tools[/\\]ReaProjectLink$")
-local shared_path = monorepo_root and
-  (monorepo_root .. "/packages/ReaToolUI/lib/?.lua;") or ""
-package.path = shared_path .. root .. "/ReaProjectLink/lib/?.lua;" ..
-  root .. "/tests/?.lua;" .. package.path
-local runtime_requirements = require("reaprojectlink.runtime_requirements")
-local runtime_ok, runtime_error = runtime_requirements.check_reaper(reaper)
-if not runtime_ok then
-  reaper.ShowMessageBox(runtime_error, "Design System Gallery", 0)
-  return
-end
+package.path = root .. "/lib/?.lua;" .. root .. "/gallery/?.lua;" .. package.path
 if not reaper.ImGui_GetBuiltinPath then
   reaper.ShowMessageBox("ReaImGui is required.", "Design System Gallery", 0)
   return
@@ -35,7 +25,7 @@ if not ok_imgui then
   return
 end
 
-local ctx = ImGui.CreateContext("ReaProjectLink Design System Gallery",
+local ctx = ImGui.CreateContext("ReaToolUI Design System Gallery",
   ImGui.ConfigFlags_NavEnableKeyboard)
 local gallery = require("design_system_gallery")
 local platform = reaper.GetOS and reaper.GetOS() or "unknown"
@@ -52,11 +42,11 @@ local function create_shell(section, theme, preview)
 end
 
 local shell = create_shell(
-  os.getenv("REAPROJECTLINK_GALLERY_SECTION"),
-  os.getenv("REAPROJECTLINK_GALLERY_THEME"),
-  os.getenv("REAPROJECTLINK_GALLERY_PREVIEW"))
-local smoke_path = os.getenv("REAPROJECTLINK_GALLERY_SMOKE_RESULT")
-local batch_smoke = os.getenv("REAPROJECTLINK_GALLERY_SMOKE_BATCH") == "1"
+  os.getenv("REATOOLUI_GALLERY_SECTION"),
+  os.getenv("REATOOLUI_GALLERY_THEME"),
+  os.getenv("REATOOLUI_GALLERY_PREVIEW"))
+local smoke_path = os.getenv("REATOOLUI_GALLERY_SMOKE_RESULT")
+local batch_smoke = os.getenv("REATOOLUI_GALLERY_SMOKE_BATCH") == "1"
 local batch_scenarios = {}
 
 if batch_smoke then

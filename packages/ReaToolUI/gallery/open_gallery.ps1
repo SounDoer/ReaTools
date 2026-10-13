@@ -13,10 +13,10 @@ if (-not (Test-Path -LiteralPath $ReaperPath -PathType Leaf)) {
   throw "REAPER executable not found: $ReaperPath"
 }
 
-$galleryScript = Join-Path $PSScriptRoot 'ReaProjectLink_DesignSystemGallery.lua'
-$env:REAPROJECTLINK_GALLERY_SECTION = $Section
-$env:REAPROJECTLINK_GALLERY_THEME = $Theme
-$env:REAPROJECTLINK_GALLERY_PREVIEW = $Preview
+$galleryScript = Join-Path $PSScriptRoot 'ReaToolUI_DesignSystemGallery.lua'
+$env:REATOOLUI_GALLERY_SECTION = $Section
+$env:REATOOLUI_GALLERY_THEME = $Theme
+$env:REATOOLUI_GALLERY_PREVIEW = $Preview
 
 try {
   Start-Process -FilePath $ReaperPath -WindowStyle Normal -ArgumentList @(
@@ -24,7 +24,7 @@ try {
   ) | Out-Null
   Write-Output "Opened Gallery: section=$Section theme=$Theme preview=$Preview"
 } finally {
-  Remove-Item Env:REAPROJECTLINK_GALLERY_SECTION -ErrorAction SilentlyContinue
-  Remove-Item Env:REAPROJECTLINK_GALLERY_THEME -ErrorAction SilentlyContinue
-  Remove-Item Env:REAPROJECTLINK_GALLERY_PREVIEW -ErrorAction SilentlyContinue
+  Remove-Item Env:REATOOLUI_GALLERY_SECTION -ErrorAction SilentlyContinue
+  Remove-Item Env:REATOOLUI_GALLERY_THEME -ErrorAction SilentlyContinue
+  Remove-Item Env:REATOOLUI_GALLERY_PREVIEW -ErrorAction SilentlyContinue
 }

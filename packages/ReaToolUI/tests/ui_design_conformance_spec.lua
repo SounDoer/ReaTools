@@ -2,9 +2,7 @@ local contract = require("reaui.design_contract")
 
 local source = debug.getinfo(1, "S").source:sub(2)
 local tests_dir = source:match("^(.*)[/\\]")
-local root = assert(tests_dir and tests_dir:match("^(.*)[/\\]tests$"), "repository root")
-local monorepo_root = assert(root:match("^(.*)[/\\]tools[/\\]ReaProjectLink$"),
-  "ReaTools monorepo root")
+local root = assert(tests_dir and tests_dir:match("^(.*)[/\\]tests$"), "package root")
 
 local function read(path)
   local file = assert(io.open(path, "r"), "missing file " .. path)
@@ -38,7 +36,7 @@ function tests.public_catalog_has_unique_traceable_entries()
 end
 
 function tests.every_public_item_has_a_registered_gallery_fixture()
-  local gallery = read(join(root, "tests/design_system_gallery.lua"))
+  local gallery = read(join(root, "gallery/design_system_gallery.lua"))
   for family, entries in pairs(contract.CATALOG) do
     for _, entry in ipairs(entries) do
       assert(gallery:find(entry.fixture, 1, true),
@@ -52,7 +50,7 @@ function tests.public_implementation_does_not_consume_primitive_tokens_or_raw_co
   for _, entries in pairs(contract.CATALOG) do
     for _, entry in ipairs(entries) do
       if not checked[entry.module] then
-        local path = join(monorepo_root, "packages/ReaToolUI/lib/reaui", entry.module .. ".lua")
+        local path = join(root, "lib/reaui", entry.module .. ".lua")
         local implementation = read(path)
         assert(not implementation:find('"primitive%.', 1), entry.module .. " consumes Primitive token")
         assert(not implementation:find("0x%x+"), entry.module .. " embeds a raw color literal")

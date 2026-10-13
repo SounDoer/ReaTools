@@ -1,0 +1,8 @@
+# Runtime (Reaper -> Wwise import via WAAPI)
+waapi-client==0.8.1
+
+# Tests (CI / local: pytest)
+pytest>=7.4,<9
+
+# Linting / formatting
+ruff>=0.4

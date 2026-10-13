@@ -783,6 +783,33 @@ run_process = function(cmd, timeout_ms)
     return code_num, text
 end
 
+local function check_base_prerequisites()
+    local probe = "import sys; assert sys.version_info >= (3, 8); " ..
+        "import waapi; print('REAASSETFLOW_READY ' + sys.version.split()[0])"
+    local code, output = run_process("python -c " .. quote(probe), 10000)
+    local text = trim(output or "")
+    if code ~= 259 and text:find("REAASSETFLOW_READY", 1, true) then
+        return {
+            ok = true,
+            summary = "Setup ready · Python " .. (text:match("REAASSETFLOW_READY%s+([^%s]+)") or "3.8+"),
+        }
+    end
+    local lower = text:lower()
+    local reason
+    if lower:find("no module named", 1, true) and lower:find("waapi", 1, true) then
+        reason = "Python is available, but waapi-client is missing."
+    elseif lower:find("assertionerror", 1, true) then
+        reason = "Python 3.8 or newer is required."
+    else
+        reason = "Python 3.8+ could not be started."
+    end
+    return {
+        ok = false,
+        summary = "Setup required",
+        detail = reason .. " Open the installation folder, run setup.bat, then choose Check Again.",
+    }
+end
+
 local function normalize_subfolder(s)
     local out = trim(s):gsub("\\", "/")
     out = out:gsub("^/+", ""):gsub("/+$", "")
@@ -2243,6 +2270,7 @@ local function run_imgui_ui()
         auto_name_missing_marker_mode = non_empty_or(ui_state.auto_name_missing_marker_mode, "skip"),
         auto_name_fallback_marker = non_empty_or(ui_state.auto_name_fallback_marker, "NoMarker"),
         llm_model = "qwen2.5vl:7b",
+        prerequisites = check_base_prerequisites(),
     }
     state.originals_path = build_originals_folder_path(state.project_path, state.subfolder)
     local last_saved_ui_key = nil
@@ -2553,7 +2581,7 @@ local function run_imgui_ui()
             local cond = (reaper.ImGui_Cond_FirstUseEver and reaper.ImGui_Cond_FirstUseEver()) or 24
             reaper.ImGui_SetNextWindowSize(ctx, 560, 720, cond)
         end
-        local visible, open = reaper.ImGui_Begin(ctx, "Reaper To Wwise", true)
+        local visible, open = reaper.ImGui_Begin(ctx, "ReaAssetFlow", true)
         if visible then
             local rp_key = current_reaper_project_path_key()
             if rp_key ~= state.reaper_project_path_key then
@@ -2569,6 +2597,27 @@ local function run_imgui_ui()
                 refresh_wwu_list(false, true)
                 state.last_project_path = state.project_path
                 state.auto_initialized = true
+            end
+
+            if state.prerequisites.ok then
+                reaper.ImGui_Text(ctx, state.prerequisites.summary)
+            else
+                reaper.ImGui_Text(ctx, state.prerequisites.summary)
+                if reaper.ImGui_TextWrapped then
+                    reaper.ImGui_TextWrapped(ctx, state.prerequisites.detail)
+                else
+                    reaper.ImGui_Text(ctx, state.prerequisites.detail)
+                end
+                if reaper.ImGui_Button(ctx, "Open installation folder##setup") then
+                    dev_open_folder_next_tick(repo_root())
+                end
+                reaper.ImGui_SameLine(ctx)
+                if reaper.ImGui_Button(ctx, "Check Again##setup") then
+                    state.prerequisites = check_base_prerequisites()
+                    state.status = state.prerequisites.ok and
+                        "Setup check passed." or state.prerequisites.detail
+                end
+                reaper.ImGui_Separator(ctx)
             end
 
             ui_major_section_title(ctx, "Auto Renamer")
@@ -2588,7 +2637,9 @@ local function run_imgui_ui()
             if reaper.ImGui_Button(ctx, "$idx3##autoname") then state.auto_name_pattern = (state.auto_name_pattern or "") .. "$idx3" end
             reaper.ImGui_SameLine(ctx)
             if reaper.ImGui_Button(ctx, "Suggest Pattern via LLM##autoname") then
-                if sel_count == 0 then
+                if not state.prerequisites.ok then
+                    state.status = state.prerequisites.detail
+                elseif sel_count == 0 then
                     state.status = "Select items first so LLM has context to analyse."
                 else
                     local llm_script = repo_root() .. "scripts\\llm_assist.py"

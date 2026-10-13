@@ -18,6 +18,10 @@
 1. 基础功能安装：双击根目录下的 `setup.bat`。
 2. 可选 LLM 功能安装：如需启用 LLM 辅助命名/结构建议，再运行 `setup-llm.bat`。
 
+通过 ReaPack 安装后，首次打开面板会检查 Python 3.8+ 和
+`waapi-client`。缺少依赖时，面板会显示安装说明，并提供打开安装目录和
+**Check Again**；它不会在后台静默运行 `pip`。
+
 > 说明：LLM 功能除了 Python 依赖，还需要本机安装并启动 Ollama 服务（`ollama serve`）以及拉取模型。
 
 ---

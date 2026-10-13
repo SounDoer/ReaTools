@@ -23,3 +23,12 @@ def test_user_data_is_outside_the_managed_package_tree():
     assert 'staging_dir = join(data_root, "staging")' in source
     assert 'cache_dir = join(data_root, "cache")' in source
     assert "Legacy ReaAssetFlow user data copied without deleting its source." in source
+
+
+def test_startup_prerequisite_check_is_visible_and_non_silent():
+    source = (ROOT / "ReaAssetFlow.lua").read_text(encoding="utf-8")
+    assert "check_base_prerequisites" in source
+    assert "Open installation folder##setup" in source
+    assert "Check Again##setup" in source
+    assert "run setup.bat" in source
+    assert "state.prerequisites = check_base_prerequisites()" in source

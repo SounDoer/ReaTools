@@ -61,14 +61,15 @@ Runtime state, presets, cache, and staging data live under
 `Data/ReaTools/ReaAssetFlow/` in the REAPER resource path. The first run copies
 legacy state, presets, and cache without deleting their source, so ReaPack
 updates preserve user data and rollback remains possible. Batch setup remains a
-compatibility route until the in-tool prerequisite flow is implemented and
-validated.
+visible, explicit dependency route. The panel checks Python and `waapi-client`
+at startup, links the user to the installed setup files, and supports a manual
+retry without silently invoking `pip`.
 
 ## ReaPack constraints
 
 The release layout follows the official packaging model: package files live in
 a category subdirectory, `@version` is mandatory, and `@provides` declares all
-additional files and their target names. Package headers and index generation
-will be added only after the public repository URL and final release layout are
-configured, so generated download URLs cannot accidentally point at the legacy
-repositories.
+additional files and their target names. Package headers and the final category
+layout are validated locally. Index generation and publishing remain disabled
+until the public repository URL is configured, so generated download URLs
+cannot accidentally point at the legacy repositories.

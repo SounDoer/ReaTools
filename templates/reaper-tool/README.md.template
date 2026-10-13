@@ -1,0 +1,11 @@
+# {{DISPLAY_NAME}}
+
+{{DESCRIPTION}}
+
+## Development status
+
+This tool was created from the ReaTools product template. Define Product
+decisions and tests before replacing the placeholder entry behavior.
+
+Its ReaToolUI contract starts as `planned`. Change it to `runtime` only when the
+tool loads the pinned `reaui` package and its release declares a `vendorTarget`.

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "{{ID}}",
+  "displayName": "{{DISPLAY_NAME}}",
+  "version": "0.1.0",
+  "kind": "reaper-tool",
+  "entry": "{{DISPLAY_NAME}}.lua",
+  "uiContract": {
+    "package": "reaui",
+    "version": "0.1.0",
+    "usage": "planned"
+  },
+  "release": {
+    "files": [
+      {
+        "source": "{{DISPLAY_NAME}}.lua",
+        "target": "{{DISPLAY_NAME}}.lua"
+      },
+      {
+        "source": "README.md",
+        "target": "README.md"
+      }
+    ]
+  }
+}

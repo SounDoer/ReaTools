@@ -157,7 +157,7 @@ message cases using both ReaProjectLink and ReaAssetFlow content shapes. Manual
 validation confirms native editing, selection, copying, horizontal scrolling,
 focus visibility, and both themes before product use.
 
-The current automated reference evidence is 255 core tests plus the
+The current automated reference evidence is 123 ReaToolUI tests plus the
 REAPER/ReaImGui smoke check, the complete 30-scenario Gallery matrix, and the
 unchanged 40-scenario ReaProjectLink UI smoke matrix. This evidence validates
 structure and host compatibility; it does not replace the remaining manual

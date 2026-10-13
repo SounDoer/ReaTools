@@ -11,11 +11,10 @@ small, inspectable vertical slices. Each slice includes its contract, reference
 implementation, Gallery examples, automated checks, and manual validation
 before product migration begins.
 
-The first reference implementation lives with ReaProjectLink because that
-product already separates theme, components, views, and smoke scenarios.
-ReaAssetFlow supplies cross-product requirements from the beginning and adopts
-the implementation after the shared boundaries have been exercised. Repository
-decisions M001 through M005 now place the canonical package at
+The reference implementation was incubated with ReaProjectLink and is now
+extracted into the product-neutral package. ReaAssetFlow supplies cross-product
+requirements and adopts the implementation after the shared boundaries have
+been exercised. Repository decisions M001 through M008 place the canonical package at
 `packages/ReaToolUI` and require self-contained tool releases.
 
 ## Delivery principles
@@ -148,8 +147,9 @@ Implementation status: Field Shell, Text Field, Integer Number Field, and the
 File and Folder Path Field variants now have contracts, tokens, reference
 Components, structural and contrast tests, responsive layouts, and
 deterministic Light and Dark Gallery frames using both products' content
-shapes. The current 255-test core suite and unchanged 40-scenario product UI
-smoke matrix pass. Manual native editing, selection, copying, horizontal scrolling,
+shapes. The current 123-test ReaToolUI suite, 133-test ReaProjectLink suite, and
+unchanged 40-scenario product UI smoke matrix pass. Manual native editing,
+selection, copying, horizontal scrolling,
 step activation, picker handoff, and focus inspection remain open, so Slice 2B
 has not passed its full completion rule and no product call site has migrated.
 
@@ -192,8 +192,9 @@ facade without becoming supported Components.
 Implementation status: Card, Status, Notice, Menu, and Disclosure now have
 contracts, tokens, reference Components, structural and contrast checks, safe
 container or popup lifecycle behavior, semantic action events, and
-deterministic Light and Dark Gallery frames. The current 255-test core suite and
-unchanged 40-scenario product UI smoke matrix pass. Manual pointer, keyboard,
+deterministic Light and Dark Gallery frames. The current 123-test ReaToolUI
+suite, 133-test ReaProjectLink suite, and unchanged 40-scenario product UI smoke
+matrix pass. Manual pointer, keyboard,
 focus, wrapping, popup-placement, and nested-control inspection remains open,
 so Slice 2D has not passed its full completion rule and no product call site has
 migrated.
@@ -396,8 +397,9 @@ The implementation now contains:
 6. public-catalog conformance, contract, behavior, contrast, and stack-balance
    checks;
 7. migration-readiness mappings for Settings and Delivery Publish Review;
-8. one-command validation of 255 core tests, 30 Gallery scenarios, and 40
-   unchanged ReaProjectLink product UI scenarios.
+8. one-command validation of 123 ReaToolUI tests, 30 Gallery scenarios, 133
+   ReaProjectLink tests, 40 unchanged ReaProjectLink UI scenarios, 13
+   ReaAssetFlow tests, one ReaAssetFlow UI frame, and both release inventories.
 
 The automated Gallery matrix reuses one hidden REAPER instance, while the core
 suite and product UI smoke each use their own isolated instance. This preserves

@@ -6,11 +6,9 @@ if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'dist' }
 
 & (Join-Path $PSScriptRoot 'build_release.ps1') -Tool All -OutputPath $OutputPath
 
-foreach ($manifestPath in @(
-  'tools\ReaProjectLink\reatools-package.json',
-  'tools\ReaAssetFlow\reatools-package.json'
-)) {
-  $manifest = Get-Content -LiteralPath (Join-Path $repoRoot $manifestPath) -Raw | ConvertFrom-Json
+foreach ($manifestFile in Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools') `
+    -Filter 'reatools-package.json' -Recurse -File | Sort-Object FullName) {
+  $manifest = Get-Content -LiteralPath $manifestFile.FullName -Raw | ConvertFrom-Json
   $releaseRoot = Join-Path $OutputPath "$($manifest.id)-$($manifest.version)"
   $inventoryPath = Join-Path $releaseRoot 'package-inventory.json'
   $inventory = Get-Content -LiteralPath $inventoryPath -Raw | ConvertFrom-Json

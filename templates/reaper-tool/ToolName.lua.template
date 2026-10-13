@@ -1,0 +1,17 @@
+-- @description {{DISPLAY_NAME}}
+-- @version 0.1.0
+-- @author ReaTools contributors
+-- @changelog
+--   Initial development package.
+-- @about
+--   {{DESCRIPTION}}
+-- @provides
+--   [nomain] README.md
+
+if not reaper then return end
+
+reaper.ShowMessageBox(
+  "{{DISPLAY_NAME}} has been scaffolded. Replace this placeholder with the Product UI and workflow.",
+  "{{DISPLAY_NAME}}",
+  0
+)

@@ -6,10 +6,11 @@ if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'dist\reapack' }
 
 & (Join-Path $PSScriptRoot 'build_reapack_repository.ps1') -OutputPath $OutputPath
 
-$entries = @(
-  'ReaTools\ReaProjectLink\ReaProjectLink.lua',
-  'ReaTools\ReaAssetFlow\ReaAssetFlow.lua'
-)
+$entries = Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools') `
+  -Filter 'reatools-package.json' -Recurse -File | Sort-Object FullName | ForEach-Object {
+    $manifest = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
+    "ReaTools\$($manifest.displayName)\$($manifest.entry)"
+  }
 foreach ($relative in $entries) {
   $path = Join-Path $OutputPath $relative
   if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {

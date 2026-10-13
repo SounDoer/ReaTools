@@ -14,12 +14,12 @@ from being mistaken for contract `0.1.0`.
 | ReaProjectLink Review pilot | Not started by gate | Requires Settings pilot and Review native cells |
 | Remaining ReaProjectLink migration | Not started | Requires both pilots |
 | Distribution mechanism approved | Confirmed | ReaTools monorepo with self-contained tool releases; see repository decision M005 |
-| Product-neutral package name and namespace | Confirmed | `ReaToolUI` and `reaui`; prototype namespace still awaits extraction |
-| ReaAssetFlow declaration and adoption | Not started | Copied baseline passes; shared-package adoption follows extraction and DS016 gates |
+| Product-neutral package name and namespace | Complete | `ReaToolUI` and `reaui` are extracted under `packages/ReaToolUI` |
+| ReaAssetFlow declaration and adoption | Declaration complete; adoption gated | Package declaration, release boundary, UI smoke, setup diagnostics, and user-data migration pass; ReaToolUI presentation adoption awaits DS016 |
 | Both consumers pass one exact contract version | Not started | Depends on adoption |
 | Changelog and migration note | Deferred correctly | Written for the approved extraction and first release |
-| Rollback guidance | Prepared at strategy level | Exact paths and versions depend on distribution decision |
-| Contract version assigned | Correctly absent | `VERSION` remains `nil`; `STATUS` remains `development` |
+| Rollback guidance | Prepared | Exact legacy and stable user-data paths plus non-destructive copy behavior are documented |
+| Contract version assigned | Correctly absent | ReaToolUI `VERSION` remains `nil` and `STATUS` remains `development`; tool package version `0.1.0` is not a released UI contract |
 
 The first release becomes eligible only when every row is pass, complete, or a
 documented non-blocking not-applicable result. Automated smoke success alone is

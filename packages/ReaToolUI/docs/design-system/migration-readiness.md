@@ -81,7 +81,9 @@ Product boundary; the shared Pattern does not call workflow or services.
   Components, Patterns, Cross-product Scenarios, and Diagnostics where
   applicable;
 - all 40 unchanged ReaProjectLink product UI smoke scenarios pass;
-- ReaAssetFlow has remained read-only during reference implementation.
+- ReaAssetFlow product presentation remains unchanged. Its monorepo package,
+  setup diagnostics, stable user-data boundary, and UI smoke are now validated
+  independently of the design-system adoption gate.
 
 ## Remaining migration gate
 

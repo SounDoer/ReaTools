@@ -18,7 +18,8 @@ path.
   under the `reaui` namespace.
 - ReaToolUI owns its design-system documentation, automated tests, and Gallery;
   the duplicate Product-local implementation has been removed.
-- No product workflow or persisted data has changed.
+- Product workflows remain unchanged. ReaAssetFlow user data now uses the
+  stable REAPER resource-data tree and copies legacy data non-destructively.
 
 ## Migration sequence
 
@@ -44,13 +45,16 @@ Completed structural extraction:
 5. proved ReaProjectLink against the shared source and removed its duplicate
    `design_*` implementation.
 
-Remaining package work adds explicit consumer declarations and packaging
-metadata.
+Consumer declarations, packaging metadata, deterministic release inventories,
+and the unified ReaPack staging layout are complete.
 
 The DS016 native visual and interaction matrix remains a gate for product UI
 migration. Structural extraction alone does not waive it.
 
 ### Phase 3 — ReaProjectLink integration
+
+Status: contract declaration and monorepo release reproduction are complete.
+Product presentation migration remains gated by DS016.
 
 1. declare the exact ReaToolUI contract used by ReaProjectLink;
 2. migrate Settings and the representative Review pilot after their DS016 cells
@@ -60,6 +64,10 @@ migration. Structural extraction alone does not waive it.
 5. reproduce the existing ReaPack package and release checks from the monorepo.
 
 ### Phase 4 — ReaAssetFlow product migration
+
+Status: rename, ReaPack package boundary, setup diagnostics, stable user-data
+paths, legacy-data copy, UI smoke, and release checks are complete. Broader
+panel/service separation and ReaToolUI adoption remain gated work.
 
 1. replace legacy ReaperToWwise names and paths without changing behavior;
 2. separate the current panel, product services, and Python worker boundaries;
@@ -71,6 +79,10 @@ migration. Structural extraction alone does not waive it.
 6. provide upgrade guidance for legacy users and local state.
 
 ### Phase 5 — Shared release tooling
+
+Status: complete. The repository validates both current tools, builds
+self-contained inventories, stages the unified ReaPack layout, keeps versions
+independent, and includes a reusable future-tool scaffolder.
 
 1. validate all affected Lua and Python suites from the repository root;
 2. build self-contained, deterministic artifacts for each tool;

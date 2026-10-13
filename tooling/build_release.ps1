@@ -1,5 +1,4 @@
 param(
-  [ValidateSet('ReaProjectLink', 'ReaAssetFlow', 'All')]
   [string]$Tool = 'All',
   [string]$OutputPath
 )
@@ -8,7 +7,12 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'dist' }
 $outputRoot = [System.IO.Path]::GetFullPath($OutputPath)
-$toolNames = if ($Tool -eq 'All') { @('ReaProjectLink', 'ReaAssetFlow') } else { @($Tool) }
+$toolNames = if ($Tool -eq 'All') {
+  @(Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools') -Directory |
+    Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'reatools-package.json') } |
+    Sort-Object Name |
+    Select-Object -ExpandProperty Name)
+} else { @($Tool) }
 $uiRoot = Join-Path $repoRoot 'packages\ReaToolUI'
 $uiManifest = Get-Content -LiteralPath (Join-Path $uiRoot 'reatools-package.json') -Raw |
   ConvertFrom-Json

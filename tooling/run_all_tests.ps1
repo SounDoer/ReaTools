@@ -51,5 +51,9 @@ Invoke-Step 'ReaPack repository' {
   & (Join-Path $PSScriptRoot 'test_reapack_repository.ps1')
 }
 
+Invoke-Step 'Future-tool template' {
+  & (Join-Path $PSScriptRoot 'test_new_tool.ps1')
+}
+
 Write-Output '==> Summary'
 $results | ForEach-Object { Write-Output $_ }

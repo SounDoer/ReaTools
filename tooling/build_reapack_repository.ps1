@@ -13,8 +13,9 @@ New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
 & (Join-Path $PSScriptRoot 'build_release.ps1') -Tool All -OutputPath $releaseRoot
 
-foreach ($toolName in @('ReaProjectLink', 'ReaAssetFlow')) {
-  $manifestPath = Join-Path $repoRoot "tools\$toolName\reatools-package.json"
+foreach ($manifestFile in Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools') `
+    -Filter 'reatools-package.json' -Recurse -File | Sort-Object FullName) {
+  $manifestPath = $manifestFile.FullName
   $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
   $source = Join-Path $releaseRoot "$($manifest.id)-$($manifest.version)"
   $target = Join-Path $outputRoot "ReaTools\$($manifest.displayName)"
@@ -24,17 +25,21 @@ foreach ($toolName in @('ReaProjectLink', 'ReaAssetFlow')) {
     Copy-Item -Destination $target -Recurse -Force
 }
 
-@'
---name ReaTools
---about README.md
---ignore ReaTools/ReaProjectLink/lib
---ignore ReaTools/ReaAssetFlow/scripts
---ignore ReaTools/ReaAssetFlow/lib
---ignore ReaTools/ReaAssetFlow/requirements.txt
---commit-template "index: $changelog
-
-[ci skip]"
-'@ | Set-Content -LiteralPath (Join-Path $outputRoot '.reapack-index.conf') -Encoding utf8
+$config = [System.Collections.Generic.List[string]]::new()
+$config.Add('--name ReaTools')
+$config.Add('--about README.md')
+foreach ($productDir in Get-ChildItem -LiteralPath (Join-Path $outputRoot 'ReaTools') -Directory) {
+  foreach ($relative in @('lib', 'scripts', 'requirements.txt')) {
+    $candidate = Join-Path $productDir.FullName $relative
+    if (Test-Path -LiteralPath $candidate) {
+      $config.Add("--ignore ReaTools/$($productDir.Name)/$relative")
+    }
+  }
+}
+$config.Add('--commit-template "index: $changelog')
+$config.Add('')
+$config.Add('[ci skip]"')
+$config | Set-Content -LiteralPath (Join-Path $outputRoot '.reapack-index.conf') -Encoding utf8
 
 @'
 # ReaTools

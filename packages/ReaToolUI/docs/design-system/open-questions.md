@@ -14,8 +14,7 @@ log.
 
 Background: the automated reference implementation now covers the supported
 Foundations, Components, Patterns, Gallery matrix, conformance checks, and both
-products' representative content. ReaAssetFlow remains read-only, and no
-product surface has migrated.
+products' representative content. No product surface has migrated to ReaToolUI.
 
 Confirmed answer:
 
@@ -27,8 +26,8 @@ Confirmed answer:
 
 `distribution-options.md` records why the earlier multi-repository alternatives
 were superseded. Repository-level decisions M001 through M005 define ownership,
-naming, installation direction, and release isolation. The prototype namespace
-`reaprojectlink.ui` remains temporary until extraction to `reaui` is verified.
+naming, installation direction, and release isolation. Extraction to the
+product-neutral `reaui` namespace is complete.
 
 Status: Resolved. This decision does not waive the separate DS016 native manual
 validation gate.

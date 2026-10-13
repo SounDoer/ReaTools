@@ -59,6 +59,10 @@ function tests.foundation_scales_and_roles_are_registered()
     "page padding")
   equal(design_tokens.resolve("semantic.space.item.vertical", "light"), 4,
     "vertical item spacing")
+  equal(design_tokens.resolve("semantic.opacity.disabled", "light"), 0.60,
+    "disabled opacity")
+  equal(design_tokens.resolve("semantic.size.scrollbar.standard", "light"), 12,
+    "scrollbar size")
   equal(design_tokens.resolve("semantic.border.focus.width", "light"), 2,
     "focus width")
   equal(design_tokens.resolve("semantic.radius.control", "light"), 6,
@@ -236,6 +240,21 @@ function tests.notice_roles_meet_text_contrast_baseline()
     for _,role in ipairs({"neutral","ready","warning","blocked"}) do
       local foreground=assert(design_tokens.resolve("component.notice."..role..".foreground",theme))
       assert(contrast(foreground,background)>=4.5,theme.." "..role.." notice contrast")
+    end
+  end
+end
+
+function tests.adapter_chrome_meets_contrast_baselines()
+  for _, theme in ipairs(design_tokens.THEMES) do
+    local primary = assert(design_tokens.resolve("semantic.color.text.primary", theme))
+    local popup = assert(design_tokens.resolve("semantic.color.surface.popup", theme))
+    assert(contrast(primary, popup) >= 4.5, theme .. " popup text contrast")
+
+    local track = assert(design_tokens.resolve("semantic.color.scrollbar.track", theme))
+    for _, state in ipairs({ "grab", "hover", "active" }) do
+      local grab = assert(design_tokens.resolve("semantic.color.scrollbar." .. state, theme))
+      assert(contrast(grab, track) >= 3,
+        theme .. " scrollbar " .. state .. " contrast")
     end
   end
 end

@@ -51,11 +51,10 @@ same confirmation for every action.
 Condition tokens use the status branch:
 
 ```text
-semantic.color.status.neutral.foreground
-semantic.color.status.neutral.background
-semantic.color.status.ready.foreground
-semantic.color.status.warning.foreground
-semantic.color.status.blocked.foreground
+semantic.color.status.neutral
+semantic.color.status.ready
+semantic.color.status.warning
+semantic.color.status.blocked
 ```
 
 Additional properties such as `background`, `border`, and `icon` are added only
@@ -64,10 +63,10 @@ when the component inventory demonstrates a distinct reusable need.
 Dangerous actions use the action branch:
 
 ```text
-semantic.color.action.danger.default
-semantic.color.action.danger.hover
-semantic.color.action.danger.pressed
-semantic.color.action.danger.foreground
+semantic.color.action.danger.background.default
+semantic.color.action.danger.background.hover
+semantic.color.action.danger.background.pressed
+semantic.color.action.danger.foreground.default
 ```
 
 The system does not define `semantic.color.status.danger`, and a destructive
@@ -77,8 +76,10 @@ use colors from a related family.
 Component tokens preserve the same separation:
 
 ```text
-component.notice.blocked.background.default
-component.status.warning.foreground.default
+component.notice.background
+component.notice.blocked.foreground
+component.notice.blocked.border
+component.status.warning.foreground
 component.button.danger.background.default
 component.button.danger.foreground.default
 ```

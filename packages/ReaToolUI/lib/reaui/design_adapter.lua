@@ -6,8 +6,8 @@ function M.create(ImGui, ctx, initial_theme)
   local current_theme = initial_theme or "dark"
   local pushed = 0
   local nav_color = ImGui.Col_NavHighlight
-  local base_color_count = nav_color and 3 or 2
-  local base_style_var_count = 9
+  local base_color_count = nav_color and 14 or 13
+  local base_style_var_count = 12
 
   local function resolve(id)
     local value, err = design_tokens.resolve(id, current_theme)
@@ -56,7 +56,20 @@ function M.create(ImGui, ctx, initial_theme)
 
   function adapter.push_base()
     ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("semantic.color.text.primary"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_TextDisabled, resolve("semantic.color.text.disabled"))
     ImGui.PushStyleColor(ctx, ImGui.Col_WindowBg, resolve("semantic.color.surface.canvas"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_PopupBg, resolve("semantic.color.surface.popup"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Border, resolve("semantic.color.border.subtle"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Separator, resolve("semantic.color.border.subtle"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ScrollbarBg, resolve("semantic.color.scrollbar.track"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ScrollbarGrab, resolve("semantic.color.scrollbar.grab"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ScrollbarGrabHovered,
+      resolve("semantic.color.scrollbar.hover"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ScrollbarGrabActive,
+      resolve("semantic.color.scrollbar.active"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Header, resolve("semantic.color.selection.default"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_HeaderHovered, resolve("semantic.color.selection.hover"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_HeaderActive, resolve("semantic.color.selection.pressed"))
     if nav_color then
       ImGui.PushStyleColor(ctx, nav_color, resolve("semantic.color.focus.ring"))
     end
@@ -70,6 +83,12 @@ function M.create(ImGui, ctx, initial_theme)
       resolve("semantic.space.inline.tight"))
     ImGui.PushStyleVar(ctx, ImGui.StyleVar_IndentSpacing,
       resolve("semantic.space.indent.default"))
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_DisabledAlpha,
+      resolve("semantic.opacity.disabled"))
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_ScrollbarSize,
+      resolve("semantic.size.scrollbar.standard"))
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_ScrollbarRounding,
+      resolve("semantic.radius.control"))
     ImGui.PushStyleVar(ctx, ImGui.StyleVar_FrameBorderSize,
       resolve("semantic.border.control.width"))
     ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowRounding,

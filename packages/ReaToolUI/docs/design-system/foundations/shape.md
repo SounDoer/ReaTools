@@ -13,8 +13,8 @@ The provisional Primitive radius scale is:
 | Token | Logical units | Purpose |
 | --- | ---: | --- |
 | `primitive.radius.0` | 0 | Deliberately square geometry |
-| `primitive.radius.1` | 4 | Controls and compact interactive surfaces |
-| `primitive.radius.2` | 8 | Containers and popups |
+| `primitive.radius.1` | 6 | Controls and compact interactive surfaces |
+| `primitive.radius.2` | 10 | Containers and popups |
 
 Shared code consumes `semantic.radius.control`,
 `semantic.radius.container`, and `semantic.radius.popup`. Product views do not

@@ -127,8 +127,8 @@ The provisional first-implementation mapping is:
 
 | Role | Family | Size | Weight |
 | --- | --- | ---: | --- |
-| `title` | system sans-serif | 16 | bold |
-| `heading` | system sans-serif | 14 | bold |
+| `title` | system sans-serif | 20 | bold |
+| `heading` | system sans-serif | 16 | bold |
 | `body` | system sans-serif | 13 | regular |
 | `label` | system sans-serif | 13 | regular |
 | `metadata` | system sans-serif | 12 | regular |

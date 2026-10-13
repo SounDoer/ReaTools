@@ -18,6 +18,7 @@ M.registry = {
         [100] = { type = "color", value = 0xebeef2ff },
         [200] = { type = "color", value = 0xd8dde4ff },
         [400] = { type = "color", value = 0x96a1adff },
+        [500] = { type = "color", value = 0x74808cff },
         [600] = { type = "color", value = 0x586370ff },
         [700] = { type = "color", value = 0x39434eff },
         [800] = { type = "color", value = 0x20272fff },
@@ -107,6 +108,9 @@ M.registry = {
       [1] = { type = "logical_unit", value = 1 },
       [2] = { type = "logical_unit", value = 2 },
     },
+    opacity = {
+      [60] = { type = "opacity", value = 0.60 },
+    },
     radius = {
       [0] = { type = "logical_unit", value = 0 },
       [1] = { type = "logical_unit", value = 6 },
@@ -153,6 +157,44 @@ M.registry = {
             dark = "primitive.color.neutral.800",
           },
         },
+        popup = {
+          type = "color",
+          themes = {
+            light = "primitive.color.neutral.0",
+            dark = "primitive.color.neutral.800",
+          },
+        },
+      },
+      border = {
+        subtle = {
+          type = "color",
+          themes = {
+            light = "primitive.color.neutral.200",
+            dark = "primitive.color.neutral.700",
+          },
+        },
+        default = {
+          type = "color",
+          themes = {
+            light = "primitive.color.neutral.600",
+            dark = "primitive.color.neutral.600",
+          },
+        },
+      },
+      scrollbar = {
+        track = { type = "color", ref = "semantic.color.surface.canvas" },
+        grab = { type = "color", themes = {
+          light = "primitive.color.neutral.600", dark = "primitive.color.neutral.500",
+        } },
+        hover = { type = "color", themes = {
+          light = "primitive.color.neutral.700", dark = "primitive.color.neutral.400",
+        } },
+        active = { type = "color", ref = "semantic.color.focus.ring" },
+      },
+      selection = {
+        default = { type = "color", ref = "semantic.color.action.quiet.background.default" },
+        hover = { type = "color", ref = "semantic.color.action.secondary.background.hover" },
+        pressed = { type = "color", ref = "semantic.color.action.secondary.background.pressed" },
       },
       focus = {
         ring = {
@@ -273,12 +315,13 @@ M.registry = {
           default = { type = "color", ref = "semantic.color.text.primary" },
         },
         border = {
-          default = { type = "color", themes = {
-            light = "primitive.color.neutral.600", dark = "primitive.color.neutral.600",
-          } },
+          default = { type = "color", ref = "semantic.color.border.default" },
           invalid = { type = "color", ref = "semantic.color.validation.invalid" },
         },
       },
+    },
+    opacity = {
+      disabled = { type = "opacity", ref = "primitive.opacity.60" },
     },
     typography = {
       title = {
@@ -365,6 +408,9 @@ M.registry = {
       },
       footer = {
         medium = { type = "logical_unit", ref = "primitive.size.20" },
+      },
+      scrollbar = {
+        standard = { type = "logical_unit", ref = "primitive.size.3" },
       },
     },
     layout = {
@@ -591,7 +637,7 @@ M.registry = {
     card = {
       background = { type = "color", ref = "semantic.color.surface.panel" },
       border = {
-        default = { type = "color", ref = "semantic.color.input.border.default" },
+        default = { type = "color", ref = "semantic.color.border.subtle" },
         emphasized = { type = "color", ref = "semantic.color.focus.ring" },
       },
       title = { type = "color", ref = "semantic.color.text.primary" },
@@ -678,6 +724,9 @@ local function literal_matches(value_type, value)
   if value_type == "font_family" then return type(value) == "string" and value ~= "" end
   if value_type == "font_weight" then return value == "regular" or value == "bold" end
   if value_type == "logical_unit" then return type(value) == "number" and value >= 0 end
+  if value_type == "opacity" then
+    return type(value) == "number" and value >= 0 and value <= 1
+  end
   return false
 end
 

@@ -24,7 +24,7 @@ Examples:
 primitive.color.blue.500 = #2f6fe0
 primitive.color.gray.900 = #1d2025
 primitive.space.3 = 12
-primitive.radius.2 = 6
+primitive.radius.2 = 10
 ```
 
 Primitive token names describe the material, not a product meaning. A blue
@@ -49,7 +49,7 @@ semantic.color.text.secondary
 semantic.color.surface.canvas
 semantic.color.border.default
 semantic.color.action.primary.default
-semantic.color.status.warning.foreground
+semantic.color.status.warning
 semantic.space.container.padding
 semantic.size.control.medium
 ```
@@ -72,9 +72,9 @@ Examples:
 component.button.primary.background.default
 component.button.primary.background.hover
 component.button.primary.foreground.default
-component.card.background.default
-component.card.border.highlighted
-component.notice.warning.background.default
+component.card.background
+component.card.border.emphasized
+component.notice.warning.foreground
 ```
 
 Component tokens do not contain product or workflow terminology. For example,

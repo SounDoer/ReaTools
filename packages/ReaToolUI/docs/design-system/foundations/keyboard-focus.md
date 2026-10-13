@@ -140,7 +140,7 @@ The installed ReaImGui API exposes the facilities needed by this baseline:
 `ConfigFlags_NavEnableKeyboard`, `IsItemFocused`, `SetItemDefaultFocus`,
 `SetKeyboardFocusHere`, and interactive items such as `InvisibleButton`.
 
-The current `icon_button` already uses `InvisibleButton`, so its migration needs
-a focused visual state rather than a new interaction model. The current context
-is created without the keyboard-navigation flag; enabling it belongs to the
-later implementation phase.
+The current `icon_button` uses a native `Button` hit target with DrawList icon
+geometry, so it participates in native focus and activation behavior. The
+Gallery context enables `ConfigFlags_NavEnableKeyboard`; product adoption must
+preserve that context flag and complete the DS016 native focus inspection.

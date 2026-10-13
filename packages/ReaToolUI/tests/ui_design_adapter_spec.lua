@@ -15,6 +15,17 @@ local function fake_imgui()
     Col_Text = 1,
     Col_WindowBg = 2,
     Col_NavHighlight = 6,
+    Col_TextDisabled = 13,
+    Col_PopupBg = 14,
+    Col_Border = 15,
+    Col_Separator = 16,
+    Col_ScrollbarBg = 17,
+    Col_ScrollbarGrab = 18,
+    Col_ScrollbarGrabHovered = 19,
+    Col_ScrollbarGrabActive = 20,
+    Col_Header = 21,
+    Col_HeaderHovered = 22,
+    Col_HeaderActive = 23,
     StyleVar_WindowPadding = 3,
     StyleVar_ItemSpacing = 4,
     StyleVar_ItemInnerSpacing = 5,
@@ -24,6 +35,9 @@ local function fake_imgui()
     StyleVar_ChildRounding = 9,
     StyleVar_FrameRounding = 10,
     StyleVar_PopupRounding = 11,
+    StyleVar_DisabledAlpha = 13,
+    StyleVar_ScrollbarSize = 14,
+    StyleVar_ScrollbarRounding = 15,
     FontFlags_Bold = 12,
   }
   function ImGui.CreateFont(family, size)
@@ -63,11 +77,12 @@ function tests.pushes_and_restores_the_base_style()
   local ImGui, calls = fake_imgui()
   local adapter = design_adapter.create(ImGui, "ctx", "light")
   adapter.push_base()
-  equal(#calls.colors, 3, "pushed colors")
+  equal(#calls.colors, 14, "pushed colors")
   equal(calls.colors[1].value, 0x181d23ff, "text color")
-  equal(calls.colors[2].value, 0xf6f7f9ff, "canvas color")
-  equal(calls.colors[3].value, 0x287a79ff, "focus color")
-  equal(#calls.vars, 9, "pushed vars")
+  equal(calls.colors[2].value, 0x586370ff, "disabled text color")
+  equal(calls.colors[3].value, 0xf6f7f9ff, "canvas color")
+  equal(calls.colors[14].value, 0x287a79ff, "focus color")
+  equal(#calls.vars, 12, "pushed vars")
   equal(calls.vars[1].first, 20, "horizontal padding")
   equal(calls.vars[1].second, 20, "vertical padding")
   equal(calls.vars[2].first, 8, "horizontal item spacing")
@@ -76,11 +91,13 @@ function tests.pushes_and_restores_the_base_style()
   equal(calls.vars[4].first, 20, "indent spacing")
   equal(#calls.fonts, 1, "pushed fonts")
   adapter.pop_base()
-  equal(calls.vars[5].first, 1, "control border width")
-  equal(calls.vars[6].first, 10, "window radius")
-  equal(calls.vars[8].first, 6, "control radius")
-  equal(calls.popped_colors, 3, "popped colors")
-  equal(calls.popped_vars, 9, "popped vars")
+  equal(calls.vars[5].first, 0.60, "disabled alpha")
+  equal(calls.vars[6].first, 12, "scrollbar size")
+  equal(calls.vars[8].first, 1, "control border width")
+  equal(calls.vars[9].first, 10, "window radius")
+  equal(calls.vars[11].first, 6, "control radius")
+  equal(calls.popped_colors, 14, "popped colors")
+  equal(calls.popped_vars, 12, "popped vars")
   equal(calls.popped_fonts, 1, "popped fonts")
 end
 

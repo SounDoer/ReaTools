@@ -45,6 +45,25 @@ function tests.every_public_item_has_a_registered_gallery_fixture()
   end
 end
 
+function tests.gallery_modal_fixtures_require_an_explicit_user_action()
+  local gallery = read(join(root, "gallery/design_system_gallery.lua"))
+  assert(gallery:find('id="open-delete-preset"', 1, true),
+    "Gallery Confirmation Dialog needs an explicit open action")
+  assert(gallery:find('open=delete_preset_dialog_open', 1, true),
+    "Gallery Confirmation Dialog needs persistent open state")
+  assert(not gallery:match('confirmation_dialog%.draw%([^\n]-open%s*=%s*true'),
+    "Gallery must not open a modal fixture while navigating between sections")
+end
+
+function tests.gallery_always_balances_imgui_window_scopes()
+  local gallery = read(join(root, "gallery/design_system_gallery.lua"))
+  assert(not gallery:find("if preview_visible then ImGui.EndChild", 1, true),
+    "BeginChild must always be paired with EndChild")
+  assert(gallery:find("ImGui.EndChild(ctx)", 1, true), "Gallery closes its preview child")
+  assert(gallery:find("    ImGui.End(ctx)\n    adapter.pop_base()", 1, true),
+    "Begin must always be paired with End before styles are popped")
+end
+
 function tests.public_implementation_does_not_consume_primitive_tokens_or_raw_colors()
   local checked = {}
   for _, entries in pairs(contract.CATALOG) do

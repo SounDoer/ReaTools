@@ -93,6 +93,10 @@ Selection, and Confirmation Dialog in a visible REAPER session. Before the
 Review pilot changes, additionally record Notice, Disclosure, Review Shell,
 Stale Review, Footer, and long-content behavior.
 
+The focused Settings checklist is
+[`validation/2026-10-13-reaprojectlink-settings-pilot.md`](validation/2026-10-13-reaprojectlink-settings-pilot.md).
+It remains Blocked until its native visual and interaction cells are inspected.
+
 Required checks include both rebuilt themes; compact, standard, and wide
 widths; focus and disabled presentation; pointer and ordinary native keyboard
 behavior; long text and paths; modal Cancel, Escape, close, and safe default

@@ -26,7 +26,7 @@ local design_confirmation_dialog = require("reaui.design_confirmation_dialog")
 local design_inline_review = require("reaui.design_inline_review")
 
 local M = {}
-local CHILD_BORDERS = 1 << 0
+local CHILD_BORDERS = 1
 
 local SECTIONS = {
   "Foundations",
@@ -77,10 +77,16 @@ function M.create(deps)
   local checkbox_values = { mirror_timeline = true }
   local dropdown_values = { conflict_policy = "merge" }
   local segmented_values = { theme_mode = "auto" }
+  local scenario_values = {
+    view = "settings",
+    page = "connection",
+    conflict_policy = "review",
+  }
   local list_values = { structure_row = "actor-mixer" }
   local pattern_values = { object_name = "$track_$marker" }
   local ordered_values = { transfer_step = "rename" }
   local preset_values = { selected = "dialogue", name = "Dialogue transfer" }
+  local delete_preset_dialog_open = false
 
   local function record(event)
     if event then last_event = event.type .. " id=" .. event.id end
@@ -698,28 +704,190 @@ function M.create(deps)
       return {events={}}
     end)
     for _,event in ipairs(inline_result.events)do last_event=event.type.." id="..event.id end
-    local dialog_result=confirmation_dialog.draw({id="delete-preset",open=true,title="Delete preset",message="Deletes the saved preset ‘Dialogue transfer’. This cannot be undone.",confirm_label="Delete preset",danger=true})
+    ImGui.Separator(ctx);ImGui.Text(ctx,"Confirmation Dialog")
+    if button.draw({id="open-delete-preset",label="Open delete preset confirmation",variant="danger"}) then
+      delete_preset_dialog_open = true
+    end
+    local dialog_result=confirmation_dialog.draw({id="delete-preset",open=delete_preset_dialog_open,title="Delete preset",message="Deletes the saved preset ‘Dialogue transfer’. This cannot be undone.",confirm_label="Delete preset",danger=true})
+    delete_preset_dialog_open = dialog_result.open
     for _,event in ipairs(dialog_result.events)do last_event=event.type.." id="..event.id end
   end
 
   local function cross_product_scenarios()
-    local result=review_shell.draw({
-      id="reference-publish",
-      header={title="Publish Reference r7",summary="4 tracks · 8 markers and regions"},
-      footer={summary="Fix 1 issue to publish",role="blocked",complete_label="Publish",enabled=false},
-      render_body=function()
-        notice.draw({id="review-save-as",role="blocked",text="This project was moved or saved under a new name. Choose how its identity should continue.",actions={{id="continue",label="Continue Existing"},{id="new",label="Start New"}}})
-        ImGui.Text(ctx,"Decisions")
-        segmented.draw_field({id="review-reference",label="Checked against Reference",value="r6",options={{id="r6",label="Reference r6"},{id="none",label="Not checked"}}})
-        ImGui.Text(ctx,"Details")
-        disclosure.draw({id="review-tracks",label="Tracks · 4",description="Long structured content wraps and remains vertically readable.",default_open=true},function()
-          ImGui.TextWrapped(ctx,"Dialogue / Main Character / Alternate Language / Close Perspective")
-          ImGui.TextWrapped(ctx,"Ambience / Forest / Night / Distant Perspective")
-        end)
-        return {events={}}
-      end,
+    adapter.with_text("title", function()
+      ImGui.Text(ctx, "ReaProjectLink")
+    end)
+    ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
+      "Keep the REAPER session and its Wwise workspace connected.")
+    ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.stack.tight"))
+
+    local view_result = segmented.draw({
+      id = "reaprojectlink-scenario",
+      value = scenario_values.view,
+      options = {
+        { id = "settings", label = "Project setup" },
+        { id = "publish", label = "Publish review" },
+      },
     })
-    for _,event in ipairs(result.events)do last_event=event.type.." id="..event.id end
+    scenario_values.view = view_result.value
+    for _, event in ipairs(view_result.events) do
+      last_event = event.type .. " id=" .. event.id
+    end
+    ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.default"))
+
+    if scenario_values.view == "settings" then
+      local _, available_height = ImGui.GetContentRegionAvail(ctx)
+      local workspace_height = math.max(380, available_height or 380)
+      local rail_width = 156
+      local gap = adapter.resolve("semantic.space.stack.default")
+
+      ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg,
+        adapter.resolve("semantic.color.surface.panel"))
+      local rail_visible = ImGui.BeginChild(ctx, "##reaprojectlink-settings-rail",
+        rail_width, workspace_height, CHILD_BORDERS)
+      ImGui.PopStyleColor(ctx)
+      if rail_visible then
+        adapter.with_text("metadata", function()
+          ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), "PROJECT SETTINGS")
+        end)
+        ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.stack.tight"))
+        for _, item in ipairs({
+          { id = "connection", label = "Project connection" },
+          { id = "naming", label = "Naming rules" },
+          { id = "transfer", label = "Transfer defaults" },
+          { id = "advanced", label = "Advanced" },
+        }) do
+          local event = button.draw({
+            id = "settings-page-" .. item.id,
+            label = item.label,
+            variant = scenario_values.page == item.id and "secondary" or "quiet",
+            stretch = true,
+          })
+          if event then scenario_values.page = item.id end
+          ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.inline.tight"))
+        end
+        ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.default"))
+        ImGui.Separator(ctx)
+        ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), "CURRENT LINK")
+        status.draw({ role = "ready", text = "Connected" })
+        ImGui.TextWrapped(ctx, "Trailer Main")
+        adapter.with_text("metadata", function()
+          ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
+            "Last checked just now")
+        end)
+      end
+      ImGui.EndChild(ctx)
+
+      ImGui.SameLine(ctx, 0, gap)
+      local content_visible = ImGui.BeginChild(ctx, "##reaprojectlink-settings-content",
+        0, workspace_height, 0)
+      if content_visible then
+        if scenario_values.page == "connection" then
+          adapter.with_text("title", function() ImGui.Text(ctx, "Project connection") end)
+          ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
+            "Pair one REAPER session with the Wwise workspace it delivers to.")
+          ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.default"))
+
+          adapter.with_text("heading", function() ImGui.Text(ctx, "Workspace pair") end)
+          status.draw({ role = "ready", text = "Both projects are online" })
+          ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), "REAPER")
+          ImGui.SameLine(ctx)
+          ImGui.Text(ctx, "Trailer_Main.rpp")
+          ImGui.SameLine(ctx)
+          ImGui.TextColored(ctx, adapter.resolve("semantic.color.focus.ring"), "→")
+          ImGui.SameLine(ctx)
+          ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), "WWISE")
+          ImGui.SameLine(ctx)
+          ImGui.Text(ctx, "Trailer.wproj")
+          ImGui.Separator(ctx)
+          path_field.draw({
+            id = "settings-reaper-project",
+            label = "REAPER source",
+            kind = "file",
+            value = "//Studio-NAS/Shows/Trailer/Reaper/Trailer_Main.rpp",
+            read_only = true,
+            browse_label = "Change...",
+            reserve_message = false,
+          })
+          path_field.draw({
+            id = "settings-wwise-project",
+            label = "Wwise destination",
+            kind = "file",
+            value = "C:/AudioProjects/Trailer/Trailer.wproj",
+            browse_label = "Browse...",
+            reserve_message = false,
+          })
+          ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.stack.tight"))
+          record(button.draw({
+            id = "validate-project-link",
+            label = "Check connection",
+            variant = "secondary",
+          }))
+        else
+          local titles = {
+            naming = "Naming rules",
+            transfer = "Transfer defaults",
+            advanced = "Advanced settings",
+          }
+          adapter.with_text("title", function()
+            ImGui.Text(ctx, titles[scenario_values.page] or "Project settings")
+          end)
+          ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
+            "This area demonstrates task-based navigation without turning settings into one long form.")
+          ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.loose"))
+          card.draw({
+            id = "settings-task-placeholder",
+            title = "Focused workspace",
+            description = "Only controls for the selected task appear here.",
+          }, function()
+            ImGui.TextWrapped(ctx,
+              "The final controls will be composed when the ReaProjectLink workflow is migrated.")
+          end)
+        end
+
+        local footer_y = workspace_height - 84
+        if ImGui.GetCursorPosY(ctx) < footer_y then
+          ImGui.SetCursorPosY(ctx, footer_y)
+        else
+          ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.loose"))
+        end
+        ImGui.Separator(ctx)
+        ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.inline.tight"))
+        ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
+          "Changes apply to this project link only.")
+        local action_gap = adapter.resolve("semantic.space.control.gap")
+        local action_padding = adapter.resolve("semantic.space.control.padding_x") * 2
+        local discard_width = ImGui.CalcTextSize(ctx, "Discard") + action_padding
+        local save_width = ImGui.CalcTextSize(ctx, "Save settings") + action_padding
+        local actions_width = discard_width + action_gap + save_width
+        ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) +
+          math.max(0, ImGui.GetContentRegionAvail(ctx) - actions_width))
+        record(button.draw({
+          id = "discard-project-link", label = "Discard", variant = "quiet",
+        }))
+        ImGui.SameLine(ctx, 0, action_gap)
+        record(button.draw({ id = "save-project-link", label = "Save settings", variant = "primary" }))
+      end
+      ImGui.EndChild(ctx)
+    else
+      local result=review_shell.draw({
+        id="reference-publish",
+        header={title="Publish Reference r7",summary="4 tracks · 8 markers and regions"},
+        footer={summary="Fix 1 issue to publish",role="blocked",complete_label="Publish",enabled=false},
+        render_body=function()
+          notice.draw({id="review-save-as",role="blocked",text="This project was moved or saved under a new name. Choose how its identity should continue.",actions={{id="continue",label="Continue Existing"},{id="new",label="Start New"}}})
+          adapter.with_text("heading", function() ImGui.Text(ctx,"Decisions") end)
+          segmented.draw_field({id="review-reference",label="Checked against reference",value="r6",options={{id="r6",label="Reference r6"},{id="none",label="Not checked"}}})
+          adapter.with_text("heading", function() ImGui.Text(ctx,"Included material") end)
+          disclosure.draw({id="review-tracks",label="Tracks · 4",description="The publish scope stays visible before anything is written.",default_open=true},function()
+            ImGui.TextWrapped(ctx,"Dialogue / Main Character / Alternate Language / Close Perspective")
+            ImGui.TextWrapped(ctx,"Ambience / Forest / Night / Distant Perspective")
+          end)
+          return {events={}}
+        end,
+      })
+      for _,event in ipairs(result.events)do last_event=event.type.." id="..event.id end
+    end
   end
 
   local function placeholder(name)
@@ -749,7 +917,11 @@ function M.create(deps)
     local visible
     visible, shell.open = ImGui.Begin(ctx, "ReaToolUI Design System Gallery", shell.open)
     if visible then
-      ImGui.Text(ctx, "Development-only reference environment")
+      adapter.with_text("title", function()
+        ImGui.Text(ctx, "ReaToolUI Gallery")
+      end)
+      ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
+        "Design review workspace · development only")
       theme_controls()
       navigation()
       preview_controls()
@@ -771,9 +943,9 @@ function M.create(deps)
           placeholder(section)
         end
       end
-      if preview_visible then ImGui.EndChild(ctx) end
-      ImGui.End(ctx)
+      ImGui.EndChild(ctx)
     end
+    ImGui.End(ctx)
     adapter.pop_base()
   end
 

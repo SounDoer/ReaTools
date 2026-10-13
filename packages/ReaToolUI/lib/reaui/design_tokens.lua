@@ -14,23 +14,23 @@ M.registry = {
     color = {
       neutral = {
         [0] = { type = "color", value = 0xffffffff },
-        [50] = { type = "color", value = 0xf7f8faff },
-        [100] = { type = "color", value = 0xf2f4f7ff },
-        [200] = { type = "color", value = 0xe3e6eaff },
-        [400] = { type = "color", value = 0x9da5b0ff },
-        [600] = { type = "color", value = 0x5e6672ff },
-        [700] = { type = "color", value = 0x3f4650ff },
-        [800] = { type = "color", value = 0x2a2f36ff },
-        [900] = { type = "color", value = 0x20242aff },
-        [950] = { type = "color", value = 0x17191dff },
+        [50] = { type = "color", value = 0xf6f7f9ff },
+        [100] = { type = "color", value = 0xebeef2ff },
+        [200] = { type = "color", value = 0xd8dde4ff },
+        [400] = { type = "color", value = 0x96a1adff },
+        [600] = { type = "color", value = 0x586370ff },
+        [700] = { type = "color", value = 0x39434eff },
+        [800] = { type = "color", value = 0x20272fff },
+        [900] = { type = "color", value = 0x181d23ff },
+        [950] = { type = "color", value = 0x11161bff },
       },
       blue = {
-        [300] = { type = "color", value = 0x8bb5ffff },
-        [400] = { type = "color", value = 0x6ca0ffff },
-        [500] = { type = "color", value = 0x4d86edff },
-        [600] = { type = "color", value = 0x2864d7ff },
-        [700] = { type = "color", value = 0x1f52b5ff },
-        [800] = { type = "color", value = 0x184292ff },
+        [300] = { type = "color", value = 0x8cc9c5ff },
+        [400] = { type = "color", value = 0x67b3afff },
+        [500] = { type = "color", value = 0x3d9693ff },
+        [600] = { type = "color", value = 0x287a79ff },
+        [700] = { type = "color", value = 0x205f60ff },
+        [800] = { type = "color", value = 0x184a4cff },
       },
       red = {
         [300] = { type = "color", value = 0xffa0a6ff },
@@ -58,6 +58,7 @@ M.registry = {
       [100] = { type = "logical_unit", value = 13 },
       [125] = { type = "logical_unit", value = 14 },
       [150] = { type = "logical_unit", value = 16 },
+      [200] = { type = "logical_unit", value = 20 },
     },
     font_weight = {
       regular = { type = "font_weight", value = "regular" },
@@ -108,8 +109,8 @@ M.registry = {
     },
     radius = {
       [0] = { type = "logical_unit", value = 0 },
-      [1] = { type = "logical_unit", value = 4 },
-      [2] = { type = "logical_unit", value = 8 },
+      [1] = { type = "logical_unit", value = 6 },
+      [2] = { type = "logical_unit", value = 10 },
     },
   },
   semantic = {
@@ -198,7 +199,7 @@ M.registry = {
             light = "primitive.color.neutral.900", dark = "primitive.color.neutral.100",
           } } },
           border = { default = { type = "color", themes = {
-            light = "primitive.color.neutral.600", dark = "primitive.color.neutral.400",
+            light = "primitive.color.neutral.600", dark = "primitive.color.neutral.600",
           } } },
         },
         quiet = {
@@ -273,7 +274,7 @@ M.registry = {
         },
         border = {
           default = { type = "color", themes = {
-            light = "primitive.color.neutral.600", dark = "primitive.color.neutral.400",
+            light = "primitive.color.neutral.600", dark = "primitive.color.neutral.600",
           } },
           invalid = { type = "color", ref = "semantic.color.validation.invalid" },
         },
@@ -282,12 +283,12 @@ M.registry = {
     typography = {
       title = {
         font_family = { type = "font_family", ref = "primitive.font_family.system" },
-        font_size = { type = "logical_unit", ref = "primitive.font_size.150" },
+        font_size = { type = "logical_unit", ref = "primitive.font_size.200" },
         font_weight = { type = "font_weight", ref = "primitive.font_weight.bold" },
       },
       heading = {
         font_family = { type = "font_family", ref = "primitive.font_family.system" },
-        font_size = { type = "logical_unit", ref = "primitive.font_size.125" },
+        font_size = { type = "logical_unit", ref = "primitive.font_size.150" },
         font_weight = { type = "font_weight", ref = "primitive.font_weight.bold" },
       },
       body = {
@@ -322,9 +323,23 @@ M.registry = {
       },
       section = {
         default = { type = "logical_unit", ref = "primitive.space.4" },
+        loose = { type = "logical_unit", ref = "primitive.space.6" },
+      },
+      region = {
+        default = { type = "logical_unit", ref = "primitive.space.8" },
+      },
+      item = {
+        horizontal = { type = "logical_unit", ref = "primitive.space.2" },
+        vertical = { type = "logical_unit", ref = "primitive.space.1" },
       },
       container = {
-        padding = { type = "logical_unit", ref = "primitive.space.3" },
+        padding = { type = "logical_unit", ref = "primitive.space.4" },
+      },
+      page = {
+        padding = { type = "logical_unit", ref = "primitive.space.5" },
+      },
+      indent = {
+        default = { type = "logical_unit", ref = "primitive.space.5" },
       },
       control = {
         padding_x = { type = "logical_unit", ref = "primitive.space.3" },

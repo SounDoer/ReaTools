@@ -41,12 +41,24 @@ local function create_shell(section, theme, preview)
   })
 end
 
-local shell = create_shell(
+local smoke_path = os.getenv("REATOOLUI_GALLERY_SMOKE_RESULT")
+local batch_smoke = os.getenv("REATOOLUI_GALLERY_SMOKE_BATCH") == "1"
+local initial_ok, shell = pcall(create_shell,
   os.getenv("REATOOLUI_GALLERY_SECTION"),
   os.getenv("REATOOLUI_GALLERY_THEME"),
   os.getenv("REATOOLUI_GALLERY_PREVIEW"))
-local smoke_path = os.getenv("REATOOLUI_GALLERY_SMOKE_RESULT")
-local batch_smoke = os.getenv("REATOOLUI_GALLERY_SMOKE_BATCH") == "1"
+if not initial_ok then
+  if smoke_path then
+    local file = io.open(smoke_path, "w")
+    if file then
+      file:write("FAIL\nGallery initialization\n" .. tostring(shell) .. "\n")
+      file:close()
+    end
+  else
+    reaper.ShowMessageBox(tostring(shell), "Design System Gallery error", 0)
+  end
+  return
+end
 local batch_scenarios = {}
 
 if batch_smoke then

@@ -52,7 +52,8 @@ multiplying or dividing by the viewport DPI.
 Valid behavior:
 
 ```lua
-ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, 12, 12)
+local padding = adapter.resolve("semantic.space.page.padding")
+ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, padding, padding)
 
 local available = ImGui.GetContentRegionAvail(ctx)
 local compact = available < 560
@@ -62,7 +63,8 @@ Invalid behavior:
 
 ```lua
 local dpi = ImGui.GetWindowDpiScale(ctx)
-ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, 12 * dpi, 12 * dpi)
+local padding = adapter.resolve("semantic.space.page.padding")
+ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, padding * dpi, padding * dpi)
 
 local logical_available = ImGui.GetContentRegionAvail(ctx) / dpi
 ```

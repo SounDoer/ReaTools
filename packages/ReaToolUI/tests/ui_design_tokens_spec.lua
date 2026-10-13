@@ -40,22 +40,30 @@ function tests.default_registry_is_valid()
 end
 
 function tests.resolves_theme_specific_semantic_tokens()
-  equal(design_tokens.resolve("semantic.color.text.primary", "light"), 0x20242aff,
+  equal(design_tokens.resolve("semantic.color.text.primary", "light"), 0x181d23ff,
     "light primary text")
-  equal(design_tokens.resolve("semantic.color.text.primary", "dark"), 0xf2f4f7ff,
+  equal(design_tokens.resolve("semantic.color.text.primary", "dark"), 0xebeef2ff,
     "dark primary text")
-  equal(design_tokens.resolve("semantic.space.container.padding", "light"), 12,
+  equal(design_tokens.resolve("semantic.space.container.padding", "light"), 16,
     "shared semantic spacing")
 end
 
 function tests.foundation_scales_and_roles_are_registered()
   equal(design_tokens.resolve("semantic.space.section.default", "light"), 16,
     "section spacing")
+  equal(design_tokens.resolve("semantic.space.section.loose", "light"), 24,
+    "loose section spacing")
+  equal(design_tokens.resolve("semantic.space.region.default", "light"), 32,
+    "region spacing")
+  equal(design_tokens.resolve("semantic.space.page.padding", "light"), 20,
+    "page padding")
+  equal(design_tokens.resolve("semantic.space.item.vertical", "light"), 4,
+    "vertical item spacing")
   equal(design_tokens.resolve("semantic.border.focus.width", "light"), 2,
     "focus width")
-  equal(design_tokens.resolve("semantic.radius.control", "light"), 4,
+  equal(design_tokens.resolve("semantic.radius.control", "light"), 6,
     "control radius")
-  equal(design_tokens.resolve("semantic.radius.container", "light"), 8,
+  equal(design_tokens.resolve("semantic.radius.container", "light"), 10,
     "container radius")
   equal(design_tokens.resolve("semantic.typography.title.font_weight", "light"), "bold",
     "title weight")

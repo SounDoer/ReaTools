@@ -53,7 +53,13 @@ semantic.space.inline.default
 semantic.space.stack.tight
 semantic.space.stack.default
 semantic.space.section.default
+semantic.space.section.loose
+semantic.space.region.default
+semantic.space.item.horizontal
+semantic.space.item.vertical
 semantic.space.container.padding
+semantic.space.page.padding
+semantic.space.indent.default
 semantic.size.control.small
 semantic.size.control.medium
 semantic.size.icon.small
@@ -90,6 +96,10 @@ Exact aliases are assigned in this order:
 4. Representative controls and Reviews are checked at DS008 layout ranges.
 5. The complete Light and Dark component states receive visual and interaction
    validation.
+
+The development implementation also overrides ReaImGui's global item spacing,
+inner spacing, page padding, and indentation from these semantic roles. Native
+host defaults are not part of the density contract.
 
 This prevents control height, line height, and padding from being selected as
 unrelated numbers.

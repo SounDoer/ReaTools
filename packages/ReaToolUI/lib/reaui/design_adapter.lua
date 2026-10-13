@@ -7,6 +7,7 @@ function M.create(ImGui, ctx, initial_theme)
   local pushed = 0
   local nav_color = ImGui.Col_NavHighlight
   local base_color_count = nav_color and 3 or 2
+  local base_style_var_count = 9
 
   local function resolve(id)
     local value, err = design_tokens.resolve(id, current_theme)
@@ -59,8 +60,16 @@ function M.create(ImGui, ctx, initial_theme)
     if nav_color then
       ImGui.PushStyleColor(ctx, nav_color, resolve("semantic.color.focus.ring"))
     end
-    local padding = resolve("semantic.space.container.padding")
+    local padding = resolve("semantic.space.page.padding")
     ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, padding, padding)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_ItemSpacing,
+      resolve("semantic.space.item.horizontal"),
+      resolve("semantic.space.item.vertical"))
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_ItemInnerSpacing,
+      resolve("semantic.space.inline.tight"),
+      resolve("semantic.space.inline.tight"))
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_IndentSpacing,
+      resolve("semantic.space.indent.default"))
     ImGui.PushStyleVar(ctx, ImGui.StyleVar_FrameBorderSize,
       resolve("semantic.border.control.width"))
     ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowRounding,
@@ -78,7 +87,7 @@ function M.create(ImGui, ctx, initial_theme)
   function adapter.pop_base()
     if pushed == 0 then error("design adapter pop_base without matching push_base") end
     ImGui.PopFont(ctx)
-    ImGui.PopStyleVar(ctx, 6)
+    ImGui.PopStyleVar(ctx, base_style_var_count)
     ImGui.PopStyleColor(ctx, base_color_count)
     pushed = pushed - 1
   end

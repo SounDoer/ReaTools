@@ -16,6 +16,9 @@ local function fake_imgui()
     Col_WindowBg = 2,
     Col_NavHighlight = 6,
     StyleVar_WindowPadding = 3,
+    StyleVar_ItemSpacing = 4,
+    StyleVar_ItemInnerSpacing = 5,
+    StyleVar_IndentSpacing = 6,
     StyleVar_FrameBorderSize = 7,
     StyleVar_WindowRounding = 8,
     StyleVar_ChildRounding = 9,
@@ -61,19 +64,23 @@ function tests.pushes_and_restores_the_base_style()
   local adapter = design_adapter.create(ImGui, "ctx", "light")
   adapter.push_base()
   equal(#calls.colors, 3, "pushed colors")
-  equal(calls.colors[1].value, 0x20242aff, "text color")
-  equal(calls.colors[2].value, 0xf7f8faff, "canvas color")
-  equal(calls.colors[3].value, 0x2864d7ff, "focus color")
-  equal(#calls.vars, 6, "pushed vars")
-  equal(calls.vars[1].first, 12, "horizontal padding")
-  equal(calls.vars[1].second, 12, "vertical padding")
+  equal(calls.colors[1].value, 0x181d23ff, "text color")
+  equal(calls.colors[2].value, 0xf6f7f9ff, "canvas color")
+  equal(calls.colors[3].value, 0x287a79ff, "focus color")
+  equal(#calls.vars, 9, "pushed vars")
+  equal(calls.vars[1].first, 20, "horizontal padding")
+  equal(calls.vars[1].second, 20, "vertical padding")
+  equal(calls.vars[2].first, 8, "horizontal item spacing")
+  equal(calls.vars[2].second, 4, "vertical item spacing")
+  equal(calls.vars[3].first, 4, "horizontal inner spacing")
+  equal(calls.vars[4].first, 20, "indent spacing")
   equal(#calls.fonts, 1, "pushed fonts")
   adapter.pop_base()
-  equal(calls.vars[2].first, 1, "control border width")
-  equal(calls.vars[3].first, 8, "window radius")
-  equal(calls.vars[5].first, 4, "control radius")
+  equal(calls.vars[5].first, 1, "control border width")
+  equal(calls.vars[6].first, 10, "window radius")
+  equal(calls.vars[8].first, 6, "control radius")
   equal(calls.popped_colors, 3, "popped colors")
-  equal(calls.popped_vars, 6, "popped vars")
+  equal(calls.popped_vars, 9, "popped vars")
   equal(calls.popped_fonts, 1, "popped fonts")
 end
 
@@ -82,7 +89,7 @@ function tests.exposes_semantic_typography_roles()
   local adapter = design_adapter.create(ImGui, "ctx", "light")
   adapter.push_text("title")
   adapter.pop_text()
-  equal(calls.fonts[1].font, "sans-serif-16", "role font pushed")
+  equal(calls.fonts[1].font, "sans-serif-20", "role font pushed")
   equal(calls.popped_fonts, 1, "role font popped")
   assert(not pcall(function() adapter.push_text("missing") end), "unknown role")
   local value = adapter.with_text("heading", function() return "rendered" end)
@@ -99,7 +106,7 @@ function tests.switches_themes_without_recreating_the_contract()
   local adapter = design_adapter.create(ImGui, "ctx", "light")
   adapter.set_theme("dark")
   equal(adapter.theme(), "dark", "changed theme")
-  equal(adapter.resolve("semantic.color.text.primary"), 0xf2f4f7ff, "dark text")
+  equal(adapter.resolve("semantic.color.text.primary"), 0xebeef2ff, "dark text")
   local ok = pcall(function() adapter.set_theme("sepia") end)
   equal(ok, false, "unknown theme rejected")
 end

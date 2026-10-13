@@ -10,7 +10,7 @@ from being mistaken for contract `0.1.0`.
 | Supported Patterns documented and validated | Automated-ready | Milestone 3 catalog, Gallery fixtures, and semantic event tests |
 | Adapter behavior documented and validated | Automated-ready | ReaImGui 0.9 adapter and stack-balance tests |
 | Complete native DS016 matrix | Blocked | Native Windows UI control is unavailable; see validation record |
-| ReaProjectLink Settings pilot | Not started by gate | Requires applicable manual Component and Pattern cells |
+| ReaProjectLink Settings pilot | Not started by gate | Focused native checklist prepared; applicable Component and Pattern cells remain Blocked |
 | ReaProjectLink Review pilot | Not started by gate | Requires Settings pilot and Review native cells |
 | Remaining ReaProjectLink migration | Not started | Requires both pilots |
 | Distribution mechanism approved | Confirmed | ReaTools monorepo with self-contained tool releases; see repository decision M005 |

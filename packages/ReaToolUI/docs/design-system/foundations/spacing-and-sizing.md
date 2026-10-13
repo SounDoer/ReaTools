@@ -74,7 +74,13 @@ semantic.space.inline.default
 semantic.space.stack.tight
 semantic.space.stack.default
 semantic.space.section.default
+semantic.space.section.loose
+semantic.space.region.default
+semantic.space.item.horizontal
+semantic.space.item.vertical
 semantic.space.container.padding
+semantic.space.page.padding
+semantic.space.indent.default
 semantic.size.control.medium
 semantic.size.icon.medium
 ```
@@ -82,10 +88,29 @@ semantic.size.icon.medium
 These names describe why the distance exists. Their exact aliases are assigned
 through the DS007 density process with DS009 text metrics.
 
-The provisional first implementation assigns inline tight/default to 4/8,
-stack tight/default to 8/12, section default to 16, and container padding to 12
-logical units. They remain subject to native DS016 calibration before the first
-contract release.
+The current development implementation uses the following vertical rhythm:
+
+| Relationship | Token | Logical units |
+| --- | --- | ---: |
+| items inside one compound control | `semantic.space.inline.tight` | 4 |
+| related inline items | `semantic.space.inline.default` | 8 |
+| closely related stacked content | `semantic.space.stack.tight` | 8 |
+| ordinary stacked content | `semantic.space.stack.default` | 12 |
+| groups inside one section | `semantic.space.section.default` | 16 |
+| distinct sections in one task | `semantic.space.section.loose` | 24 |
+| major page regions | `semantic.space.region.default` | 32 |
+
+Global ImGui item spacing is explicitly owned by
+`semantic.space.item.horizontal` (8) and `semantic.space.item.vertical` (4),
+so host defaults cannot silently change the rhythm. Cards and notices use
+`semantic.space.container.padding` (16). Top-level pages use the deliberately
+larger `semantic.space.page.padding` (20). Tree and disclosure indentation uses
+`semantic.space.indent.default` (20).
+
+Adjacent components do not choose a gap by appearance. The composition decides
+whether they belong to the same stack, section, or page region and uses that
+relationship's token. These assignments remain subject to native DS016
+calibration before the first contract release.
 
 ## Optical exceptions
 
@@ -155,8 +180,10 @@ an approved spacing value.
 Valid decisions:
 
 ```text
-card padding -> semantic.space.container.padding -> primitive.space.3
+card padding -> semantic.space.container.padding -> primitive.space.4
+page padding -> semantic.space.page.padding -> primitive.space.5
 section gap -> semantic.space.section.default -> primitive.space.4
+major region gap -> semantic.space.region.default -> primitive.space.8
 medium icon box -> semantic.size.icon.medium -> primitive.size.4
 focus outline -> semantic.border.focus.width -> primitive.border_width.2
 ```

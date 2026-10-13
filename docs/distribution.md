@@ -8,13 +8,19 @@ rollback, and Action List registration for shipped files. A tool release is
 self-contained: it must not load Lua modules from the source monorepo or from
 another separately installed ReaTools product.
 
-The public repository URL and Git hosting owner remain deployment settings, not
-source-level product decisions. They must be configured before the first public
-index is generated.
+The canonical public repository is `https://github.com/SounDoer/ReaTools`.
+Source lives on `main`; the generated ReaPack repository lives on `reapack`.
+Users import this stable URL:
+
+```text
+https://raw.githubusercontent.com/SounDoer/ReaTools/reapack/index.xml
+```
 
 The root CI workflow installs Pandoc and `reapack-index` in an isolated runner
-and performs the full official package check. It does not publish or deploy an
-index; deployment remains disabled until the public URL is confirmed.
+and performs the full official package check. After those checks succeed on
+`main`, the deployment workflow builds the same deterministic staging tree,
+commits changed package files to `reapack`, regenerates `index.xml`, and pushes
+the result with the repository-scoped GitHub Actions token.
 
 ## Package declarations
 
@@ -45,7 +51,10 @@ Generated `dist/` content is never canonical source and is not committed. The
 ReaPack staging command consumes these verified trees and arranges them under
 `ReaTools/<Product>/`. Its validation checks headers and package boundaries, and
 runs `reapack-index --check` when that optional release tool is installed. The
-future publishing job will publish this staged source and its generated index.
+publishing job deploys this staged source and its generated index to the
+`reapack` branch. Publishing is serialized so two updates cannot rewrite it
+concurrently, and its Git history is retained for versioned downloads and
+rollback.
 
 ## ReaAssetFlow installation boundary
 
@@ -74,6 +83,5 @@ retry without silently invoking `pip`.
 The release layout follows the official packaging model: package files live in
 a category subdirectory, `@version` is mandatory, and `@provides` declares all
 additional files and their target names. Package headers and the final category
-layout are validated locally. Index generation and publishing remain disabled
-until the public repository URL is configured, so generated download URLs
-cannot accidentally point at the legacy repositories.
+layout are validated locally and in CI. Only validated `main` commits publish;
+the two legacy standalone repositories are never used as download origins.

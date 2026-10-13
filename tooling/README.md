@@ -30,3 +30,7 @@ Gallery, and product UI smoke checks remain in the Windows local command above.
 - `new_tool.ps1` creates a future ReaTools product from the repository template.
 - `test_new_tool.ps1` expands the template in an isolated generated sandbox and
   rejects missing files or unreplaced placeholders.
+
+On validated pushes to `main`, `.github/workflows/deploy-reapack.yml` publishes
+the output of `build_reapack_repository.ps1` to the generated `reapack` branch
+and updates its `index.xml`. Do not edit that branch by hand.

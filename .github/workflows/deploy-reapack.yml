@@ -1,0 +1,72 @@
+name: deploy ReaPack
+
+on:
+  workflow_run:
+    workflows: [check]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reapack-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch validated source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
+          fetch-depth: 0
+          path: source
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install ReaPack publishing tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+          gem install reapack-index
+
+      - name: Build deterministic ReaPack tree
+        shell: pwsh
+        run: ./source/tooling/build_reapack_repository.ps1 -OutputPath "$env:GITHUB_WORKSPACE/staged"
+
+      - name: Prepare generated branch
+        env:
+          REPOSITORY_URL: https://github.com/${{ github.repository }}.git
+        run: |
+          git init publish
+          cd publish
+          git remote add origin "$REPOSITORY_URL"
+          if git fetch origin reapack; then
+            git checkout -B reapack FETCH_HEAD
+          else
+            git checkout --orphan reapack
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Publish packages and index
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          rsync -a --delete --exclude='.git/' staged/ publish/
+          cd publish
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "release: sync packages from ${SOURCE_SHA}"
+          fi
+          reapack-index --commit
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:reapack

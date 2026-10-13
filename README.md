@@ -32,6 +32,19 @@ Shared source lives once under `packages/`. Release artifacts remain
 self-contained so installing or updating one tool does not silently alter
 another tool.
 
+## Install with ReaPack
+
+Import the following repository URL in **Extensions > ReaPack > Import
+repositories...**:
+
+```text
+https://raw.githubusercontent.com/SounDoer/ReaTools/reapack/index.xml
+```
+
+ReaProjectLink and ReaAssetFlow appear as separate packages and can be updated
+independently. The generated package repository is published from the
+`reapack` branch; canonical source remains on `main`.
+
 See `docs/decisions.md` for confirmed cross-tool decisions and
 `docs/monorepo-migration.md` for the migration sequence. Distribution,
 ReaPack, and Python-prerequisite boundaries are defined in

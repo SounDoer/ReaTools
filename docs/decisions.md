@@ -84,3 +84,14 @@ and WAAPI dependencies use an explicit, visible prerequisite flow; LLM support
 remains optional. User state, presets, cache, and staging files live under the
 REAPER resource-data tree rather than the managed package tree. Legacy data is
 copied non-destructively on first run.
+
+### M009 — Host source and distribution in one public GitHub repository
+
+Confirmed: 2026-10-13.
+
+`https://github.com/SounDoer/ReaTools` is the canonical public repository. The
+`main` branch contains source and repository automation. The generated
+`reapack` branch contains only the independently versioned, self-contained tool
+packages and their ReaPack index. GitHub Actions rebuilds and publishes that
+branch after validated changes reach `main`; generated distribution files do
+not become canonical source.

@@ -16,9 +16,9 @@ if ($Id -notmatch '^rea[a-z0-9]+$') {
   throw 'Id must start with rea and contain only lowercase ASCII letters or digits.'
 }
 
-$target = Join-Path $repoRoot "tools\$Name"
+$target = Join-Path $repoRoot "tools/$Name"
 if (Test-Path -LiteralPath $target) { throw "Tool already exists: $target" }
-$templateRoot = Join-Path $repoRoot 'templates\reaper-tool'
+$templateRoot = Join-Path $repoRoot 'templates/reaper-tool'
 New-Item -ItemType Directory -Path $target | Out-Null
 
 function Expand-Template([string]$TemplateName, [string]$TargetName) {

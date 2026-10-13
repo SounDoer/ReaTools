@@ -13,7 +13,7 @@ $toolNames = if ($Tool -eq 'All') {
     Sort-Object Name |
     Select-Object -ExpandProperty Name)
 } else { @($Tool) }
-$uiRoot = Join-Path $repoRoot 'packages\ReaToolUI'
+$uiRoot = Join-Path $repoRoot 'packages/ReaToolUI'
 $uiManifest = Get-Content -LiteralPath (Join-Path $uiRoot 'reatools-package.json') -Raw |
   ConvertFrom-Json
 $trackedSet = [System.Collections.Generic.HashSet[string]]::new(
@@ -80,7 +80,7 @@ function Write-Inventory([string]$ReleaseRoot, $Manifest) {
 }
 
 foreach ($toolName in $toolNames) {
-  $toolRoot = Join-Path $repoRoot "tools\$toolName"
+  $toolRoot = Join-Path $repoRoot "tools/$toolName"
   $manifestPath = Join-Path $toolRoot 'reatools-package.json'
   $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
   if ($manifest.schemaVersion -ne 1) { throw "Unsupported manifest schema: $manifestPath" }

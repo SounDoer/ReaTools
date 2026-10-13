@@ -2,14 +2,14 @@ param([string]$OutputPath)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'dist\reapack' }
+if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'dist/reapack' }
 
 & (Join-Path $PSScriptRoot 'build_reapack_repository.ps1') -OutputPath $OutputPath
 
 $entries = Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools') `
   -Filter 'reatools-package.json' -Recurse -File | Sort-Object FullName | ForEach-Object {
     $manifest = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
-    "ReaTools\$($manifest.displayName)\$($manifest.entry)"
+    "ReaTools/$($manifest.displayName)/$($manifest.entry)"
   }
 foreach ($relative in $entries) {
   $path = Join-Path $OutputPath $relative

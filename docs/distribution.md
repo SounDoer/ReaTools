@@ -12,6 +12,10 @@ The public repository URL and Git hosting owner remain deployment settings, not
 source-level product decisions. They must be configured before the first public
 index is generated.
 
+The root CI workflow installs Pandoc and `reapack-index` in an isolated runner
+and performs the full official package check. It does not publish or deploy an
+index; deployment remains disabled until the public URL is confirmed.
+
 ## Package declarations
 
 Each tool owns a `reatools-package.json` declaration. It records the product

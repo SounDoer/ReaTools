@@ -1,0 +1,41 @@
+name: check
+
+on: [push, pull_request]
+
+jobs:
+  reaassetflow-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependencies
+        run: python -m pip install -e './tools/ReaAssetFlow[dev]'
+      - name: Check Python sources
+        working-directory: tools/ReaAssetFlow
+        run: |
+          python -m py_compile scripts/wwise_import.py scripts/llm_assist.py
+          ruff check scripts/ tests/
+          pytest -q
+
+  distribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+      - name: Install ReaPack validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+          gem install reapack-index
+      - name: Validate release and ReaPack layouts
+        shell: pwsh
+        run: |
+          ./tooling/test_release.ps1
+          ./tooling/test_reapack_repository.ps1
+          ./tooling/test_new_tool.ps1

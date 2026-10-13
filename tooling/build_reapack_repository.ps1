@@ -2,9 +2,9 @@ param([string]$OutputPath)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'dist\reapack' }
+if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'dist/reapack' }
 $outputRoot = [System.IO.Path]::GetFullPath($OutputPath)
-$releaseRoot = Join-Path $repoRoot 'dist\release-source'
+$releaseRoot = Join-Path $repoRoot 'dist/release-source'
 
 if (Test-Path -LiteralPath $outputRoot) {
   Remove-Item -LiteralPath $outputRoot -Recurse -Force
@@ -18,7 +18,7 @@ foreach ($manifestFile in Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools
   $manifestPath = $manifestFile.FullName
   $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
   $source = Join-Path $releaseRoot "$($manifest.id)-$($manifest.version)"
-  $target = Join-Path $outputRoot "ReaTools\$($manifest.displayName)"
+  $target = Join-Path $outputRoot "ReaTools/$($manifest.displayName)"
   New-Item -ItemType Directory -Force -Path $target | Out-Null
   Get-ChildItem -LiteralPath $source -Force |
     Where-Object Name -ne 'package-inventory.json' |

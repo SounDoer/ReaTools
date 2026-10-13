@@ -12,6 +12,10 @@ release-inventory checks.
 The command adds no runtime dependency. It expects the same local REAPER,
 ReaImGui, Python, and test environment already required by the copied tools.
 
+Repository CI runs the portable Python, release-inventory, scaffold, and full
+official ReaPack index checks on Linux with Pandoc. Native REAPER, ReaImGui,
+Gallery, and product UI smoke checks remain in the Windows local command above.
+
 ## Commands
 
 - `run_all_tests.ps1` validates ReaToolUI, ReaProjectLink, and ReaAssetFlow.

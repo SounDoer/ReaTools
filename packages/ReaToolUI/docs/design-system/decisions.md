@@ -649,3 +649,22 @@ the canonical monorepo package; each release vendors the pinned implementation
 under the product tree so installation remains self-contained per M005, M007,
 and M010. Native pointer, keyboard, focus, and display-scale validation remains
 required evidence after the automated migration checks.
+
+### DS021: Migrate the complete ReaProjectLink presentation to ReaToolUI
+
+Confirmed: 2026-10-13.
+
+After the Settings pilot, ReaProjectLink migrates setup, headers, cards, every
+Review, notices, menus, status treatment, inputs, footers, Toast, and
+confirmation flows in one Product-owned composition pass. ReaToolUI owns the
+theme palettes, fonts, spacing, control states, and reusable Components and
+Patterns. The Product retains workflow routing, services, persistence, domain
+copy, grouped Lane mapping, virtualized domain lists, key/value rows, and card
+composition.
+
+The old Product palette and style stack are removed. Product helpers may draw
+composition that has no promoted shared counterpart, but must resolve semantic
+or Component tokens through the adapter and must not recreate a parallel theme.
+Automated product and release validation is required for implementation
+readiness; native DS016 visual and interaction evidence remains a separate
+acceptance gate.

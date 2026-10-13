@@ -73,23 +73,29 @@ local function handle_detach(env, action)
   local subscription, adapter = env.services.reference_subscription, env.adapter
   local name = display_name(action.name, "this " .. (action.kind or "object"))
   if action.id == "detach_track" then
-    if workflow.confirm(env.reaper, "Detach Reference Track",
-        string.format(
-          "Detach %s and its Reference items? They stay in the project. Later updates won't change them, and the next synchronization adds a new managed copy.",
-          name
-        )) then
+    env.c.request_confirmation({
+      id = "detach-reference-track",
+      title = "Detach Reference Track",
+      message = string.format(
+        "Detach %s and its Reference items? They stay in the project. Later updates won't change them, and the next synchronization adds a new managed copy.", name),
+      confirm_label = "Detach Track",
+      danger = true,
+    }, function()
       local result, err = subscription.detach_reference_track(adapter, action.ref)
       workflow.apply(env, result, err)
-    end
+    end)
   elseif action.id == "detach_entry" then
-    if workflow.confirm(env.reaper, "Detach Reference " .. action.kind,
-        string.format(
-          "Detach %s? It stays in the project. Later updates won't change it, and the next synchronization adds a new managed copy.",
-          name
-        )) then
+    env.c.request_confirmation({
+      id = "detach-reference-entry",
+      title = "Detach Reference " .. action.kind,
+      message = string.format(
+        "Detach %s? It stays in the project. Later updates won't change it, and the next synchronization adds a new managed copy.", name),
+      confirm_label = "Detach " .. action.kind,
+      danger = true,
+    }, function()
       local result, err = subscription.detach_timeline_entry(adapter, action.entry_id)
       workflow.apply(env, result, err)
-    end
+    end)
   end
 end
 

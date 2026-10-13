@@ -50,10 +50,17 @@ local function draw_issues(env, data, options)
   end
   if data.removed_blocker and not options.allow_removals then
     local choice = c.notice("removed", "blocked", data.removed_blocker, { "Publish Without Them..." })
-    if choice == 1 and workflow.confirm(env.reaper, "Publish Without Them",
-        "The Master Project will see them as removed, and registering again gives them new identities. Continue?") then
-      options.allow_removals = true
-      changed = true
+    if choice == 1 then
+      c.request_confirmation({
+        id = "publish-delivery-without-removed",
+        title = "Publish Without Removed Lanes",
+        message = "The Master Project will see them as removed, and registering again gives them new identities.",
+        confirm_label = "Publish Without Them",
+        danger = true,
+      }, function()
+        options.allow_removals = true
+        refresh(env, options)
+      end)
     end
   elseif data.removed and data.removed.total > 0 then
     c.notice("removed-accepted", "warning", "Removed Lanes won't be part of this Delivery.")
@@ -62,10 +69,16 @@ local function draw_issues(env, data, options)
     local choice = c.notice("unprocessed-fx", "warning",
       "Track or Take FX were found. Published audio won't include them.",
       { "Publish Unprocessed Media..." })
-    if choice == 1 and workflow.confirm(env.reaper, "Publish Unprocessed Media",
-        "Detected Track FX or Take FX will not be included in the published media. Continue?") then
-      options.publish_anyway = true
-      changed = true
+    if choice == 1 then
+      c.request_confirmation({
+        id = "publish-unprocessed-media",
+        title = "Publish Unprocessed Media",
+        message = "Detected Track FX or Take FX will not be included in the published media.",
+        confirm_label = "Publish Unprocessed Media",
+      }, function()
+        options.publish_anyway = true
+        refresh(env, options)
+      end)
     end
   elseif data.has_unprocessed_fx then
     c.notice("unprocessed-fx-accepted", "warning", "Detected FX won't be included in the published audio.")
@@ -107,7 +120,8 @@ local function draw_declaration(env, review)
 end
 
 local function draw_details(env, data)
-  local c, ImGui, ctx, colors = env.c, env.ImGui, env.ctx, env.theme.colors
+  local c, ImGui, ctx = env.c, env.ImGui, env.ctx
+  local adapter = env.design_system.adapter
   c.section("Items")
   for _, lane in ipairs(data.lanes) do
     local blocked = 0
@@ -120,7 +134,9 @@ local function draw_details(env, data)
         blocked > 0 and "blocked" or "neutral", blocked > 0 or lane.fx_blocked) then
       c.clipped(#lane.clips, function(index)
         local row = lane.clips[index]
-        ImGui.TextColored(ctx, #row.blockers > 0 and colors.blocked or colors.text,
+        ImGui.TextColored(ctx, #row.blockers > 0 and
+          adapter.resolve("component.status.blocked.foreground") or
+          adapter.resolve("semantic.color.text.primary"),
           row.display_name or "Unnamed Item")
       end)
       c.end_group()

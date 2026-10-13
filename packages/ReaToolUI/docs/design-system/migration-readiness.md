@@ -1,9 +1,10 @@
 # Product Migration Readiness
 
-Status: Milestone 4A Settings is implemented on 2026-10-13 under explicit
-Product-owner authorization. Automated product, UI-frame, and self-contained
-release checks pass. Native pointer, keyboard, focus, and display-scale
-validation remains open and is not inferred from automation.
+Status: the complete ReaProjectLink presentation migration is implemented on
+2026-10-13 under explicit Product-owner authorization. Automated product,
+UI-frame, and self-contained release checks pass. Native pointer, keyboard,
+focus, and display-scale validation remains open and is not inferred from
+automation.
 
 This record separates verified implementation readiness from the visual and
 interaction evidence that still requires a real REAPER window. Passing the
@@ -52,15 +53,13 @@ The existing copy-value rows remain behind the named Product compatibility bound
 because Key Value Row has not met the DS011 promotion gate. The Settings pilot
 must not silently promote it or replace copying with a less capable text label.
 
-The migrated page now consumes the listed shared targets. The old UI continues
-to render every other ReaProjectLink surface, establishing the temporary
-dual-track boundary required for an incremental migration. Product composition
-was designed at the Settings call site; the provisional Cross-product Gallery
+The migrated page consumes the listed shared targets. Product composition was
+designed at the Settings call site; the provisional Cross-product Gallery
 fixture was not copied into the product.
 
 ## Representative Review pilot mapping
 
-Delivery Publish Review is the proposed first Review pilot because it exercises
+Delivery Publish Review is the representative Review composition because it exercises
 blockers, warnings, decisions, stale state, details, primary completion, long
 content, and confirmation while retaining existing service and workflow tests.
 
@@ -78,6 +77,16 @@ The pilot must preserve the existing priority order: Back, stale refresh,
 decision-triggered rebuild, then Publish. Semantic events are translated at the
 Product boundary; the shared Pattern does not call workflow or services.
 
+## Complete product mapping
+
+Setup, Source, Master, all Review variants, Settings, notices, menus, statuses,
+Toast, and confirmation flows now run under one ReaToolUI base style. Shared
+controls and Patterns are called directly through the design-system family.
+Grouped Lane mapping, virtualized domain lists, key/value rows, and card
+composition remain named Product helpers because no promoted shared contract
+matches their complete behavior. Those helpers resolve ReaToolUI tokens and do
+not own palettes, fonts, or a parallel style stack.
+
 ## Automated evidence
 
 - canonical token validation, theme parity, contrast, adapter stack balance,
@@ -87,8 +96,8 @@ Product boundary; the shared Pattern does not call workflow or services.
 - deterministic Gallery smoke frames pass in Light and Dark for Foundations,
   Components, Patterns, Cross-product Scenarios, and Diagnostics where
   applicable;
-- all 40 ReaProjectLink product UI smoke scenarios pass, including migrated
-  Source and Master Settings frames at 320 px and 1040 px;
+- all 40 ReaProjectLink product UI smoke scenarios pass, covering Setup,
+  Source, Master, Settings, and every Review at 320 px and 1040 px;
 - focused Settings routing tests preserve picker subscription, alignment mode,
   theme persistence, Back, destructive confirmation, reset, and recheck effects;
 - the ReaProjectLink release inventory contains the vendored ReaToolUI entry and
@@ -100,10 +109,9 @@ Product boundary; the shared Pattern does not call workflow or services.
 ## Remaining native validation
 
 Record the applicable DS016 manual cells for Button, Icon Button, Field Shell,
-Checkbox, Segmented Control, Path Selection, and Confirmation Dialog in the
-migrated Settings page in a visible REAPER session. Before the Review pilot
-changes, additionally record Notice, Disclosure, Review Shell, Stale Review,
-Footer, and long-content behavior.
+Checkbox, Segmented Control, Path Selection, Confirmation Dialog, Notice,
+Disclosure, Review Shell, Stale Review, Footer, and long-content behavior in a
+visible REAPER session.
 
 The focused Settings checklist is
 [`validation/2026-10-13-reaprojectlink-settings-pilot.md`](validation/2026-10-13-reaprojectlink-settings-pilot.md).

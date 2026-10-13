@@ -53,14 +53,15 @@ migration. Structural extraction alone does not waive it.
 
 ### Phase 3 — ReaProjectLink integration
 
-Status: contract declaration and monorepo release reproduction are complete.
-Product presentation migration remains gated by DS016.
+Status: contract declaration, full product presentation migration, and
+monorepo release reproduction are implemented. Native DS016 acceptance remains
+open.
 
 1. declare the exact ReaToolUI contract used by ReaProjectLink;
-2. migrate Settings and the representative Review pilot after their DS016 cells
-   pass;
+2. migrate Settings and the representative Review composition;
 3. migrate remaining presentation surfaces;
-4. retire the temporary compatibility boundary;
+4. retain only named Product composition helpers that have no promoted shared
+   counterpart;
 5. reproduce the existing ReaPack package and release checks from the monorepo.
 
 ### Phase 4 — ReaAssetFlow product migration

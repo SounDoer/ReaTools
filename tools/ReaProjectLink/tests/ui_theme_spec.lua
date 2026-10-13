@@ -8,38 +8,12 @@ end
 
 local tests = {}
 
-function tests.palettes_share_every_token()
-  local count = 0
-  for key in pairs(theme.PALETTES.light) do
-    count = count + 1
-    assert(theme.PALETTES.dark[key], "dark palette is missing " .. key)
-  end
-  for key in pairs(theme.PALETTES.dark) do
-    assert(theme.PALETTES.light[key], "light palette is missing " .. key)
-  end
-  equal(count, 14, "token count")
-end
-
 function tests.resolves_explicit_and_automatic_modes()
   equal(theme.resolve("light", nil), "light", "explicit light")
   equal(theme.resolve("dark", { 255, 255, 255 }), "dark", "explicit dark wins")
   equal(theme.resolve("auto", { 240, 240, 240 }), "light", "bright REAPER theme")
   equal(theme.resolve("auto", { 30, 30, 30 }), "dark", "dark REAPER theme")
   equal(theme.resolve("auto", nil), "dark", "unknown REAPER theme")
-end
-
-function tests.mixes_channels_and_keeps_alpha()
-  equal(theme.mix(0x000000ff, 0xffffffff, 0.5), 0x808080ff, "midpoint")
-  equal(theme.mix(0x102030ff, 0x102030ff, 0.3), 0x102030ff, "same color")
-  equal(theme.mix(0x00000080, 0xffffffff, 1), 0xffffff80, "first alpha kept")
-end
-
-function tests.colors_add_derived_tokens()
-  local colors = theme.colors("light")
-  equal(colors.accent, theme.PALETTES.light.accent, "base token copied")
-  assert(colors.accent_hover and colors.accent_active and colors.surface_active,
-    "derived tokens exist")
-  equal(theme.colors("unknown").bg, theme.PALETTES.dark.bg, "unknown mode falls back to dark")
 end
 
 function tests.stores_the_preference_globally()
@@ -72,6 +46,38 @@ function tests.reads_the_reaper_background()
   end
   local rgb = theme.reaper_background(reaper_api)
   equal(rgb[1] .. "," .. rgb[2] .. "," .. rgb[3], "10,20,30", "rgb")
+end
+
+local function theme_api(background)
+  local stored = "auto"
+  return {
+    GetExtState = function() return stored end,
+    SetExtState = function(_, _, value) stored = value end,
+    GetThemeColor = function() return 1 end,
+    ColorFromNative = function() return table.unpack(background) end,
+  }
+end
+
+function tests.runtime_theme_owns_preference_not_visual_tokens()
+  local instance = theme.create({}, {}, theme_api({ 20, 20, 20 }))
+  equal(instance.mode, "dark", "dark host mode")
+  equal(instance.colors, nil, "no product palette")
+  equal(instance.fonts, nil, "no product fonts")
+  equal(instance.push, nil, "no product style stack")
+end
+
+function tests.runtime_theme_follows_auto_host_mode()
+  local instance = theme.create({}, {}, theme_api({ 245, 245, 245 }))
+  equal(instance.mode, "light", "light host mode")
+end
+
+function tests.runtime_theme_persists_explicit_mode()
+  local reaper_api = theme_api({ 245, 245, 245 })
+  local instance = theme.create({}, {}, reaper_api)
+  instance:set_preference("dark")
+  equal(instance.preference, "dark", "stored preference")
+  equal(instance.mode, "dark", "explicit mode")
+  equal(theme.load_preference(reaper_api), "dark", "persisted preference")
 end
 
 local passed = 0

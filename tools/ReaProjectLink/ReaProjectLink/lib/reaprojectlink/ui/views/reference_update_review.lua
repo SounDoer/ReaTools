@@ -42,7 +42,7 @@ function M.open(env)
 end
 
 function M.draw(env)
-  local ImGui, ctx, c, app = env.ImGui, env.ctx, env.c, env.app
+  local c, app = env.c, env.app
   local review = app.review
   local status = review.status
   local snapshot = status.snapshot or {}
@@ -55,9 +55,13 @@ function M.draw(env)
     if status.can_shift_entire_project then
       c.section("Decision")
       local label, note = view_models.shift_texts(status.shift_seconds)
-      local changed, value = ImGui.Checkbox(ctx, label, review.shift_entire_project)
-      if changed then review.shift_entire_project = value end
-      c.small(note)
+      local result = env.design_system.components.checkbox.draw({
+        id = "shift-entire-project",
+        label = label,
+        checked = review.shift_entire_project,
+        description = note,
+      })
+      if result.changed then review.shift_entire_project = result.checked end
     end
     c.key_value("Alignment", status.alignment_mode == "relative" and
       "Relative to Reference Start" or "Mirror Master Timeline")

@@ -273,13 +273,12 @@ Acceptance:
 - reset uses the DS013 consequence-appropriate safeguard;
 - direct product use of migrated raw style values is removed.
 
-Implementation status: complete in code and automated validation. Settings now
-uses Review Header, Path Selection, Checkbox, Segmented Control, Button, and
-Confirmation Dialog. Product-owned copy/value rows remain in a named
-compatibility layer; other pages continue using the old UI. ReaProjectLink now
-declares runtime usage and vendors ReaToolUI into each self-contained release.
-Native pointer, keyboard, focus, theme, and supported-scale acceptance remains
-open.
+Implementation status: complete in code and automated validation. Settings uses
+Review Header, Path Selection, Checkbox, Segmented Control, Button, and
+Confirmation Dialog. Product-owned copy/value rows remain in a named Product
+composition layer. ReaProjectLink declares runtime usage and vendors ReaToolUI
+into each self-contained release. Native pointer, keyboard, focus, theme, and
+supported-scale acceptance remains open.
 
 ### Pilot 4B One Review
 
@@ -294,6 +293,11 @@ Acceptance:
 - stale review, cancellation, confirmation, and completion semantics match the
   product decisions;
 - the shared Review Pattern requires no ReaProjectLink-specific branch.
+
+Implementation status: complete in code and automated validation as part of
+the full Product migration. Delivery Publish and the remaining Reviews use the
+same shared Review composition without Product branches in ReaToolUI. Native
+acceptance remains open.
 
 ### Remaining ReaProjectLink migration
 
@@ -313,6 +317,11 @@ Exit criteria:
   shared variants;
 - the complete automated suite and UI smoke matrix pass;
 - affected manual workflow checks in `docs/validation.md` pass.
+
+Implementation status: complete in code and automated validation. All product
+surfaces share the ReaToolUI base style and component families; the former
+Product palette and style stack are removed. Native DS016 evidence remains
+open, so implementation completion is not release acceptance.
 
 ## Milestone 5 ReaToolUI extraction and ReaAssetFlow adoption
 

@@ -42,10 +42,17 @@ local function draw_issues(env, data, options)
   end
   if data.removed_blocker and not options.allow_removals then
     local choice = c.notice("removed", "blocked", data.removed_blocker, { "Publish Without Them..." })
-    if choice == 1 and workflow.confirm(env.reaper, "Publish Without Them",
-        "Source Projects will see them as removed, and registering again gives them new identities. Continue?") then
-      options.allow_removals = true
-      changed = true
+    if choice == 1 then
+      c.request_confirmation({
+        id = "publish-reference-without-removed",
+        title = "Publish Without Removed Content",
+        message = "Source Projects will see them as removed, and registering again gives them new identities.",
+        confirm_label = "Publish Without Them",
+        danger = true,
+      }, function()
+        options.allow_removals = true
+        refresh(env, options)
+      end)
     end
   elseif data.removed and data.removed.total > 0 then
     c.notice("removed-accepted", "warning", "Removed content won't be part of this Reference.")
@@ -59,10 +66,16 @@ local function draw_issues(env, data, options)
     local choice = c.notice("unchanged", "warning",
       string.format("This Reference is identical to Reference r%d.", data.base_revision),
       { "Publish Anyway..." })
-    if choice == 1 and workflow.confirm(env.reaper, "Publish Unchanged Reference",
-        "Publish a new unchanged Reference revision? Source projects will still need to synchronize it.") then
-      options.publish_anyway = true
-      changed = true
+    if choice == 1 then
+      c.request_confirmation({
+        id = "publish-unchanged-reference",
+        title = "Publish Unchanged Reference",
+        message = "Publish a new unchanged Reference revision? Source projects will still need to synchronize it.",
+        confirm_label = "Publish New Revision",
+      }, function()
+        options.publish_anyway = true
+        refresh(env, options)
+      end)
     end
   end
   return changed

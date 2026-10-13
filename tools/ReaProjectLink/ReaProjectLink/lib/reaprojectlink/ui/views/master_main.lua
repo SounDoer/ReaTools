@@ -61,22 +61,24 @@ function M.confirm_moved_items(env)
   env.services.reference_publish.separate_copied_identities(adapter)
   local moved = env.services.delivery_update.moved_instances(adapter)
   if #moved == 0 then return end
-  local confirmed = env.reaper.ShowMessageBox(
-    string.format(
+  local queued = env.c.request_confirmation({
+    id = "keep-moved-items-local",
+    title = "Keep Moved Items as Local",
+    message = string.format(
       "%d synchronized Item(s) were moved out of their mapped Track.\n\n" ..
       "Keep them as local Master content? They will no longer be updated from the Source.\n\n" ..
-      "Choose No to keep them Source-managed; the next synchronization will replace them.",
-      #moved
-    ),
-    "Keep Moved Items as Local",
-    4
-  ) == 6
-  if confirmed then
+      "Cancel to keep them Source-managed; the next synchronization will replace them.", #moved),
+    confirm_label = "Keep as Local",
+  }, function()
     local result, err = env.services.delivery_update.detach_many(adapter, moved)
     workflow.report(env, result, err, function(value)
       return string.format("Kept %s as local content.", view_models.count(value.detached, "moved item"))
     end)
     app.moved_items_change_count = adapter.project_change_count()
+  end)
+  if not queued then
+    app.moved_items_change_count = nil
+    return
   end
   app.moved_items_change_count = adapter.project_change_count()
 end
@@ -103,12 +105,17 @@ local function handle_delivery(env, action)
   elseif action.id == "retry" then
     app:request_check()
   elseif action.id == "remove" then
-    if workflow.confirm(env.reaper, "Remove Subscription",
-        string.format("Stop following %s? Its tracks and items stay in this project.", action.row.name)) then
+    env.c.request_confirmation({
+      id = "remove-subscription",
+      title = "Remove Subscription",
+      message = string.format("Stop following %s? Its tracks and items stay in this project.", action.row.name),
+      confirm_label = "Remove Subscription",
+      danger = true,
+    }, function()
       local result, err = env.services.delivery_import.remove_subscription(env.adapter, action.row.id)
       workflow.apply(env, result, err)
       app:request_check()
-    end
+    end)
   end
 end
 
@@ -118,7 +125,7 @@ local function draw_row(env, row, primary)
   ImGui.Separator(ctx)
   ImGui.AlignTextToFramePadding(ctx)
   ImGui.Text(ctx, row.name)
-  local width = c.status_width(row.status) + 8 + ImGui.GetFrameHeight(ctx)
+  local width = c.status_width(row.status, row.level) + 8 + ImGui.GetFrameHeight(ctx)
   if row.action then width = width + c.button_width(row.action.label) + 8 end
   c.same_line_right(width)
   c.inline_status(row.status, row.level)

@@ -87,7 +87,7 @@ local function lane_default(lane, default_kind)
 end
 
 local function draw_mapping_table(env, lanes, review, default_kind)
-  local ImGui, ctx, c, colors = env.ImGui, env.ctx, env.c, env.theme.colors
+  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
   c.section("Lanes")
   draw_parent_choice(env, review)
   local column = ImGui.GetContentRegionAvail(ctx) * 0.45
@@ -113,7 +113,10 @@ local function draw_mapping_table(env, lanes, review, default_kind)
       end
     end
     if lane.orphaned then c.small("Its target track was deleted. Map it again to restore its items.") end
-    if review.row_errors[lane.lane_id] then c.colored(review.row_errors[lane.lane_id], colors.warning) end
+    if review.row_errors[lane.lane_id] then
+      c.colored(review.row_errors[lane.lane_id],
+        env.design_system.adapter.resolve("component.status.warning.foreground"))
+    end
   end
 end
 
@@ -192,9 +195,13 @@ end
 local function draw_target(env, review)
   local ImGui, ctx, c = env.ImGui, env.ctx, env.c
   c.section("Revision")
-  ImGui.SetNextItemWidth(ctx, 120)
-  local changed, value = ImGui.InputInt(ctx, "##target-revision", review.target_input)
-  if changed then review.target_input = value end
+  local result = env.design_system.components.number_field.draw({
+    id = "target-revision",
+    label = "Target revision",
+    value = review.target_input,
+    minimum = 1,
+  })
+  if result.changed and result.parse_state == "valid" then review.target_input = result.value end
   ImGui.SameLine(ctx)
   local load = c.button("Load")
   c.small(string.format("Latest is r%d", review.data.latest_revision))
@@ -227,7 +234,8 @@ local function draw_bound_lanes(env, review)
       review.row_errors[lane.lane_id] = err
     end
     if review.row_errors[lane.lane_id] then
-      c.colored(review.row_errors[lane.lane_id], env.theme.colors.warning)
+      c.colored(review.row_errors[lane.lane_id],
+        env.design_system.adapter.resolve("component.status.warning.foreground"))
     end
   end
 end

@@ -36,8 +36,8 @@ package identity.
 - `runtime`: the shipped product loads that exact contract and the release must
   vendor the corresponding `reaui` files.
 
-ReaProjectLink now declares `runtime` because Settings is its first migrated
-product surface; its `vendorTarget` places the pinned package inside every
+ReaProjectLink declares `runtime` because its complete product presentation now
+uses ReaToolUI; its `vendorTarget` places the pinned package inside every
 self-contained release. ReaAssetFlow remains `planned` until its own product
 migration introduces the dependency.
 

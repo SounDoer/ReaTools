@@ -20,10 +20,6 @@ function M.choose_json(reaper_api, title)
   return ok and path or nil
 end
 
-function M.confirm(reaper_api, title, text)
-  return reaper_api.ShowMessageBox(text, title, 1) == 1
-end
-
 function M.is_stale(env, data)
   return data.project_change_count ~= nil and
     data.project_change_count ~= env.adapter.project_change_count()
@@ -63,16 +59,16 @@ end
 
 function M.unlock(env)
   local app = env.app
-  if not M.confirm(env.reaper, "Unlock Publishing",
-      "Unlock publishing only if no other user or computer is publishing to this package.") then
-    return
-  end
-  local removed, err = env.fs.remove_lock(app.lock.package_root, app.lock.info.token)
-  if removed then
-    app.lock = nil
-  else
-    app:notify(err, true)
-  end
+  env.c.request_confirmation({
+    id = "unlock-publishing",
+    title = "Unlock Publishing",
+    message = "Unlock publishing only if no other user or computer is publishing to this package.",
+    confirm_label = "Unlock Publishing",
+    danger = true,
+  }, function()
+    local removed, err = env.fs.remove_lock(app.lock.package_root, app.lock.info.token)
+    if removed then app.lock = nil else app:notify(err, true) end
+  end)
 end
 
 function M.choose_reference(env)

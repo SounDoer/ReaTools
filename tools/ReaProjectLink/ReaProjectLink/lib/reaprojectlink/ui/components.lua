@@ -1,282 +1,196 @@
+-- Product composition and compatibility helpers for ReaProjectLink.
+-- Supported controls delegate to ReaToolUI. Product-only value rows, Toast,
+-- complex mapping rows, and virtualized lists remain local by design.
 local icons = require("reaprojectlink.ui.icons")
 
--- Shared widgets. They standardize spacing and color and never contain domain
--- or REAPER mutation logic.
 local M = {}
 
--- ReaImGui's 0.9 compatibility table predates the named ChildFlags constants;
--- BeginChild accepts the Dear ImGui bit values directly.
 local CHILD_BORDER = 1
 local CHILD_ALWAYS_USE_PADDING = 2
 local CHILD_AUTO_RESIZE_Y = 32
 local CARD_FLAGS = CHILD_BORDER | CHILD_ALWAYS_USE_PADDING | CHILD_AUTO_RESIZE_Y
-local PAGE_MAX_WIDTH = 720
-local FOOTER_HEIGHT = 48
-local STACK_BELOW = 560
 local VALUE_COLUMN = 130
+local STACK_BELOW = 560
 local TOAST_MAX_WIDTH = 520
-local LEVEL_COLOR = { neutral = "muted", ready = "ready", warning = "warning", blocked = "blocked" }
-local NOTICE_STYLE = {
-  blocked = { "blocked_bg", "blocked", "cross" },
-  warning = { "warning_bg", "warning", "warning" },
-  ready = { "accent_bg", "text", "check" },
+local LEVEL_TOKEN = {
+  neutral = "component.status.neutral.foreground",
+  ready = "component.status.ready.foreground",
+  warning = "component.status.warning.foreground",
+  blocked = "component.status.blocked.foreground",
 }
+local LEVEL_LABEL = { neutral = "Info", ready = "Ready", warning = "Attention", blocked = "Blocked" }
 
-function M.create(ImGui, ctx, theme)
+local function split_label(label)
+  local visible, hidden = label:match("^(.-)##(.+)$")
+  return visible or label, hidden or label:gsub("[^%w]+", "-"):lower()
+end
+
+function M.create(ImGui, ctx, design_system)
+  local adapter = design_system.adapter
+  local shared = design_system.components
+  local patterns = design_system.patterns
   local c = {}
   local cards, pages = {}, {}
+  local toast_height = 64
+  local confirmation
 
-  local function colors() return theme.colors end
-  local function level_color(level) return colors()[LEVEL_COLOR[level] or "muted"] end
-  local function visible_label(label) return (label:gsub("##.*$", "")) end
-
-  local function styled_button(label, fill, hover, active, text, border)
-    ImGui.PushStyleColor(ctx, ImGui.Col_Button, fill)
-    ImGui.PushStyleColor(ctx, ImGui.Col_ButtonHovered, hover)
-    ImGui.PushStyleColor(ctx, ImGui.Col_ButtonActive, active)
-    ImGui.PushStyleColor(ctx, ImGui.Col_Text, text)
-    ImGui.PushStyleColor(ctx, ImGui.Col_Border, border)
-    local clicked = ImGui.Button(ctx, label)
-    ImGui.PopStyleColor(ctx, 5)
-    return clicked
+  local function resolve(id) return adapter.resolve(id) end
+  local function with_text(role, renderer) return adapter.with_text(role, renderer) end
+  local function secondary(renderer)
+    ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("semantic.color.text.secondary"))
+    renderer()
+    ImGui.PopStyleColor(ctx)
   end
+  local function level_color(level) return resolve(LEVEL_TOKEN[level] or LEVEL_TOKEN.neutral) end
 
-  -- Text ----------------------------------------------------------------------
-
-  function c.title(text)
-    ImGui.PushFont(ctx, theme.fonts.title)
-    ImGui.Text(ctx, text)
-    ImGui.PopFont(ctx)
-  end
-
-  function c.heading(text)
-    ImGui.PushFont(ctx, theme.fonts.heading)
-    ImGui.Text(ctx, text)
-    ImGui.PopFont(ctx)
-  end
-
+  function c.title(text) with_text("title", function() ImGui.Text(ctx, text) end) end
+  function c.heading(text) with_text("heading", function() ImGui.Text(ctx, text) end) end
   function c.colored(text, color)
     ImGui.PushStyleColor(ctx, ImGui.Col_Text, color)
     ImGui.TextWrapped(ctx, text)
     ImGui.PopStyleColor(ctx)
   end
-
-  function c.muted(text) c.colored(text, colors().muted) end
-
+  function c.muted(text) secondary(function() ImGui.TextWrapped(ctx, text) end) end
   function c.small(text)
-    ImGui.PushFont(ctx, theme.fonts.small)
-    c.muted(text)
-    ImGui.PopFont(ctx)
+    secondary(function() with_text("metadata", function() ImGui.TextWrapped(ctx, text) end) end)
   end
-
-  function c.inline_muted(text) ImGui.TextColored(ctx, colors().muted, text) end
-
+  function c.inline_muted(text)
+    secondary(function() with_text("metadata", function() ImGui.Text(ctx, text) end) end)
+  end
+  function c.text_width(role, text)
+    return with_text(role, function() return ImGui.CalcTextSize(ctx, text) end)
+  end
   function c.section(text)
-    ImGui.Dummy(ctx, 0, 4)
-    c.small(text)
+    ImGui.Dummy(ctx, 0, resolve("semantic.space.section.loose"))
+    c.heading(text)
   end
-
   function c.key_value(label, value)
-    ImGui.TextColored(ctx, colors().muted, label)
+    secondary(function() with_text("label", function() ImGui.Text(ctx, label) end) end)
     ImGui.SameLine(ctx, VALUE_COLUMN)
     ImGui.TextWrapped(ctx, tostring(value))
   end
-
   function c.value_row(label, value)
     ImGui.AlignTextToFramePadding(ctx)
-    ImGui.TextColored(ctx, colors().muted, label)
-    ImGui.SameLine(ctx, VALUE_COLUMN)
-    ImGui.AlignTextToFramePadding(ctx)
-    ImGui.TextWrapped(ctx, tostring(value))
+    c.key_value(label, value)
   end
-
   function c.copy_value(id, label, value)
     ImGui.AlignTextToFramePadding(ctx)
-    ImGui.TextColored(ctx, colors().muted, label)
+    secondary(function() with_text("label", function() ImGui.Text(ctx, label) end) end)
     ImGui.SameLine(ctx, VALUE_COLUMN)
-    if ImGui.SmallButton(ctx, "Copy##" .. id) then ImGui.SetClipboardText(ctx, tostring(value)) end
+    if shared.button.draw({ id = "copy-" .. id, label = "Copy", variant = "secondary" }) then
+      ImGui.SetClipboardText(ctx, tostring(value))
+    end
     ImGui.SameLine(ctx)
     ImGui.TextWrapped(ctx, tostring(value))
   end
 
-  -- Icons and status ------------------------------------------------------------
-
   function c.icon(name, color, size)
-    size = size or ImGui.GetTextLineHeight(ctx)
+    size = size or resolve("semantic.size.icon.medium")
     local x, y = ImGui.GetCursorScreenPos(ctx)
-    icons.draw(ImGui, ImGui.GetWindowDrawList(ctx), name, x, y, size, color or colors().text)
+    icons.draw(ImGui, ImGui.GetWindowDrawList(ctx), name, x, y, size,
+      color or resolve("semantic.color.text.primary"))
     ImGui.Dummy(ctx, size, size)
   end
-
   function c.status(text, level)
-    local color = level_color(level)
-    c.icon("dot", color)
-    ImGui.SameLine(ctx, 0, 6)
-    c.colored(text, color)
+    shared.status.draw({ role = level or "neutral", text = text })
   end
-
   function c.inline_status(text, level)
-    local color = level_color(level)
-    c.icon("dot", color)
-    ImGui.SameLine(ctx, 0, 6)
-    ImGui.TextColored(ctx, color, text)
+    ImGui.TextColored(ctx, level_color(level), (LEVEL_LABEL[level] or "Info") .. ": " .. text)
   end
-
-  function c.status_width(text)
-    return ImGui.GetTextLineHeight(ctx) + 6 + ImGui.CalcTextSize(ctx, text)
+  function c.status_width(text, level)
+    return ImGui.CalcTextSize(ctx, (LEVEL_LABEL[level] or "Info") .. ": " .. text)
   end
-
   function c.badge(text)
-    local k = colors()
-    ImGui.PushFont(ctx, theme.fonts.small)
-    local width, height = ImGui.CalcTextSize(ctx, text)
-    local x, y = ImGui.GetCursorScreenPos(ctx)
-    local draw_list = ImGui.GetWindowDrawList(ctx)
-    ImGui.DrawList_AddRectFilled(draw_list, x, y, x + width + 12, y + height + 4, k.accent_bg, 4)
-    ImGui.DrawList_AddText(draw_list, x + 6, y + 2, k.accent, text)
-    ImGui.Dummy(ctx, width + 12, height + 4)
-    ImGui.PopFont(ctx)
+    with_text("metadata", function()
+      local width, height = ImGui.CalcTextSize(ctx, text)
+      local x, y = ImGui.GetCursorScreenPos(ctx)
+      local draw_list = ImGui.GetWindowDrawList(ctx)
+      local pad = resolve("semantic.space.inline.default")
+      ImGui.DrawList_AddRectFilled(draw_list, x, y, x + width + pad * 2, y + height + 4,
+        resolve("semantic.color.selection.default"), resolve("semantic.radius.control"))
+      ImGui.DrawList_AddText(draw_list, x + pad, y + 2,
+        resolve("semantic.color.text.primary"), text)
+      ImGui.Dummy(ctx, width + pad * 2, height + 4)
+    end)
   end
-
-  -- Buttons and layout helpers ---------------------------------------------------
 
   function c.button(label, kind)
-    local k = colors()
-    if kind == "primary" then
-      return styled_button(label, k.accent, k.accent_hover, k.accent_active, k.on_accent, k.accent)
-    end
-    return ImGui.Button(ctx, label)
+    local visible, id = split_label(label)
+    return shared.button.draw({ id = "product-" .. id, label = visible,
+      variant = kind == "primary" and "primary" or "secondary" }) ~= nil
   end
-
   function c.disabled_button(label)
-    ImGui.BeginDisabled(ctx, true)
-    ImGui.Button(ctx, label)
-    ImGui.EndDisabled(ctx)
+    local visible, id = split_label(label)
+    shared.button.draw({ id = "product-" .. id, label = visible, variant = "secondary", disabled = true })
   end
-
   function c.button_width(label)
-    local padding = ImGui.GetStyleVar(ctx, ImGui.StyleVar_FramePadding)
-    return ImGui.CalcTextSize(ctx, visible_label(label)) + padding * 2
+    local visible = split_label(label)
+    return ImGui.CalcTextSize(ctx, visible) + resolve("semantic.space.control.padding_x") * 2
   end
-
   function c.icon_button(id, name, tooltip)
-    local size = ImGui.GetFrameHeight(ctx)
-    local x, y = ImGui.GetCursorScreenPos(ctx)
-    local clicked = ImGui.InvisibleButton(ctx, id, size, size)
-    local hovered = ImGui.IsItemHovered(ctx)
-    local draw_list = ImGui.GetWindowDrawList(ctx)
-    if hovered then
-      ImGui.DrawList_AddRectFilled(draw_list, x, y, x + size, y + size, colors().surface_hover, 6)
-    end
-    local pad = size * 0.2
-    icons.draw(ImGui, draw_list, name, x + pad, y + pad, size - pad * 2,
-      hovered and colors().text or colors().muted)
-    if hovered and tooltip then ImGui.SetTooltip(ctx, tooltip) end
-    return clicked
+    return shared.button.draw_icon({ id = id, icon = name, accessible_label = tooltip or name,
+      variant = "quiet" }) ~= nil
   end
-
-  -- Continues the current line and moves the cursor so that `width` pixels end
-  -- at the right edge; wraps to a new line when there is not enough room.
   function c.same_line_right(width)
     ImGui.SameLine(ctx)
     local available = ImGui.GetContentRegionAvail(ctx)
-    if available < width then
-      ImGui.NewLine(ctx)
-      available = ImGui.GetContentRegionAvail(ctx)
-    end
+    if available < width then ImGui.NewLine(ctx); available = ImGui.GetContentRegionAvail(ctx) end
     ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + math.max(0, available - width))
   end
-
-  -- Returns the card width and whether two cards fit side by side.
   function c.card_width()
     local available = ImGui.GetContentRegionAvail(ctx)
     if available < STACK_BELOW then return 0, false end
-    return (available - 12) / 2, true
+    local gap = resolve("semantic.space.stack.default")
+    return (available - gap) / 2, true
   end
 
-  -- Cards ----------------------------------------------------------------------
-
   function c.begin_card(id, width, highlighted)
-    local k = colors()
-    ImGui.PushStyleColor(ctx, ImGui.Col_Border, highlighted and k.accent or k.border)
-    ImGui.PushStyleVar(ctx, ImGui.StyleVar_ChildBorderSize, highlighted and 2 or 1)
-    ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, 12, 12)
-    local visible = ImGui.BeginChild(ctx, id, width or 0, 0, CARD_FLAGS, ImGui.WindowFlags_NoScrollbar)
+    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, resolve("component.card.background"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Border, resolve(
+      highlighted and "component.card.border.emphasized" or "component.card.border.default"))
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_ChildBorderSize, resolve(
+      highlighted and "semantic.border.emphasis.width" or "semantic.border.control.width"))
+    local padding = resolve("semantic.space.container.padding")
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, padding, padding)
+    local visible = ImGui.BeginChild(ctx, "##card-" .. id, width or 0, 0, CARD_FLAGS)
     ImGui.PopStyleVar(ctx, 2)
-    ImGui.PopStyleColor(ctx)
+    ImGui.PopStyleColor(ctx, 2)
     table.insert(cards, visible)
     return visible
   end
-
-  function c.end_card()
-    if table.remove(cards) then ImGui.EndChild(ctx) end
-  end
-
+  function c.end_card() if table.remove(cards) then ImGui.EndChild(ctx) end end
   function c.card_header(icon, title)
-    c.icon(icon, colors().muted)
-    ImGui.SameLine(ctx, 0, 6)
+    c.icon(icon, resolve("semantic.color.text.secondary"))
+    ImGui.SameLine(ctx, 0, resolve("semantic.space.inline.default"))
     c.heading(title)
   end
-
-  -- Draws a "more" icon button with a popup menu. Entries are
-  -- { id = ..., label = ... } or { separator = true }. Returns the chosen id.
   function c.menu(id, entries, align_right)
-    if align_right ~= false then c.same_line_right(ImGui.GetFrameHeight(ctx)) end
-    if c.icon_button(id .. "-open", "more", "More Actions") then ImGui.OpenPopup(ctx, id) end
-    local chosen
-    if ImGui.BeginPopup(ctx, id) then
-      for _, entry in ipairs(entries) do
-        if entry.separator then
-          ImGui.Separator(ctx)
-        elseif ImGui.MenuItem(ctx, entry.label) then
-          chosen = entry.id
-        end
-      end
-      ImGui.EndPopup(ctx)
+    if align_right ~= false then c.same_line_right(resolve("semantic.size.control.medium")) end
+    local items = {}
+    for _, entry in ipairs(entries) do
+      table.insert(items, entry.separator and { separator = true } or {
+        id = entry.id, label = entry.label, disabled = entry.disabled, danger = entry.danger,
+      })
     end
-    return chosen
+    return shared.menu.draw({ id = id, items = items }).action
   end
 
-  -- Notices --------------------------------------------------------------------
-
-  -- A tinted, full-width message with optional buttons. Returns the index of
-  -- the clicked action.
   function c.notice(id, level, text, actions)
-    local style = NOTICE_STYLE[level] or NOTICE_STYLE.ready
-    local k = colors()
-    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, k[style[1]])
-    ImGui.PushStyleColor(ctx, ImGui.Col_Border, k[style[1]])
-    ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, 10, 8)
-    local visible = ImGui.BeginChild(ctx, id, 0, 0, CARD_FLAGS, ImGui.WindowFlags_NoScrollbar)
-    ImGui.PopStyleVar(ctx)
-    ImGui.PopStyleColor(ctx, 2)
-    local chosen
-    if visible then
-      c.icon(style[3], k[style[2]])
-      ImGui.SameLine(ctx, 0, 6)
-      c.colored(text, k[style[2]])
-      for index, label in ipairs(actions or {}) do
-        if index > 1 then ImGui.SameLine(ctx) end
-        if ImGui.Button(ctx, label .. "##" .. id .. "-" .. index) then chosen = index end
-      end
-      ImGui.EndChild(ctx)
+    local action_options = {}
+    for index, label in ipairs(actions or {}) do
+      table.insert(action_options, { id = tostring(index), label = label })
     end
-    return chosen
+    local result = shared.notice.draw({ id = id, role = level or "neutral", text = text,
+      actions = action_options })
+    return result.action and tonumber(result.action) or nil
   end
-
-  -- Floats the message over the bottom of the window so appearing and
-  -- disappearing never moves the content underneath. The height comes from the
-  -- previous frame because the notice sizes itself to its text.
-  local toast_height = 44
-
   function c.toast_overlay(toast)
     local window_x, window_y = ImGui.GetWindowPos(ctx)
     local window_width, window_height = ImGui.GetWindowSize(ctx)
-    local margin = 12
+    local margin = resolve("semantic.space.section.default")
     local width = math.min(window_width - margin * 2, TOAST_MAX_WIDTH)
-    local x = window_x + window_width - margin - width
-    local y = math.max(window_y + margin, window_y + window_height - margin - toast_height)
-    ImGui.SetCursorScreenPos(ctx, x, y)
+    ImGui.SetCursorScreenPos(ctx, window_x + window_width - margin - width,
+      math.max(window_y + margin, window_y + window_height - margin - toast_height))
     local chosen = c.notice("toast", toast.is_error and "blocked" or "ready", toast.text,
       toast.is_error and { "Dismiss" } or nil)
     local _, height = ImGui.GetItemRectSize(ctx)
@@ -284,62 +198,53 @@ function M.create(ImGui, ctx, theme)
     return chosen == 1
   end
 
-  -- Selection ------------------------------------------------------------------
-
-  -- Options are { label = ... } (returned when chosen), { header = ... }, or
-  -- { separator = true }. Returns the chosen option table.
+  -- Product compatibility for grouped Lane mapping options. The shared
+  -- Dropdown intentionally supports a flat option set only.
   function c.dropdown(id, preview, options)
     local chosen
     ImGui.SetNextItemWidth(ctx, -1)
+    ImGui.PushStyleColor(ctx, ImGui.Col_FrameBg, resolve("component.dropdown.background.default"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_FrameBgHovered, resolve("component.dropdown.background.hover"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_FrameBgActive, resolve("component.dropdown.background.pressed"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("component.dropdown.foreground.default"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Border, resolve("component.dropdown.border.default"))
     if ImGui.BeginCombo(ctx, "##" .. id, preview) then
       for index, option in ipairs(options) do
-        if option.separator then
-          ImGui.Separator(ctx)
-        elseif option.header then
-          ImGui.TextColored(ctx, colors().muted, option.header)
-        elseif ImGui.Selectable(ctx, option.label .. "##" .. id .. "-" .. index, false) then
-          chosen = option
-        end
+        if option.separator then ImGui.Separator(ctx)
+        elseif option.header then c.inline_muted(option.header)
+        elseif ImGui.Selectable(ctx, option.label .. "##" .. id .. "-" .. index, false) then chosen = option end
       end
       ImGui.EndCombo(ctx)
     end
+    ImGui.PopStyleColor(ctx, 5)
     return chosen
   end
-
-  -- Options are { id = ..., label = ... }. Returns the selected id.
   function c.segmented(id, options, selected)
-    local chosen = selected
-    local k = colors()
+    local normalized, values = {}, {}
     for index, option in ipairs(options) do
-      if index > 1 then ImGui.SameLine(ctx, 0, 4) end
-      local label = option.label .. "##" .. id .. "-" .. index
-      local clicked
-      if option.id == selected then
-        clicked = styled_button(label, k.accent_bg, k.accent_bg, k.accent_bg, k.accent, k.accent)
-      else
-        clicked = ImGui.Button(ctx, label)
-      end
-      if clicked then chosen = option.id end
+      local option_id = tostring(option.id)
+      normalized[index] = { id = option_id, label = option.label }
+      values[option_id] = option.id
     end
-    return chosen
+    local result = shared.segmented_control.draw({
+      id = id,
+      options = normalized,
+      value = tostring(selected),
+    })
+    return values[result.value]
   end
-
-  -- Review details ---------------------------------------------------------------
 
   function c.begin_group(id, label, detail, level, default_open)
     local flags = ImGui.TreeNodeFlags_SpanAvailWidth
     if default_open then flags = flags | ImGui.TreeNodeFlags_DefaultOpen end
-    local open = ImGui.TreeNodeEx(ctx, id, label, flags)
+    local open = ImGui.TreeNodeEx(ctx, "##group-" .. id, label, flags)
     if detail then
       c.same_line_right(ImGui.CalcTextSize(ctx, detail))
       ImGui.TextColored(ctx, level_color(level), detail)
     end
     return open
   end
-
   function c.end_group() ImGui.TreePop(ctx) end
-
-  -- Draws only visible rows; every row must be one text line high.
   function c.clipped(count, draw_row)
     local clipper = ImGui.CreateListClipper(ctx)
     ImGui.ListClipper_Begin(clipper, count)
@@ -349,129 +254,109 @@ function M.create(ImGui, ctx, theme)
     end
   end
 
-  -- Pages ----------------------------------------------------------------------
-
-  -- A centered, width-capped scrolling region. With a footer it leaves room
-  -- for c.footer below it.
   function c.begin_page(id, has_footer)
     local available = ImGui.GetContentRegionAvail(ctx)
-    local width = math.min(available, PAGE_MAX_WIDTH)
-    local indent = math.max(0, (available - width) / 2)
-    ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + indent)
-    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, colors().bg)
-    local visible = ImGui.BeginChild(ctx, id, width, has_footer and -FOOTER_HEIGHT or 0)
+    local width = math.min(available, resolve("semantic.layout.content.max_width"))
+    local footer_height = has_footer and -resolve("semantic.size.footer.medium") or 0
+    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, resolve("semantic.color.surface.canvas"))
+    local visible = ImGui.BeginChild(ctx, "##page-" .. id, width, footer_height)
     ImGui.PopStyleColor(ctx)
-    table.insert(pages, { visible = visible, indent = indent, width = width, id = id })
+    table.insert(pages, { visible = visible, width = width, id = id })
     return visible
   end
-
   function c.end_page()
     local page = table.remove(pages)
     if page.visible then ImGui.EndChild(ctx) end
     return page
   end
-
   function c.review_header(title, summary)
-    local back = c.icon_button("page-back", "back", "Back")
-    ImGui.SameLine(ctx, 0, 6)
-    c.title(title)
-    if summary then c.muted(summary) end
-    ImGui.Dummy(ctx, 0, 4)
-    return back
+    return patterns.review_header.draw({ id = "page", title = title, summary = summary }).back_requested
   end
-
   function c.footer(page, summary, level, label, enabled)
-    ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + page.indent)
-    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, colors().bg)
-    local visible = ImGui.BeginChild(ctx, page.id .. "-footer", page.width, 0, 0,
+    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, resolve("semantic.color.surface.canvas"))
+    local visible = ImGui.BeginChild(ctx, "##footer-" .. page.id, page.width, 0, 0,
       ImGui.WindowFlags_NoScrollbar)
     ImGui.PopStyleColor(ctx)
     local clicked = false
     if visible then
-      ImGui.Separator(ctx)
-      ImGui.AlignTextToFramePadding(ctx)
-      ImGui.TextColored(ctx, level_color(level), summary)
-      c.same_line_right(c.button_width(label))
-      if enabled then clicked = c.button(label, "primary") else c.disabled_button(label) end
+      clicked = patterns.review_footer.draw({ id = page.id, summary = summary,
+        role = level or "neutral", complete_label = label, enabled = enabled }).complete_requested
       ImGui.EndChild(ctx)
     end
     return clicked
   end
-
   function c.stale(title, text, label)
-    ImGui.Dummy(ctx, 0, 24)
-    c.icon("warning", colors().warning)
-    c.heading(title)
-    c.muted(text)
-    return c.button(label, "primary")
+    ImGui.Dummy(ctx, 0, resolve("semantic.space.region.default"))
+    return patterns.stale_review.draw({ id = "current-review", title = title,
+      message = text, refresh_label = label }).refresh_requested
+  end
+
+  function c.request_confirmation(options, on_confirm)
+    if confirmation then return false end
+    confirmation = { options = options, on_confirm = on_confirm }
+    return true
+  end
+  function c.draw_confirmation()
+    if not confirmation then return end
+    local pending = confirmation
+    local options = {}
+    for key, value in pairs(pending.options) do options[key] = value end
+    options.open = true
+    local result = patterns.confirmation_dialog.draw(options)
+    if result.action == "confirmed" then
+      confirmation = nil
+      pending.on_confirm()
+    elseif result.action == "cancelled" then
+      confirmation = nil
+    end
   end
 
   return c
 end
 
--- Product-owned Settings composition that remains outside the shared
--- ReaToolUI contract. These copy/value rows preserve ReaProjectLink behavior
--- until a shared Key Value Row satisfies its own promotion gate.
-function M.create_settings_compat(ImGui, ctx, adapter)
+function M.create_settings_compat(ImGui, ctx, design_system)
+  local adapter = design_system.adapter
+  local button = design_system.components.button
   local compat = {}
   local pages = {}
-  local value_column = 130
-
-  local function with_text(role, renderer)
-    if adapter.with_text then return adapter.with_text(role, renderer) end
-    return renderer()
-  end
-
-  local function secondary_text(renderer)
-    ImGui.PushStyleColor(ctx, ImGui.Col_Text,
-      adapter.resolve("semantic.color.text.secondary"))
+  local function with_text(role, renderer) return adapter.with_text(role, renderer) end
+  local function secondary(renderer)
+    ImGui.PushStyleColor(ctx, ImGui.Col_Text, adapter.resolve("semantic.color.text.secondary"))
     renderer()
     ImGui.PopStyleColor(ctx)
   end
-
   function compat.begin_page(id)
-    local available = ImGui.GetContentRegionAvail(ctx)
-    local width = math.min(available, adapter.resolve("semantic.layout.content.max_width"))
-    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg,
-      adapter.resolve("semantic.color.surface.canvas"))
-    local visible = ImGui.BeginChild(ctx, id, width, 0)
+    local width = math.min(ImGui.GetContentRegionAvail(ctx),
+      adapter.resolve("semantic.layout.content.max_width"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, adapter.resolve("semantic.color.surface.canvas"))
+    local visible = ImGui.BeginChild(ctx, "##page-" .. id, width, 0)
     ImGui.PopStyleColor(ctx)
     table.insert(pages, visible)
     return visible
   end
-
-  function compat.end_page()
-    if table.remove(pages) then ImGui.EndChild(ctx) end
-  end
-
+  function compat.end_page() if table.remove(pages) then ImGui.EndChild(ctx) end end
   function compat.section(label)
     ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.loose"))
     with_text("heading", function() ImGui.Text(ctx, label) end)
   end
-
   function compat.copy_value(id, label, value)
     ImGui.AlignTextToFramePadding(ctx)
-    secondary_text(function() with_text("label", function() ImGui.Text(ctx, label) end) end)
-    ImGui.SameLine(ctx, value_column)
-    if ImGui.SmallButton(ctx, "Copy##settings-" .. id) then
+    secondary(function() with_text("label", function() ImGui.Text(ctx, label) end) end)
+    ImGui.SameLine(ctx, VALUE_COLUMN)
+    if button.draw({ id = "settings-copy-" .. id, label = "Copy", variant = "secondary" }) then
       ImGui.SetClipboardText(ctx, tostring(value))
     end
     ImGui.SameLine(ctx)
     ImGui.TextWrapped(ctx, tostring(value))
   end
-
   function compat.key_value(label, value)
-    secondary_text(function() with_text("label", function() ImGui.Text(ctx, label) end) end)
-    ImGui.SameLine(ctx, value_column)
+    secondary(function() with_text("label", function() ImGui.Text(ctx, label) end) end)
+    ImGui.SameLine(ctx, VALUE_COLUMN)
     ImGui.TextWrapped(ctx, tostring(value))
   end
-
   function compat.explanation(text)
-    secondary_text(function()
-      with_text("metadata", function() ImGui.TextWrapped(ctx, text) end)
-    end)
+    secondary(function() with_text("metadata", function() ImGui.TextWrapped(ctx, text) end) end)
   end
-
   return compat
 end
 

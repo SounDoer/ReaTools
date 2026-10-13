@@ -34,8 +34,8 @@ function M.create(deps)
     version = deps.version,
     theme = theme,
     design_system = design_system,
-    settings_compat = components.create_settings_compat(ImGui, ctx, design_system.adapter),
-    c = components.create(ImGui, ctx, theme),
+    settings_compat = components.create_settings_compat(ImGui, ctx, design_system),
+    c = components.create(ImGui, ctx, design_system),
     app = app_state.new(deps.reaper.time_precise),
   }
   local shell = { open = true, env = env }
@@ -84,16 +84,11 @@ function M.create(deps)
     else
       ImGui.SetNextWindowSize(ctx, 1040, 720, ImGui.Cond_FirstUseEver)
     end
-    theme:push()
-    local shared_page = env.app.view == "settings"
-    if shared_page then
-      design_system.adapter.set_theme(theme.mode)
-      design_system.adapter.push_base()
-    end
+    design_system.adapter.set_theme(theme.mode)
+    design_system.adapter.push_base()
     local visible
     visible, shell.open = ImGui.Begin(ctx, "ReaProjectLink", shell.open)
     if visible then
-      if not shared_page then ImGui.PushFont(ctx, theme.fonts.body) end
       local state = deps.services.project_service.project_state(adapter)
       run_due_check(state)
       if state.project_type == constants.PROJECT_TYPES.master then
@@ -103,12 +98,11 @@ function M.create(deps)
       -- Drawn last so it floats over the view instead of moving it.
       local toast = env.app:visible_toast()
       if toast and env.c.toast_overlay(toast) then env.app:dismiss_toast() end
-      if not shared_page then ImGui.PopFont(ctx) end
+      env.c.draw_confirmation()
       -- ReaImGui only accepts End() when Begin() returned true, unlike Dear ImGui.
       ImGui.End(ctx)
     end
-    if shared_page then design_system.adapter.pop_base() end
-    theme:pop()
+    design_system.adapter.pop_base()
   end
 
   -- Prepares one smoke-test frame: project type, theme, width, and view.

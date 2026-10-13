@@ -31,7 +31,11 @@ $pandoc = Get-Command pandoc -ErrorAction SilentlyContinue
 if ($indexer -and $pandoc) {
   Push-Location $OutputPath
   try {
-    & git init --quiet
+    # The output lives below the source worktree. Passing an explicit path is
+    # required so Git creates a nested validation repository instead of finding
+    # and reinitializing the source repository above it.
+    & git init --quiet .
+    & git remote add origin 'https://github.com/SounDoer/ReaTools.git'
     & git add .
     & git -c user.name=ReaTools -c user.email=release@invalid.local commit `
       --quiet -m 'ReaPack validation snapshot'

@@ -8,7 +8,7 @@
 --
 --   Requires REAPER 7.74 or newer and ReaImGui 0.9 or newer (install ReaImGui
 --   through ReaPack).
--- @link GitHub https://github.com/SounDoer/ReaProjectLink
+-- @link GitHub https://github.com/SounDoer/ReaTools
 -- @provides
 --   [nomain] lib/reaprojectlink/*.lua
 --   [nomain] lib/reaprojectlink/ui/*.lua

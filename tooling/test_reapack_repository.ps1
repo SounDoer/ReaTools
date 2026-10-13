@@ -22,6 +22,28 @@ foreach ($relative in $entries) {
   }
 }
 
+$reaprojectlinkRoot = Join-Path $OutputPath 'ReaTools/ReaProjectLink'
+$reaprojectlinkReadme = Get-Content -LiteralPath `
+  (Join-Path $reaprojectlinkRoot 'README.md') -Raw
+$reaprojectlinkEntry = Get-Content -LiteralPath `
+  (Join-Path $reaprojectlinkRoot 'ReaProjectLink.lua') -Raw
+$canonicalRepository = 'https://github.com/SounDoer/ReaTools'
+$canonicalIndex = 'https://raw.githubusercontent.com/SounDoer/ReaTools/reapack/index.xml'
+if (-not $reaprojectlinkReadme.Contains($canonicalIndex)) {
+  throw 'ReaProjectLink README does not name the unified ReaPack index.'
+}
+if (-not $reaprojectlinkEntry.Contains($canonicalRepository)) {
+  throw 'ReaProjectLink package metadata does not name the canonical repository.'
+}
+foreach ($legacyOrigin in @(
+    'github.com/SounDoer/ReaProjectLink',
+    'github.com/SounDoer/ReaperToWwise')) {
+  if ($reaprojectlinkReadme.Contains($legacyOrigin) -or
+      $reaprojectlinkEntry.Contains($legacyOrigin)) {
+    throw "Legacy repository origin entered the ReaProjectLink package: $legacyOrigin"
+  }
+}
+
 $forbidden = Get-ChildItem -LiteralPath $OutputPath -Recurse -Force |
   Where-Object { $_.FullName -match '(__pycache__|\.pytest_cache|[\\/]_state[\\/]|[\\/]_staging[\\/])' }
 if ($forbidden) { throw "Generated or user-state files entered the ReaPack tree." }

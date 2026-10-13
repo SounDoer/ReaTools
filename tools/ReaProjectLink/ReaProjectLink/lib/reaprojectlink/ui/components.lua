@@ -415,7 +415,6 @@ end
 function M.create_settings_compat(ImGui, ctx, adapter)
   local compat = {}
   local pages = {}
-  local page_max_width = 720
   local value_column = 130
 
   local function with_text(role, renderer)
@@ -432,9 +431,7 @@ function M.create_settings_compat(ImGui, ctx, adapter)
 
   function compat.begin_page(id)
     local available = ImGui.GetContentRegionAvail(ctx)
-    local width = math.min(available, page_max_width)
-    local indent = math.max(0, (available - width) / 2)
-    ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + indent)
+    local width = math.min(available, adapter.resolve("semantic.layout.content.max_width"))
     ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg,
       adapter.resolve("semantic.color.surface.canvas"))
     local visible = ImGui.BeginChild(ctx, id, width, 0)
@@ -448,10 +445,8 @@ function M.create_settings_compat(ImGui, ctx, adapter)
   end
 
   function compat.section(label)
-    ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.default"))
-    secondary_text(function()
-      with_text("metadata", function() ImGui.Text(ctx, label) end)
-    end)
+    ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.loose"))
+    with_text("heading", function() ImGui.Text(ctx, label) end)
   end
 
   function compat.copy_value(id, label, value)

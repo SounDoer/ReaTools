@@ -63,8 +63,6 @@ function M.create()
     local source = state.project_type == constants.PROJECT_TYPES.source
     local back = false
 
-    design_system.adapter.set_theme(theme.mode)
-    design_system.adapter.push_base()
     workflow.draw_notices(env)
     if compat.begin_page("settings") then
       local header = patterns.review_header.draw({ id = "settings", title = "Settings" })
@@ -134,8 +132,6 @@ function M.create()
         env.app:notify(err, true)
       end
     end
-    design_system.adapter.pop_base()
-
     if back then
       self.reset_open = false
       env.app:back()

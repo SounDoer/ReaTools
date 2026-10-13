@@ -85,10 +85,15 @@ function M.create(deps)
       ImGui.SetNextWindowSize(ctx, 1040, 720, ImGui.Cond_FirstUseEver)
     end
     theme:push()
+    local shared_page = env.app.view == "settings"
+    if shared_page then
+      design_system.adapter.set_theme(theme.mode)
+      design_system.adapter.push_base()
+    end
     local visible
     visible, shell.open = ImGui.Begin(ctx, "ReaProjectLink", shell.open)
     if visible then
-      ImGui.PushFont(ctx, theme.fonts.body)
+      if not shared_page then ImGui.PushFont(ctx, theme.fonts.body) end
       local state = deps.services.project_service.project_state(adapter)
       run_due_check(state)
       if state.project_type == constants.PROJECT_TYPES.master then
@@ -98,10 +103,11 @@ function M.create(deps)
       -- Drawn last so it floats over the view instead of moving it.
       local toast = env.app:visible_toast()
       if toast and env.c.toast_overlay(toast) then env.app:dismiss_toast() end
-      ImGui.PopFont(ctx)
+      if not shared_page then ImGui.PopFont(ctx) end
       -- ReaImGui only accepts End() when Begin() returned true, unlike Dear ImGui.
       ImGui.End(ctx)
     end
+    if shared_page then design_system.adapter.pop_base() end
     theme:pop()
   end
 

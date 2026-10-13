@@ -118,8 +118,7 @@ function tests.routes_shared_control_events_to_existing_product_effects()
   equal(calls.saved_theme, "light", "theme preference persists")
   equal(calls.path_options.read_only, true, "Reference path remains picker-owned")
   equal(calls.copies[4].value, "delivery-1", "Delivery ID remains copyable")
-  equal(calls.pushes, 1, "shared style pushed")
-  equal(calls.pops, 1, "shared style popped")
+  equal(calls.themes[1], "light", "shared controls follow the saved theme")
 end
 
 function tests.reset_runs_only_after_shared_confirmation()

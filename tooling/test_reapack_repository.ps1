@@ -4,6 +4,13 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $OutputPath) { $OutputPath = Join-Path $repoRoot 'dist/reapack' }
 
+$sourceIndexes = Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools') `
+  -Filter 'index.xml' -Recurse -File
+if ($sourceIndexes) {
+  $paths = $sourceIndexes.FullName -join ', '
+  throw "Generated ReaPack indexes must live only on the reapack branch: $paths"
+}
+
 & (Join-Path $PSScriptRoot 'build_reapack_repository.ps1') -OutputPath $OutputPath
 
 $entries = Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools') `

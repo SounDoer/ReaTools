@@ -9,6 +9,7 @@
 --   Requires ReaImGui, Python 3.8 or newer, and the Python dependencies listed
 --   in requirements.txt. Optional LLM features additionally require Ollama.
 -- @provides
+--   [nomain] lib/reaassetflow/*.lua
 --   [nomain] scripts/wwise_import.py
 --   [nomain] scripts/llm_assist.py
 --   [nomain] requirements.txt
@@ -39,6 +40,18 @@ local function repo_root()
     return script_path()
 end
 
+package.path = repo_root() .. "lib\\?.lua;" .. package.path
+local storage = require("reaassetflow.storage").create(
+    reaper,
+    repo_root(),
+    os.getenv("REAASSETFLOW_DATA_ROOT")
+)
+local migration = storage.migrate_legacy()
+if #migration.errors > 0 and reaper.ShowConsoleMsg then
+    reaper.ShowConsoleMsg("ReaAssetFlow user-data migration warning:\n" ..
+        table.concat(migration.errors, "\n") .. "\n")
+end
+
 -- Code-level debug switch (no UI):
 -- 1) default off; set to true for local troubleshooting.
 -- 2) can be overridden by environment variable RTW_DEBUG=1.
@@ -56,7 +69,7 @@ local function is_debug_mode_enabled()
 end
 
 local function get_staging_dir()
-    return repo_root() .. "_staging"
+    return storage.staging_dir
 end
 
 local function get_dir_name(path)
@@ -406,7 +419,7 @@ end
 -- === STATE / IPC ===
 
 local function get_state_dir()
-    return repo_root() .. "_state"
+    return storage.state_dir
 end
 
 local function ensure_state_dir()
@@ -827,14 +840,12 @@ local function reaper_project_cache_slug()
 end
 
 local function build_reaper_to_wwise_cache_dir()
-    local base = (reaper.GetResourcePath and reaper.GetResourcePath()) or repo_root()
-    return base .. "\\ReaAssetFlow\\cache\\" .. reaper_project_cache_slug()
+    return storage.cache_dir .. "\\" .. reaper_project_cache_slug()
 end
 
 -- Parent of per-project slug folders: ...\REAPER\ReaAssetFlow\cache
 local function build_reaper_to_wwise_cache_root_dir()
-    local base = (reaper.GetResourcePath and reaper.GetResourcePath()) or repo_root()
-    return normalize_folder_path(base .. "\\ReaAssetFlow\\cache")
+    return normalize_folder_path(storage.cache_dir)
 end
 
 local function ensure_folder_exists_for_dev(path)
@@ -2198,6 +2209,8 @@ end
 
 local function run_imgui_ui()
     ensure_state_dir()
+    local smoke_path = os.getenv("REAASSETFLOW_UI_SMOKE_RESULT")
+    local smoke_written = false
     if not reaper.ImGui_CreateContext then
         reaper.ShowMessageBox("ReaImGui is required. Please install ReaImGui via ReaPack.", "ReaAssetFlow", 0)
         return
@@ -2694,7 +2707,7 @@ local function run_imgui_ui()
             ui_major_section_title(ctx, "Wwise Importer")
             ui_subsection_title(ctx, "Presets")
             do
-                local presets_dir = normalize_folder_path(repo_root() .. "presets")
+                local presets_dir = normalize_folder_path(storage.presets_dir)
                 local preset_paths = enumerate_structure_preset_files(presets_dir)
                 if state.structure_preset_choice_idx >= #preset_paths then
                     state.structure_preset_choice_idx = math.max(0, #preset_paths - 1)
@@ -3121,30 +3134,42 @@ local function run_imgui_ui()
 
             ui_major_section_title(ctx, "Dev")
             if reaper.ImGui_PushItemWidth then reaper.ImGui_PushItemWidth(ctx, -1) end
-            if reaper.ImGui_Button(ctx, "Open REAPER\\ReaAssetFlow\\cache##dev_cache_root") then
+            if reaper.ImGui_Button(ctx, "Open user cache##dev_cache_root") then
                 dev_open_folder_next_tick(build_reaper_to_wwise_cache_root_dir())
             end
             if reaper.ImGui_Button(ctx, "Open current Reaper project cache (slug)##dev_cache_slug") then
                 dev_open_folder_next_tick(normalize_folder_path(build_reaper_to_wwise_cache_dir()))
             end
-            if reaper.ImGui_Button(ctx, "Open tool _state##dev_state") then
+            if reaper.ImGui_Button(ctx, "Open user state##dev_state") then
                 dev_open_state_dir_next_tick()
             end
-            if reaper.ImGui_Button(ctx, "Open tool _staging##dev_staging") then
+            if reaper.ImGui_Button(ctx, "Open user staging##dev_staging") then
                 dev_open_folder_next_tick(normalize_folder_path(get_staging_dir()))
             end
-            if reaper.ImGui_Button(ctx, "Open tool presets##dev_presets") then
-                dev_open_folder_next_tick(normalize_folder_path(repo_root() .. "presets"))
+            if reaper.ImGui_Button(ctx, "Open user presets##dev_presets") then
+                dev_open_folder_next_tick(normalize_folder_path(storage.presets_dir))
             end
             if reaper.ImGui_PopItemWidth then reaper.ImGui_PopItemWidth(ctx) end
 
             reaper.ImGui_End(ctx)
+        end
+        if smoke_path and not smoke_written then
+            local file = io.open(smoke_path, "w")
+            if file then
+                file:write("PASS ReaAssetFlow UI frame\n")
+                file:close()
+            end
+            smoke_written = true
+            open = false
         end
         if open then
             reaper.defer(loop)
         else
             if reaper.ImGui_DestroyContext then
                 reaper.ImGui_DestroyContext(ctx)
+            end
+            if smoke_path then
+                reaper.Main_OnCommand(40004, 0)
             end
         end
     end

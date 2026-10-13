@@ -57,11 +57,12 @@ on the user's machine. The supported experience is therefore:
 5. treat Ollama and its Python package as optional and request them only when an
    LLM feature is enabled.
 
-Before public migration, runtime state and user presets must move out of the
-installed package tree into a stable REAPER resource-data location. The upgrade
-must import existing local state once, preserve it across ReaPack updates, and
-document rollback. Batch setup remains a compatibility route until the in-tool
-prerequisite flow is implemented and validated.
+Runtime state, presets, cache, and staging data live under
+`Data/ReaTools/ReaAssetFlow/` in the REAPER resource path. The first run copies
+legacy state, presets, and cache without deleting their source, so ReaPack
+updates preserve user data and rollback remains possible. Batch setup remains a
+compatibility route until the in-tool prerequisite flow is implemented and
+validated.
 
 ## ReaPack constraints
 

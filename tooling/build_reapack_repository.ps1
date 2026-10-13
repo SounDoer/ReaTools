@@ -29,6 +29,7 @@ foreach ($toolName in @('ReaProjectLink', 'ReaAssetFlow')) {
 --about README.md
 --ignore ReaTools/ReaProjectLink/lib
 --ignore ReaTools/ReaAssetFlow/scripts
+--ignore ReaTools/ReaAssetFlow/lib
 --ignore ReaTools/ReaAssetFlow/requirements.txt
 --commit-template "index: $changelog
 

@@ -81,5 +81,6 @@ Confirmed: 2026-10-13.
 ReaPack installs and updates ReaAssetFlow's shipped files and registers its main
 ReaScript. It does not silently execute `pip` or install Ollama. Required Python
 and WAAPI dependencies use an explicit, visible prerequisite flow; LLM support
-remains optional. User state and presets must live outside the managed package
-tree before public ReaPack migration.
+remains optional. User state, presets, cache, and staging files live under the
+REAPER resource-data tree rather than the managed package tree. Legacy data is
+copied non-destructively on first run.

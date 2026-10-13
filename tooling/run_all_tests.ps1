@@ -31,6 +31,8 @@ Invoke-Step 'ReaProjectLink' {
 }
 
 Invoke-Step 'ReaAssetFlow' {
+  & (Join-Path $reaassetflow 'tests\run_ui_smoke.ps1') `
+    -ReaperPath $ReaperPath -TimeoutSeconds $TimeoutSeconds
   Push-Location $reaassetflow
   try {
     python -m pytest

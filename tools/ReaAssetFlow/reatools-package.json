@@ -21,6 +21,10 @@
         "target": "scripts"
       },
       {
+        "source": "lib",
+        "target": "lib"
+      },
+      {
         "source": "requirements.txt",
         "target": "requirements.txt"
       },

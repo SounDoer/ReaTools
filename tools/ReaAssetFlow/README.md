@@ -28,6 +28,10 @@ Actions → Show action list → **ReaScript: Load** → 选择 `ReaAssetFlow.lu
 
 建议为其绑定快捷键或添加到工具栏。
 
+程序更新与用户数据相互独立。面板状态、预设、缓存和临时工作目录保存在
+REAPER resource path 下的 `Data/ReaTools/ReaAssetFlow/`。首次运行新版时会从
+旧安装目录复制已有 `_state`、`presets` 和旧缓存；旧数据不会被自动删除，便于回退。
+
 ---
 
 ## 使用流程

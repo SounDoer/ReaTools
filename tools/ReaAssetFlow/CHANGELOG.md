@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed the REAPER entry script from `scripts/rtw_panel.lua` to
   `ReaAssetFlow.lua` and moved it to the Product root for ReaPack packaging.
 - Added ReaPack metadata and an explicit multi-file package boundary.
+- Moved user state, presets, cache, and staging paths to the stable REAPER
+  resource-data tree, with non-destructive legacy-data import.
 - Moved the maintained source baseline into the ReaTools monorepo.
 
 ## [0.1.0] - 2026-04-22

@@ -50,7 +50,7 @@
 ### 3.1 MVP 功能（v0.1，已实现）
 
 #### F1：Item 自动命名
-- **Reaper 侧**：只需 **ReaScript: Load `scripts/ReaAssetFlow.lua`**；Auto name（Marker / Region / 轨道 + pattern）与导入 UI 均在同一脚本内
+- **Reaper 侧**：只需 **ReaScript: Load `ReaAssetFlow.lua`**；Auto name（Marker / Region / 轨道 + pattern）与导入 UI 均在同一脚本内
 - 名称写入 item Notes（用于 `$item` 渲染 token）和 take 名称（显示在时间轴上）
 
 #### F2：Transfer Panel（ImGui UI）
@@ -129,10 +129,11 @@ ReaAssetFlow/
 ├── PRD.md                       # 本文档
 ├── README.md                    # 使用说明
 ├── setup.bat                    # 一键环境部署脚本
+├── ReaAssetFlow.lua             # 主工作流（Transfer Panel，ImGui UI，含 Auto name）
 ├── tests/                       # pytest（wwise_import 纯函数）
 └── scripts/
-    ├── ReaAssetFlow.lua           # 主工作流（Transfer Panel，ImGui UI，含 Auto name）
-    └── wwise_import.py          # Python 核心导入脚本（WAAPI）
+    ├── wwise_import.py          # Python 核心导入脚本（WAAPI）
+    └── llm_assist.py            # 可选 LLM 辅助脚本
 ```
 
 ---

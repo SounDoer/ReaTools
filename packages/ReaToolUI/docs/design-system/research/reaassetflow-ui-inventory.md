@@ -10,7 +10,7 @@ structure editing, hierarchical preview, presets, and long-running external
 workflow feedback that are not all present in ReaProjectLink.
 
 The original audit inspected the legacy `scripts/rtw_panel.lua` entry. The
-copied monorepo entry is now `scripts/ReaAssetFlow.lua`; its behavior remains
+copied monorepo entry is now `ReaAssetFlow.lua`; its behavior remains
 governed by ReaAssetFlow's README and PRD.
 
 ## Product context

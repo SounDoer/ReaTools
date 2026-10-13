@@ -4,7 +4,7 @@
   "displayName": "ReaAssetFlow",
   "version": "0.1.0",
   "kind": "reaper-tool",
-  "entry": "scripts/ReaAssetFlow.lua",
+  "entry": "ReaAssetFlow.lua",
   "uiContract": {
     "package": "reaui",
     "version": "0.1.0",
@@ -12,6 +12,10 @@
   },
   "release": {
     "files": [
+      {
+        "source": "ReaAssetFlow.lua",
+        "target": "ReaAssetFlow.lua"
+      },
       {
         "source": "scripts",
         "target": "scripts"

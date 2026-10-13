@@ -107,6 +107,11 @@ foreach ($toolName in $toolNames) {
   if (-not (Test-Path -LiteralPath (Join-Path $releaseRoot $manifest.entry) -PathType Leaf)) {
     throw "Release entry is missing: $($manifest.entry)"
   }
+  $entryContent = Get-Content -LiteralPath (Join-Path $releaseRoot $manifest.entry) -Raw
+  $entryVersion = [regex]::Match($entryContent, '(?m)^\s*--\s*@version\s+(\S+)')
+  if (-not $entryVersion.Success -or $entryVersion.Groups[1].Value -ne $manifest.version) {
+    throw "Entry @version does not match $($manifest.version): $($manifest.entry)"
+  }
   Write-Inventory $releaseRoot $manifest
   Write-Output "Built $($manifest.displayName) $($manifest.version): $releaseRoot"
 }

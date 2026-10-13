@@ -24,7 +24,7 @@
 
 ## 在 Reaper 中注册脚本
 
-Actions → Show action list → **ReaScript: Load** → 选择 `scripts/ReaAssetFlow.lua`。
+Actions → Show action list → **ReaScript: Load** → 选择 `ReaAssetFlow.lua`。
 
 建议为其绑定快捷键或添加到工具栏。
 

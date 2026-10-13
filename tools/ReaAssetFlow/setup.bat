@@ -37,7 +37,7 @@ echo ============================================
 echo.
 echo Next steps:
 echo   1. Open Wwise with WAAPI enabled (default port 8080)
-echo   2. In Reaper, ReaScript: Load scripts\ReaAssetFlow.lua
+echo   2. In Reaper, ReaScript: Load ReaAssetFlow.lua
 echo   3. In the panel, use Browse Project to pick your .wproj
 echo   4. Optional LLM features: run setup-llm.bat
 echo.

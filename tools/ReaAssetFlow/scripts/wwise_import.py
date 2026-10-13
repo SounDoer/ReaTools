@@ -1,3 +1,4 @@
+# @noindex
 """
 ReaAssetFlow - Wwise Import Script
 

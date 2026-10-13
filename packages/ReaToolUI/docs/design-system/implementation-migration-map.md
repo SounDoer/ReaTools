@@ -31,7 +31,7 @@ mechanically wrapped in advance.
 
 ## ReaAssetFlow baseline
 
-The current panel is concentrated in `scripts/ReaAssetFlow.lua`. Shared adoption
+The current panel is concentrated in `ReaAssetFlow.lua`. Shared adoption
 must create presentation seams without moving Wwise, WAAPI, filesystem,
 rendering, LLM, or preset behavior into the design system.
 
@@ -95,7 +95,7 @@ Field Shell, Text Field, Integer Number Field, and File and Folder Path Field no
 have the same reference boundaries, automated checks, responsive layouts, and
 Light and Dark Gallery frames. Their fixtures exercise both products' naming,
 revision, project-file, Originals-folder, long-value, validation, disabled, and
-read-only shapes without changing `scripts/ReaAssetFlow.lua`. Manual native input,
+read-only shapes without changing `ReaAssetFlow.lua`. Manual native input,
 step, picker-handoff, and focus checks remain open before Slice 2B can be used
 as a migration boundary.
 

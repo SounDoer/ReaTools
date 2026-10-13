@@ -12,6 +12,7 @@ $results = [System.Collections.Generic.List[string]]::new()
 
 function Invoke-Step([string]$Name, [scriptblock]$Action) {
   Write-Output "==> $Name"
+  $global:LASTEXITCODE = 0
   & $Action
   if ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) {
     throw "$Name failed with exit code $LASTEXITCODE"

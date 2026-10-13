@@ -1,3 +1,22 @@
+-- @description ReaAssetFlow
+-- @version 0.1.0
+-- @author ReaTools contributors
+-- @changelog
+--   Establish the ReaAssetFlow product identity and ReaPack package boundary.
+-- @about
+--   Name, render, preview, and transfer game-audio assets from REAPER to Wwise.
+--
+--   Requires ReaImGui, Python 3.8 or newer, and the Python dependencies listed
+--   in requirements.txt. Optional LLM features additionally require Ollama.
+-- @provides
+--   [nomain] scripts/wwise_import.py
+--   [nomain] scripts/llm_assist.py
+--   [nomain] requirements.txt
+--   [nomain] setup.bat
+--   [nomain] setup-llm.bat
+--   [nomain] README.md
+--   [nomain] LICENSE
+
 --[[
   ReaAssetFlow - ReaAssetFlow.lua
   主工作流脚本，将选中 item 渲染后直接导入 Wwise。
@@ -17,8 +36,7 @@ local function script_path()
 end
 
 local function repo_root()
-    local sp = script_path()
-    return sp:match("(.*[\\/])scripts[\\/]") or sp .. "../"
+    return script_path()
 end
 
 -- Code-level debug switch (no UI):

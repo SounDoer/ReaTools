@@ -1,3 +1,4 @@
+# @noindex
 """
 LLM-assisted utilities for ReaAssetFlow — requires Ollama running locally.
 

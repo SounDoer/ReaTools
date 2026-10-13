@@ -39,6 +39,9 @@ $canonicalIndex = 'https://raw.githubusercontent.com/SounDoer/ReaTools/reapack/i
 if (-not $reaprojectlinkReadme.Contains($canonicalIndex)) {
   throw 'ReaProjectLink README does not name the unified ReaPack index.'
 }
+if ($reaprojectlinkReadme -match '\]\(docs/') {
+  throw 'ReaProjectLink release README links to docs that are not in its package.'
+}
 if (-not $reaprojectlinkEntry.Contains($canonicalRepository)) {
   throw 'ReaProjectLink package metadata does not name the canonical repository.'
 }

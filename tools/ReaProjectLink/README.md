@@ -32,14 +32,14 @@ Browse packages. It appears in the Action List as
 
 ## Documentation
 
-- [Product concept](docs/product-concept.md)
-- [Architecture](docs/architecture.md)
-- [Manifest schema](docs/manifest-schema.md)
-- [Decision log](docs/decisions.md)
-- [UI specification](docs/ui-spec.md)
-- [UI implementation plan](docs/ui-implementation-plan.md)
-- [Development](docs/development.md)
-- [Manual validation](docs/validation.md)
+- [Product concept](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/product-concept.md)
+- [Architecture](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/architecture.md)
+- [Manifest schema](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/manifest-schema.md)
+- [Decision log](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/decisions.md)
+- [UI specification](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/ui-spec.md)
+- [UI implementation plan](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/ui-implementation-plan.md)
+- [Development](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/development.md)
+- [Manual validation](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/validation.md)
 
 ## Status
 

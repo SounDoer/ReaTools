@@ -1,4 +1,4 @@
-local checkbox_module = require("reaprojectlink.ui.design_checkbox")
+local checkbox_module = require("reaui.design_checkbox")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

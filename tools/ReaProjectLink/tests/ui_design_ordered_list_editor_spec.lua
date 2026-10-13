@@ -1,4 +1,4 @@
-local module = require("reaprojectlink.ui.design_ordered_list_editor")
+local module = require("reaui.design_ordered_list_editor")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

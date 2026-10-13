@@ -1,5 +1,5 @@
-local field_shell_module = require("reaprojectlink.ui.design_field_shell")
-local text_field_module = require("reaprojectlink.ui.design_text_field")
+local field_shell_module = require("reaui.design_field_shell")
+local text_field_module = require("reaui.design_text_field")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

@@ -1,5 +1,5 @@
-local disclosure_module = require("reaprojectlink.ui.design_disclosure")
-local status_module = require("reaprojectlink.ui.design_status")
+local disclosure_module = require("reaui.design_disclosure")
+local status_module = require("reaui.design_status")
 
 local M = {}
 local STATES = { ready = true, loading = true, empty = true, failed = true, stale = true, partial = true }

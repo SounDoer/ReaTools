@@ -1,4 +1,4 @@
-local module=require("reaprojectlink.ui.design_status")
+local module=require("reaui.design_status")
 local function equal(a,b,l) if a~=b then error(l..": expected "..tostring(b)..", got "..tostring(a)) end end
 local tests={}
 function tests.roles_render_readable_prefixes_and_balance_style()

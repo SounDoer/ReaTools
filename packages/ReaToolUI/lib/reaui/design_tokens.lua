@@ -1,4 +1,4 @@
-local contract = require("reaprojectlink.ui.design_contract")
+local contract = require("reaui.design_contract")
 local M = {}
 
 M.CONTRACT_VERSION = contract.VERSION

@@ -1,4 +1,4 @@
-local segmented_module = require("reaprojectlink.ui.design_segmented_control")
+local segmented_module = require("reaui.design_segmented_control")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

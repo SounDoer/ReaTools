@@ -1,4 +1,4 @@
-local number_field_module = require("reaprojectlink.ui.design_number_field")
+local number_field_module = require("reaui.design_number_field")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

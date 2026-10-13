@@ -9,9 +9,9 @@ system. Its Transfer Panel exercises form entry, path selection, ordered
 structure editing, hierarchical preview, presets, and long-running external
 workflow feedback that are not all present in ReaProjectLink.
 
-The inspected implementation is `scripts/rtw_panel.lua` in the separate
-ReaAssetFlow repository. Product behavior remains governed by that repository's
-README and PRD.
+The original audit inspected the legacy `scripts/rtw_panel.lua` entry. The
+copied monorepo entry is now `scripts/ReaAssetFlow.lua`; its behavior remains
+governed by ReaAssetFlow's README and PRD.
 
 ## Product context
 

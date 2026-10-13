@@ -1,4 +1,4 @@
-local module=require("reaprojectlink.ui.design_token_insert_group")
+local module=require("reaui.design_token_insert_group")
 local function equal(a,b,l)if a~=b then error(l..": expected "..tostring(b)..", got "..tostring(a))end end
 local function deps()
   local c={buttons={},available=500};local I={GetContentRegionAvail=function()return c.available end,CalcTextSize=function(_,v)return #v*7 end,SameLine=function()c.same=(c.same or 0)+1 end}

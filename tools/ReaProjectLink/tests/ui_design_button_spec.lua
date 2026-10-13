@@ -1,4 +1,4 @@
-local design_button = require("reaprojectlink.ui.design_button")
+local design_button = require("reaui.design_button")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

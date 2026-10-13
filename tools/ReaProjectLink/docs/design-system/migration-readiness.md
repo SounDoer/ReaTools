@@ -10,12 +10,13 @@ automated column does not waive a manual gate.
 
 ## Shared boundary
 
-`ui/design_system.lua` is the single construction entry point for a ReaImGui
-consumer. It returns one adapter plus named Component and Pattern families.
-Product views consume those semantic APIs rather than requiring individual
-implementation modules or Primitive tokens.
+`packages/ReaToolUI/lib/reaui.lua` is the public construction entry point for a
+ReaImGui consumer. It returns one adapter plus named Component and Pattern
+families. Product views consume those semantic APIs rather than requiring
+individual implementation modules or Primitive tokens.
 
-`ui/design_contract.lua` is the machine-readable development contract record.
+`packages/ReaToolUI/lib/reaui/design_contract.lua` is the machine-readable
+development contract record.
 It lists the supported catalog, ReaImGui API target, theme names, and consumer
 declaration validation. The contract remains `development` with no semantic
 version; this is not a premature `0.1.0` release.

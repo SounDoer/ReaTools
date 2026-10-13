@@ -1,4 +1,4 @@
-local dropdown_module = require("reaprojectlink.ui.design_dropdown")
+local dropdown_module = require("reaui.design_dropdown")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

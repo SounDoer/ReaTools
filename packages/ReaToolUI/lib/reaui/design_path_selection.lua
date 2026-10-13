@@ -1,4 +1,4 @@
-local path_field_module=require("reaprojectlink.ui.design_path_field")
+local path_field_module=require("reaui.design_path_field")
 local M={}
 local STATES={idle=true,checking=true,valid=true,invalid=true,unavailable=true}
 function M.create(ImGui,ctx,adapter,path_field)

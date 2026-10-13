@@ -1,6 +1,6 @@
-local field_shell_module = require("reaprojectlink.ui.design_field_shell")
-local input_control_module = require("reaprojectlink.ui.design_input_control")
-local button_module = require("reaprojectlink.ui.design_button")
+local field_shell_module = require("reaui.design_field_shell")
+local input_control_module = require("reaui.design_input_control")
+local button_module = require("reaui.design_button")
 
 local M = {}
 

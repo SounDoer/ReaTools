@@ -1,4 +1,4 @@
-local module=require("reaprojectlink.ui.design_path_selection")
+local module=require("reaui.design_path_selection")
 local function equal(a,b,l)if a~=b then error(l..": expected "..tostring(b)..", got "..tostring(a))end end
 local tests={}
 function tests.maps_lifecycle_to_path_field_validation()

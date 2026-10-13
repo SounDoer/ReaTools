@@ -1,4 +1,4 @@
-local design_adapter = require("reaprojectlink.ui.design_adapter")
+local design_adapter = require("reaui.design_adapter")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

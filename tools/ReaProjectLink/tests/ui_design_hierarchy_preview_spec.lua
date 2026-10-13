@@ -1,4 +1,4 @@
-local module = require("reaprojectlink.ui.design_hierarchy_preview")
+local module = require("reaui.design_hierarchy_preview")
 
 local function equal(actual, expected, label)
   if actual ~= expected then error(label .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual)) end

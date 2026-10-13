@@ -1,6 +1,6 @@
-local header_module = require("reaprojectlink.ui.design_review_header")
-local footer_module = require("reaprojectlink.ui.design_review_footer")
-local stale_module = require("reaprojectlink.ui.design_stale_review")
+local header_module = require("reaui.design_review_header")
+local footer_module = require("reaui.design_review_footer")
+local stale_module = require("reaui.design_stale_review")
 
 local M = {}
 local function required_string(value, name)

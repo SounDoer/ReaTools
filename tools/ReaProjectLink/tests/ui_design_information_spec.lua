@@ -1,6 +1,6 @@
-local notice_module=require("reaprojectlink.ui.design_notice")
-local menu_module=require("reaprojectlink.ui.design_menu")
-local disclosure_module=require("reaprojectlink.ui.design_disclosure")
+local notice_module=require("reaui.design_notice")
+local menu_module=require("reaui.design_menu")
+local disclosure_module=require("reaui.design_disclosure")
 local function equal(a,b,l)if a~=b then error(l..": expected "..tostring(b)..", got "..tostring(a))end end
 local tests={}
 

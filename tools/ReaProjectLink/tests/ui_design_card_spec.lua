@@ -1,4 +1,4 @@
-local card_module = require("reaprojectlink.ui.design_card")
+local card_module = require("reaui.design_card")
 
 local function equal(actual, expected, label)
   if actual ~= expected then error(label .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual)) end

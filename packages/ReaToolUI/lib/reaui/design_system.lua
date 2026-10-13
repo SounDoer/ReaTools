@@ -1,5 +1,5 @@
-local contract = require("reaprojectlink.ui.design_contract")
-local adapter_module = require("reaprojectlink.ui.design_adapter")
+local contract = require("reaui.design_contract")
+local adapter_module = require("reaui.design_adapter")
 
 local M = {}
 
@@ -7,7 +7,7 @@ local function create_family(entries, ImGui, ctx, adapter)
   local family = {}
   for _, entry in ipairs(entries) do
     if not family[entry.factory_key] then
-      family[entry.factory_key] = require("reaprojectlink.ui." .. entry.module)
+      family[entry.factory_key] = require("reaui." .. entry.module)
         .create(ImGui, ctx, adapter)
     end
   end

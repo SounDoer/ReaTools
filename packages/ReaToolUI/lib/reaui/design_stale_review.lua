@@ -1,5 +1,5 @@
-local status_module = require("reaprojectlink.ui.design_status")
-local button_module = require("reaprojectlink.ui.design_button")
+local status_module = require("reaui.design_status")
+local button_module = require("reaui.design_button")
 
 local M = {}
 local function required_string(value, name)

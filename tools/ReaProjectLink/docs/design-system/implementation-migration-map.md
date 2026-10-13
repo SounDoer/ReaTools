@@ -1,6 +1,7 @@
 # Design System Implementation Migration Map
 
-Status: Initial baseline for Milestone 0. No product surface has migrated.
+Status: Shared implementation extracted to ReaToolUI on 2026-10-13. No product
+surface has migrated.
 
 This map assigns current UI code to the target design-system layers and names
 the first safe seams for implementation. It prevents existing helper names and
@@ -30,7 +31,7 @@ mechanically wrapped in advance.
 
 ## ReaAssetFlow baseline
 
-The current panel is concentrated in `scripts/rtw_panel.lua`. Shared adoption
+The current panel is concentrated in `scripts/ReaAssetFlow.lua`. Shared adoption
 must create presentation seams without moving Wwise, WAAPI, filesystem,
 rendering, LLM, or preset behavior into the design system.
 
@@ -45,9 +46,9 @@ rendering, LLM, or preset behavior into the design system.
 | Preset controls | Preset Manager | Serialization, storage, and naming policy |
 | Transfer status text | External Operation Status | Render, process, WAAPI, and retry behavior |
 
-ReaAssetFlow remains read-only during the reference implementation. Its labels,
-paths, long values, loading states, and hierarchy shapes are represented by
-deterministic Gallery fixtures before integration begins.
+ReaAssetFlow's copied baseline and product rename are complete. Its workflow
+code remains unchanged while labels, paths, long values, loading states, and
+hierarchy shapes are represented by deterministic Gallery fixtures.
 
 ## Foundation spine introduced in Milestone 1
 
@@ -64,10 +65,10 @@ ready for the Settings pilot.
 
 The current files are:
 
-- `ui/design_tokens.lua` for typed Token data, validation, canonical IDs, and
-  theme-aware resolution;
-- `ui/design_adapter.lua` for the first font, color, and spacing mappings into
-  ReaImGui;
+- `packages/ReaToolUI/lib/reaui/design_tokens.lua` for typed Token data,
+  validation, canonical IDs, and theme-aware resolution;
+- `packages/ReaToolUI/lib/reaui/design_adapter.lua` for font, color, spacing,
+  sizing, border, and shape mappings into ReaImGui;
 - `tests/design_system_gallery.lua` for the side-effect-free Gallery shell;
 - `tests/ReaProjectLink_DesignSystemGallery.lua` for the development ReaScript
   entry point;
@@ -94,7 +95,7 @@ Field Shell, Text Field, Integer Number Field, and File and Folder Path Field no
 have the same reference boundaries, automated checks, responsive layouts, and
 Light and Dark Gallery frames. Their fixtures exercise both products' naming,
 revision, project-file, Originals-folder, long-value, validation, disabled, and
-read-only shapes without changing `scripts/rtw_panel.lua`. Manual native input,
+read-only shapes without changing `scripts/ReaAssetFlow.lua`. Manual native input,
 step, picker-handoff, and focus checks remain open before Slice 2B can be used
 as a migration boundary.
 

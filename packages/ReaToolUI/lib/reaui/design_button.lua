@@ -1,4 +1,4 @@
-local default_icons = require("reaprojectlink.ui.icons")
+local default_icons = require("reaui.icons")
 
 local M = {}
 

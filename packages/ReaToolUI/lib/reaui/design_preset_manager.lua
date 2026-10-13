@@ -1,6 +1,6 @@
-local dropdown_module = require("reaprojectlink.ui.design_dropdown")
-local text_field_module = require("reaprojectlink.ui.design_text_field")
-local button_module = require("reaprojectlink.ui.design_button")
+local dropdown_module = require("reaui.design_dropdown")
+local text_field_module = require("reaui.design_text_field")
+local button_module = require("reaui.design_button")
 
 local M = {}
 

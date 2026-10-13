@@ -1,4 +1,4 @@
-local design_tokens = require("reaprojectlink.ui.design_tokens")
+local design_tokens = require("reaui.design_tokens")
 
 local M = {}
 

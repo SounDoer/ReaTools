@@ -1,5 +1,5 @@
-local text_field_module=require("reaprojectlink.ui.design_text_field")
-local button_module=require("reaprojectlink.ui.design_button")
+local text_field_module=require("reaui.design_text_field")
+local button_module=require("reaui.design_button")
 local M={}
 function M.create(ImGui,ctx,adapter,text_field,button)
   text_field=text_field or text_field_module.create(ImGui,ctx,adapter)

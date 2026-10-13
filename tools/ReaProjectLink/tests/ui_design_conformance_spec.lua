@@ -1,8 +1,10 @@
-local contract = require("reaprojectlink.ui.design_contract")
+local contract = require("reaui.design_contract")
 
 local source = debug.getinfo(1, "S").source:sub(2)
 local tests_dir = source:match("^(.*)[/\\]")
 local root = assert(tests_dir and tests_dir:match("^(.*)[/\\]tests$"), "repository root")
+local monorepo_root = assert(root:match("^(.*)[/\\]tools[/\\]ReaProjectLink$"),
+  "ReaTools monorepo root")
 
 local function read(path)
   local file = assert(io.open(path, "r"), "missing file " .. path)
@@ -27,7 +29,7 @@ function tests.public_catalog_has_unique_traceable_entries()
       ids[entry.id], names[entry.name] = true, true
       assert(type(entry.factory_key) == "string" and entry.factory_key ~= "", entry.id .. " factory")
       assert(type(entry.fixture) == "string" and entry.fixture ~= "", entry.id .. " fixture")
-      local module = require("reaprojectlink.ui." .. entry.module)
+      local module = require("reaui." .. entry.module)
       assert(type(module.create) == "function", entry.id .. " module create")
       local specification = read(join(root, "docs/design-system", entry.spec))
       assert(specification:match("^# "), entry.id .. " specification title")
@@ -50,7 +52,7 @@ function tests.public_implementation_does_not_consume_primitive_tokens_or_raw_co
   for _, entries in pairs(contract.CATALOG) do
     for _, entry in ipairs(entries) do
       if not checked[entry.module] then
-        local path = join(root, "ReaProjectLink/lib/reaprojectlink/ui", entry.module .. ".lua")
+        local path = join(monorepo_root, "packages/ReaToolUI/lib/reaui", entry.module .. ".lua")
         local implementation = read(path)
         assert(not implementation:find('"primitive%.', 1), entry.module .. " consumes Primitive token")
         assert(not implementation:find("0x%x+"), entry.module .. " embeds a raw color literal")

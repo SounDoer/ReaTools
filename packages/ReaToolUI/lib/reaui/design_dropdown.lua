@@ -1,4 +1,4 @@
-local field_shell_module = require("reaprojectlink.ui.design_field_shell")
+local field_shell_module = require("reaui.design_field_shell")
 
 local M = {}
 

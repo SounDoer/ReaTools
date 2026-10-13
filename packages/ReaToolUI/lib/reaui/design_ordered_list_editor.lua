@@ -1,5 +1,5 @@
-local list_module = require("reaprojectlink.ui.design_single_selection_list")
-local button_module = require("reaprojectlink.ui.design_button")
+local list_module = require("reaui.design_single_selection_list")
+local button_module = require("reaui.design_button")
 
 local M = {}
 

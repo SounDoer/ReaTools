@@ -1,4 +1,4 @@
-local button_module = require("reaprojectlink.ui.design_button")
+local button_module = require("reaui.design_button")
 local M = {}
 local ROLES = { neutral="Info", ready="Ready", warning="Attention", blocked="Blocked" }
 local FLAGS = (1 << 0) | (1 << 1) | (1 << 5)

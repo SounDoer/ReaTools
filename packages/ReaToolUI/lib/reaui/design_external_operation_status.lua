@@ -1,4 +1,4 @@
-local notice_module = require("reaprojectlink.ui.design_notice")
+local notice_module = require("reaui.design_notice")
 
 local M = {}
 local STATES = {

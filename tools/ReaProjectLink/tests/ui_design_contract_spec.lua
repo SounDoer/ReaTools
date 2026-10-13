@@ -1,5 +1,5 @@
-local contract = require("reaprojectlink.ui.design_contract")
-local system_module = require("reaprojectlink.ui.design_system")
+local contract = require("reaui.design_contract")
+local system_module = require("reaui.design_system")
 
 local function equal(actual, expected, label)
   if actual ~= expected then error(label .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual)) end

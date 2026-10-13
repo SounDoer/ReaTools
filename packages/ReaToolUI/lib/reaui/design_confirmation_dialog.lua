@@ -1,4 +1,4 @@
-local button_module = require("reaprojectlink.ui.design_button")
+local button_module = require("reaui.design_button")
 
 local M = {}
 local GENERIC_TITLES = { ["Are you sure?"] = true, Warning = true }

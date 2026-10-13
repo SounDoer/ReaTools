@@ -1,7 +1,7 @@
 # ReaAssetFlow — Product Requirements Document
 
-**版本**: v0.1  
-**日期**: 2026-04-20  
+**版本**: v0.1
+**日期**: 2026-04-20
 **状态**: MVP 开发中
 
 ---

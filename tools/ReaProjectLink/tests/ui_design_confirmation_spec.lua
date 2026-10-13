@@ -1,5 +1,5 @@
-local dialog_module = require("reaprojectlink.ui.design_confirmation_dialog")
-local inline_module = require("reaprojectlink.ui.design_inline_review")
+local dialog_module = require("reaui.design_confirmation_dialog")
+local inline_module = require("reaui.design_inline_review")
 
 local function equal(actual, expected, label)
   if actual ~= expected then error(label .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual)) end

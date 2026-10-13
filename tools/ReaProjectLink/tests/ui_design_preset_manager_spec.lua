@@ -1,4 +1,4 @@
-local module = require("reaprojectlink.ui.design_preset_manager")
+local module = require("reaui.design_preset_manager")
 
 local function equal(actual, expected, label)
   if actual ~= expected then

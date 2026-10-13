@@ -14,7 +14,10 @@ path.
 - The tracked files from legacy ReaperToWwise are copied to
   `tools/ReaAssetFlow`.
 - The original standalone repositories remain unchanged.
-- `packages/ReaToolUI` is reserved for the validated design-system extraction.
+- `packages/ReaToolUI` contains the canonical design-system implementation
+  under the `reaui` namespace.
+- ReaProjectLink design-system tests and Gallery fixtures resolve the shared
+  package; the duplicate Product-local implementation has been removed.
 - No product workflow or persisted data has changed.
 
 ## Migration sequence
@@ -29,13 +32,20 @@ path.
 
 ### Phase 2 — Extract ReaToolUI
 
-1. Copy the validated design-system contract into `packages/ReaToolUI`.
-2. rename its public Lua namespace from the prototype
-   `reaprojectlink.ui` boundary to `reaui`;
-3. retain Product effects and workflow code inside each tool;
-4. migrate Gallery and conformance checks to the shared package;
-5. prove ReaProjectLink against the shared source before removing its prototype
-   implementation.
+Completed structural extraction:
+
+1. copied the validated design-system implementation into
+   `packages/ReaToolUI`;
+2. renamed its public Lua namespace from the prototype `reaprojectlink.ui`
+   boundary to `reaui`;
+3. retained Product effects and workflow code inside each tool;
+4. pointed Gallery and conformance checks at the shared package;
+5. proved ReaProjectLink against the shared source and removed its duplicate
+   `design_*` implementation.
+
+Remaining package ownership work moves the Gallery fixtures and design-system
+test sources themselves out of the ReaProjectLink tree and adds consumer
+declarations and packaging metadata.
 
 The DS016 native visual and interaction matrix remains a gate for product UI
 migration. Structural extraction alone does not waive it.

@@ -40,6 +40,15 @@ disabled, and Field Shell pending, valid, or invalid validation. The first
 version follows ordinary native focus order for each segment; it does not
 require a custom single-tab-stop arrow-key model.
 
+The unselected segment uses the neutral secondary-action surface scale so its
+idle target remains discoverable and hover moves to a visibly stronger tone.
+The selected segment uses the Teal soft scale and matching high-contrast text;
+selection must remain immediately distinguishable from both unselected idle and
+hover states. This does not make either segment a Button: the control emits
+`selection.changed`, not an action event. Persistent product navigation remains
+outside this component's scope and is not part of the initial confirmed
+inventory.
+
 ## Content guidance
 
 Use short parallel nouns or noun phrases. Do not combine unrelated settings,

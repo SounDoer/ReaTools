@@ -27,7 +27,7 @@ local function dependencies()
   function adapter.resolve(id)
     local values = {
       ["semantic.space.control.padding_x"] = 12,
-      ["semantic.space.control.compact_gap"] = 4,
+      ["component.segmented_control.gap"] = 0,
       ["semantic.size.control.medium"] = 32,
     }
     return values[id] or 0x112233ff

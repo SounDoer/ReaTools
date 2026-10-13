@@ -95,3 +95,13 @@ Confirmed: 2026-10-13.
 packages and their ReaPack index. GitHub Actions rebuilds and publishes that
 branch after validated changes reach `main`; generated distribution files do
 not become canonical source.
+
+### M010 — Vendor ReaToolUI with each runtime consumer
+
+Confirmed: 2026-10-13.
+
+ReaProjectLink may declare ReaToolUI as a runtime dependency after a product
+surface adopts the shared contract. Development loads the canonical monorepo
+package, while every ReaProjectLink release vendors its pinned ReaToolUI source
+inside that release. No shared global installation or runtime network lookup is
+introduced.

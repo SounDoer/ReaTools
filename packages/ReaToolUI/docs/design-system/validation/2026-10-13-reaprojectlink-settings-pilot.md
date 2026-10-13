@@ -1,13 +1,14 @@
 # ReaProjectLink Settings Pilot Native Validation — 2026-10-13
 
-Status: Failed. Automated preparation passes, but the first inspected native
-scene did not meet the visual-quality bar. Product migration is not authorized
-by this record.
+Status: Migration implemented under explicit Product-owner authorization on
+2026-10-13. The earlier Gallery scene remains a recorded native visual failure;
+the migrated product page still requires the matrix below and no native
+interaction result is inferred from automated smoke frames.
 
 ## Purpose
 
-This is the minimum DS016 matrix required before replacing the existing
-ReaProjectLink Settings presentation with ReaToolUI. It narrows the complete
+This is the minimum DS016 matrix for accepting the migrated ReaProjectLink
+Settings presentation. It narrows the complete
 Gallery runbook to Button, Icon Button, Field Shell, Checkbox, Segmented
 Control, Path Selection, and Confirmation Dialog.
 
@@ -81,6 +82,22 @@ is structurally consistent but does not yet establish enough hierarchy,
 composition, density control, or product-level finish. This is a blocking
 visual failure, not a subjective note attached to a passing cell.
 
+Follow-up candidates in `e789a8c` and `d316ef8` introduced a task-oriented
+ReaProjectLink composition, a calibrated spacing hierarchy, explicit adapter
+chrome, and additional contrast coverage. These changes pass automated
+validation but do not convert the failed native row to Pass. The revised scene
+still requires an explicit reviewer result.
+
+After incremental visual tuning proved inefficient, DS019 replaced the custom
+Studio Neutral direction with a Radix Themes reference baseline: Slate gray,
+Teal accent, solid panels, neutral surface segmented controls, medium radius,
+and Radix spacing. Subsequent review clarified that this checkpoint calibrates
+shared Foundations and confirmed Components, not a finished Settings page. The
+Cross-product Scenario is therefore a provisional integration fixture only;
+its navigation, information architecture, and page composition are not shared
+contracts and are not being approved by this validation pass. The failed matrix
+result remains unchanged until the component baseline receives a new review.
+
 ## Interaction matrix
 
 Inspect at least one representative enabled instance of each target with both
@@ -98,10 +115,11 @@ pointer and keyboard. Do not infer an interaction result from static rendering.
 
 ## Completion rule
 
-The Settings pilot may start only after every applicable 125% cell is Pass or
-has a documented, accepted non-blocking platform variation. Unavailable display
-scales remain Blocked and do not become Pass by inference. A failure must record
-the target, theme, preview, scale, input method, and concise reproduction.
+The Settings pilot is not natively accepted until every applicable 125% cell is
+Pass or has a documented, accepted non-blocking platform variation. Unavailable
+display scales remain Blocked and do not become Pass by inference. A failure
+must record the target, theme, preview, scale, input method, and concise
+reproduction.
 
 After a fix, rerun `packages/ReaToolUI/tests/run_validation.ps1` and repeat the
 affected manual cells plus any shared Foundation cells the fix can influence.

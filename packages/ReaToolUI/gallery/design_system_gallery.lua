@@ -196,6 +196,13 @@ function M.create(deps)
   end
 
   local function components()
+    adapter.with_text("title", function()
+      ImGui.Text(ctx, "Component calibration")
+    end)
+    ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
+      "Review shared component anatomy, variants, and states here. Product composition is out of scope.")
+    ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.default"))
+
     ImGui.Text(ctx, "Card")
     card.draw({
       id = "source-project-card",
@@ -714,6 +721,11 @@ function M.create(deps)
   end
 
   local function cross_product_scenarios()
+    adapter.with_text("metadata", function()
+      ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
+        "PROVISIONAL INTEGRATION FIXTURE · NOT A PRODUCT PAGE SPECIFICATION")
+    end)
+    ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.stack.tight"))
     adapter.with_text("title", function()
       ImGui.Text(ctx, "ReaProjectLink")
     end)
@@ -740,11 +752,18 @@ function M.create(deps)
       local workspace_height = math.max(380, available_height or 380)
       local rail_width = 156
       local gap = adapter.resolve("semantic.space.stack.default")
+      local rail_padding = adapter.resolve("semantic.space.container.padding")
 
       ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg,
         adapter.resolve("semantic.color.surface.panel"))
+      -- Borderless child windows otherwise lose their implicit window padding.
+      -- Keep spacing and decoration independent so the rail remains inset even
+      -- when its boundary is expressed only by the surface color.
+      ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding,
+        rail_padding, rail_padding)
       local rail_visible = ImGui.BeginChild(ctx, "##reaprojectlink-settings-rail",
-        rail_width, workspace_height, CHILD_BORDERS)
+        rail_width, workspace_height, ImGui.ChildFlags_AlwaysUseWindowPadding)
+      ImGui.PopStyleVar(ctx)
       ImGui.PopStyleColor(ctx)
       if rail_visible then
         adapter.with_text("metadata", function()
@@ -767,7 +786,6 @@ function M.create(deps)
           ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.inline.tight"))
         end
         ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.default"))
-        ImGui.Separator(ctx)
         ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), "CURRENT LINK")
         status.draw({ role = "ready", text = "Connected" })
         ImGui.TextWrapped(ctx, "Trailer Main")
@@ -799,7 +817,7 @@ function M.create(deps)
           ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), "WWISE")
           ImGui.SameLine(ctx)
           ImGui.Text(ctx, "Trailer.wproj")
-          ImGui.Separator(ctx)
+          ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.stack.default"))
           path_field.draw({
             id = "settings-reaper-project",
             label = "REAPER source",
@@ -926,8 +944,12 @@ function M.create(deps)
       navigation()
       preview_controls()
       local _, available_height = ImGui.GetContentRegionAvail(ctx)
+      local preview_padding = adapter.resolve("semantic.space.page.padding")
+      ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding,
+        preview_padding, preview_padding)
       local preview_visible = ImGui.BeginChild(ctx, "##gallery-preview", preview_width,
-        available_height, CHILD_BORDERS)
+        available_height, ImGui.ChildFlags_AlwaysUseWindowPadding)
+      ImGui.PopStyleVar(ctx)
       if preview_visible then
         if section == "Foundations" then
           foundations()

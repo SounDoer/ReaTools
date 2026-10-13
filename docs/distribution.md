@@ -36,9 +36,10 @@ package identity.
 - `runtime`: the shipped product loads that exact contract and the release must
   vendor the corresponding `reaui` files.
 
-The current declarations intentionally say `validation-only` for ReaProjectLink
-and `planned` for ReaAssetFlow. They must change to `runtime` only with the
-product migration that introduces the dependency.
+ReaProjectLink now declares `runtime` because Settings is its first migrated
+product surface; its `vendorTarget` places the pinned package inside every
+self-contained release. ReaAssetFlow remains `planned` until its own product
+migration introduces the dependency.
 
 ## Deterministic release trees
 

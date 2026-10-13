@@ -104,8 +104,9 @@ Global ImGui item spacing is explicitly owned by
 `semantic.space.item.horizontal` (8) and `semantic.space.item.vertical` (4),
 so host defaults cannot silently change the rhythm. Cards and notices use
 `semantic.space.container.padding` (16). Top-level pages use the deliberately
-larger `semantic.space.page.padding` (20). Tree and disclosure indentation uses
-`semantic.space.indent.default` (20).
+larger `semantic.space.page.padding` (24). Tree and disclosure indentation uses
+`semantic.space.indent.default` (24). These values align the final baseline to
+Radix Themes spacing step 5 while preserving the four-unit rhythm.
 
 Adjacent components do not choose a gap by appearance. The composition decides
 whether they belong to the same stack, section, or page region and uses that
@@ -181,7 +182,7 @@ Valid decisions:
 
 ```text
 card padding -> semantic.space.container.padding -> primitive.space.4
-page padding -> semantic.space.page.padding -> primitive.space.5
+page padding -> semantic.space.page.padding -> primitive.space.6
 section gap -> semantic.space.section.default -> primitive.space.4
 major region gap -> semantic.space.region.default -> primitive.space.8
 medium icon box -> semantic.size.icon.medium -> primitive.size.4

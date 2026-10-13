@@ -588,3 +588,64 @@ another tool. Repository-level decisions M001 through M005 govern source
 ownership, naming, installation direction, and release isolation. Detailed
 tradeoffs and the extraction sequence are recorded in
 `distribution-options.md`.
+
+### DS019: Use Radix Themes as the visual reference baseline
+
+Confirmed: 2026-10-13.
+
+ReaToolUI uses Radix Themes with Slate gray, Teal accent, solid panels, medium
+radius, and 100% scaling as its primary visual reference. The shared token
+registry preserves the Radix Colors 3.0 1-12 Slate and Teal scales and maps
+ReaToolUI semantic roles to their documented background, surface, text,
+interactive, and focus purposes.
+
+This is a reference implementation, not a runtime dependency. ReaToolUI ports
+the relevant values and hierarchy into ReaImGui; it does not embed web code or
+require Radix packages at runtime. ReaImGui limitations may replace alpha
+overlays, animation, shadows, or composited focus rings with the nearest stable
+opaque treatment. Those adaptations keep semantic hierarchy and DS003 contrast
+requirements intact rather than inventing a second visual language.
+
+Primary actions follow Radix solid treatment, secondary actions follow neutral
+soft treatment, quiet actions follow ghost treatment, inputs follow surface
+treatment, and Segmented Control uses a Teal soft selected segment against
+neutral unselected segments so selection remains visible without an extra
+outline.
+Product navigation is not added to the shared component inventory solely to
+complete a Gallery integration fixture.
+
+The Radix spacing scale confirms the existing four-unit rhythm. Page padding
+and default indentation use 24 logical units; medium-theme control and
+container radii resolve to 4 and 8 logical units. Product code cannot selectively
+mix the superseded Studio Neutral values back into new surfaces.
+
+Reference sources:
+
+- <https://www.radix-ui.com/themes/docs/theme/overview>
+- <https://www.radix-ui.com/themes/docs/theme/color>
+- <https://www.radix-ui.com/themes/docs/theme/radius>
+- <https://www.radix-ui.com/colors/docs/palette-composition/scales>
+
+### DS020: Migrate ReaProjectLink Settings as the first runtime consumer
+
+Confirmed: 2026-10-13.
+
+ReaProjectLink Settings is the first product surface to consume ReaToolUI at
+runtime. Only Settings migrates in this slice; setup, overview cards, Reviews,
+menus, notices, and other product surfaces remain on the existing UI. The two
+systems coexist behind an explicit page boundary until later migrations are
+separately accepted.
+
+Settings uses Review Header, Path Selection, Checkbox, Segmented Control,
+Button, and Confirmation Dialog. ReaProjectLink retains navigation effects,
+Reference subscription and alignment services, theme-preference persistence,
+reset effects, and all project and diagnostic copy/value rows. Those rows stay
+in a named Product compatibility layer and do not promote a shared Key Value
+Row. The provisional Cross-product Gallery fixture does not define the product
+composition.
+
+ReaProjectLink declares `uiContract.usage` as `runtime`. Development resolves
+the canonical monorepo package; each release vendors the pinned implementation
+under the product tree so installation remains self-contained per M005, M007,
+and M010. Native pointer, keyboard, focus, and display-scale validation remains
+required evidence after the automated migration checks.

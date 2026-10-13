@@ -409,4 +409,75 @@ function M.create(ImGui, ctx, theme)
   return c
 end
 
+-- Product-owned Settings composition that remains outside the shared
+-- ReaToolUI contract. These copy/value rows preserve ReaProjectLink behavior
+-- until a shared Key Value Row satisfies its own promotion gate.
+function M.create_settings_compat(ImGui, ctx, adapter)
+  local compat = {}
+  local pages = {}
+  local page_max_width = 720
+  local value_column = 130
+
+  local function with_text(role, renderer)
+    if adapter.with_text then return adapter.with_text(role, renderer) end
+    return renderer()
+  end
+
+  local function secondary_text(renderer)
+    ImGui.PushStyleColor(ctx, ImGui.Col_Text,
+      adapter.resolve("semantic.color.text.secondary"))
+    renderer()
+    ImGui.PopStyleColor(ctx)
+  end
+
+  function compat.begin_page(id)
+    local available = ImGui.GetContentRegionAvail(ctx)
+    local width = math.min(available, page_max_width)
+    local indent = math.max(0, (available - width) / 2)
+    ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + indent)
+    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg,
+      adapter.resolve("semantic.color.surface.canvas"))
+    local visible = ImGui.BeginChild(ctx, id, width, 0)
+    ImGui.PopStyleColor(ctx)
+    table.insert(pages, visible)
+    return visible
+  end
+
+  function compat.end_page()
+    if table.remove(pages) then ImGui.EndChild(ctx) end
+  end
+
+  function compat.section(label)
+    ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.default"))
+    secondary_text(function()
+      with_text("metadata", function() ImGui.Text(ctx, label) end)
+    end)
+  end
+
+  function compat.copy_value(id, label, value)
+    ImGui.AlignTextToFramePadding(ctx)
+    secondary_text(function() with_text("label", function() ImGui.Text(ctx, label) end) end)
+    ImGui.SameLine(ctx, value_column)
+    if ImGui.SmallButton(ctx, "Copy##settings-" .. id) then
+      ImGui.SetClipboardText(ctx, tostring(value))
+    end
+    ImGui.SameLine(ctx)
+    ImGui.TextWrapped(ctx, tostring(value))
+  end
+
+  function compat.key_value(label, value)
+    secondary_text(function() with_text("label", function() ImGui.Text(ctx, label) end) end)
+    ImGui.SameLine(ctx, value_column)
+    ImGui.TextWrapped(ctx, tostring(value))
+  end
+
+  function compat.explanation(text)
+    secondary_text(function()
+      with_text("metadata", function() ImGui.TextWrapped(ctx, text) end)
+    end)
+  end
+
+  return compat
+end
+
 return M

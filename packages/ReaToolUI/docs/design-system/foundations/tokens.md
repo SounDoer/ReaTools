@@ -1,8 +1,8 @@
 # Design Token Architecture and Naming
 
-Status: The architecture and naming rules are confirmed by DS001. Individual
-token values and most token inventories remain provisional until their related
-foundation questions are resolved.
+Status: The architecture and naming rules are confirmed by DS001. DS019 adopts
+Radix Themes Slate and Teal as the visual value baseline; semantic mappings
+remain governed by ReaToolUI contrast and host-adapter requirements.
 
 Design tokens give reusable names to visual decisions. They allow product views
 to request a purpose such as primary text or a primary action without knowing a
@@ -21,10 +21,10 @@ Size-bearing literals use the logical-unit model defined in
 Examples:
 
 ```text
-primitive.color.blue.500 = #2f6fe0
-primitive.color.gray.900 = #1d2025
+primitive.color.teal_light.9 = #12a594
+primitive.color.slate_dark.12 = #edeef0
 primitive.space.3 = 12
-primitive.radius.2 = 10
+primitive.radius.2 = 8
 ```
 
 Primitive token names describe the material, not a product meaning. A blue
@@ -49,6 +49,7 @@ semantic.color.text.secondary
 semantic.color.surface.canvas
 semantic.color.border.default
 semantic.color.action.primary.default
+semantic.color.selection.active.background.default
 semantic.color.status.warning
 semantic.space.container.padding
 semantic.size.control.medium

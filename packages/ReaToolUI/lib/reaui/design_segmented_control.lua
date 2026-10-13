@@ -47,7 +47,7 @@ function M.create(ImGui, ctx, adapter, field_shell)
     validate(options)
     local available = ImGui.GetContentRegionAvail(ctx)
     local padding = resolve("semantic.space.control.padding_x")
-    local gap = resolve("semantic.space.control.compact_gap")
+    local gap = resolve("component.segmented_control.gap")
     local height = resolve("semantic.size.control.medium")
     local segment_width = 0
     for _, option in ipairs(options.options) do

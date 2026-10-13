@@ -40,9 +40,9 @@ function tests.default_registry_is_valid()
 end
 
 function tests.resolves_theme_specific_semantic_tokens()
-  equal(design_tokens.resolve("semantic.color.text.primary", "light"), 0x181d23ff,
+  equal(design_tokens.resolve("semantic.color.text.primary", "light"), 0x1c2024ff,
     "light primary text")
-  equal(design_tokens.resolve("semantic.color.text.primary", "dark"), 0xebeef2ff,
+  equal(design_tokens.resolve("semantic.color.text.primary", "dark"), 0xedeef0ff,
     "dark primary text")
   equal(design_tokens.resolve("semantic.space.container.padding", "light"), 16,
     "shared semantic spacing")
@@ -55,7 +55,7 @@ function tests.foundation_scales_and_roles_are_registered()
     "loose section spacing")
   equal(design_tokens.resolve("semantic.space.region.default", "light"), 32,
     "region spacing")
-  equal(design_tokens.resolve("semantic.space.page.padding", "light"), 20,
+  equal(design_tokens.resolve("semantic.space.page.padding", "light"), 24,
     "page padding")
   equal(design_tokens.resolve("semantic.space.item.vertical", "light"), 4,
     "vertical item spacing")
@@ -65,9 +65,9 @@ function tests.foundation_scales_and_roles_are_registered()
     "scrollbar size")
   equal(design_tokens.resolve("semantic.border.focus.width", "light"), 2,
     "focus width")
-  equal(design_tokens.resolve("semantic.radius.control", "light"), 6,
+  equal(design_tokens.resolve("semantic.radius.control", "light"), 4,
     "control radius")
-  equal(design_tokens.resolve("semantic.radius.container", "light"), 10,
+  equal(design_tokens.resolve("semantic.radius.container", "light"), 8,
     "container radius")
   equal(design_tokens.resolve("semantic.typography.title.font_weight", "light"), "bold",
     "title weight")
@@ -199,6 +199,33 @@ function tests.segmented_control_text_meets_contrast_baselines()
         assert(contrast(foreground, background) >= 4.5,
           theme .. " segmented " .. selection .. " " .. state .. " contrast")
       end
+    end
+  end
+end
+
+function tests.interactive_state_colors_remain_visibly_distinct()
+  local secondary_default = design_tokens.resolve(
+    "semantic.color.action.secondary.background.default", "dark")
+  local secondary_hover = design_tokens.resolve(
+    "semantic.color.action.secondary.background.hover", "dark")
+  local secondary_pressed = design_tokens.resolve(
+    "semantic.color.action.secondary.background.pressed", "dark")
+  assert(secondary_default ~= secondary_hover, "dark secondary idle and hover differ")
+  assert(secondary_hover ~= secondary_pressed, "dark secondary hover and pressed differ")
+
+  local teal_scale = { light = "teal_light", dark = "teal_dark" }
+  local selected_steps = { default = 4, hover = 5, pressed = 6 }
+  for _, theme in ipairs(design_tokens.THEMES) do
+    local unselected = assert(design_tokens.resolve(
+      "component.segmented_control.unselected.background.default", theme))
+    for state, step in pairs(selected_steps) do
+      local selected = assert(design_tokens.resolve(
+        "component.segmented_control.selected.background." .. state, theme))
+      local expected = assert(design_tokens.resolve(
+        "primitive.color." .. teal_scale[theme] .. "." .. step, theme))
+      equal(selected, expected, theme .. " segmented selected " .. state .. " accent soft")
+      assert(selected ~= unselected,
+        theme .. " segmented selected " .. state .. " differs from unselected idle")
     end
   end
 end

@@ -8,7 +8,8 @@
   "uiContract": {
     "package": "reaui",
     "version": "0.1.0",
-    "usage": "validation-only"
+    "usage": "runtime",
+    "vendorTarget": "vendor/ReaToolUI/lib"
   },
   "release": {
     "files": [

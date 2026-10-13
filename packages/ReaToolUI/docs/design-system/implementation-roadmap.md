@@ -1,10 +1,12 @@
 # Design System Implementation Roadmap
 
 Status: In progress. The automated reference implementation through Milestone 3
-was completed on 2026-10-12. Milestones 0 through 3 remain open for their native
-DS016 validation gates, and no product surface has migrated.
+was completed on 2026-10-12. Milestone 4A migrated ReaProjectLink Settings on
+2026-10-13 using the DS019 Radix Themes baseline and an explicit dual-track
+boundary. Native validation of the migrated page remains open; other product
+surfaces have not migrated.
 
-This roadmap turns the confirmed DS001-DS017 contract into a shared ReaImGui
+This roadmap turns the confirmed DS001-DS019 contract into a shared ReaImGui
 implementation for ReaProjectLink and ReaAssetFlow inside the ReaTools
 monorepo. Work proceeds through
 small, inspectable vertical slices. Each slice includes its contract, reference
@@ -126,8 +128,8 @@ the smallest end-to-end proof of a public Component contract.
 
 Implementation status: the contract, tokens, reference Components, structural
 tests, contrast checks, and Light and Dark Gallery smoke frames are complete.
-Manual keyboard-focus inspection is still open, so no product call site has
-migrated.
+Manual keyboard-focus inspection was still open at that checkpoint, so no
+product call site had migrated then.
 
 ### Slice 2B Field structure and direct entry
 
@@ -147,11 +149,12 @@ Implementation status: Field Shell, Text Field, Integer Number Field, and the
 File and Folder Path Field variants now have contracts, tokens, reference
 Components, structural and contrast tests, responsive layouts, and
 deterministic Light and Dark Gallery frames using both products' content
-shapes. The current 123-test ReaToolUI suite, 133-test ReaProjectLink suite, and
-unchanged 40-scenario product UI smoke matrix pass. Manual native editing,
+shapes. The current 127-test ReaToolUI suite, 136-test ReaProjectLink suite, and
+40-scenario product UI smoke matrix pass. Manual native editing,
 selection, copying, horizontal scrolling,
 step activation, picker handoff, and focus inspection remain open, so Slice 2B
-has not passed its full completion rule and no product call site has migrated.
+has not passed its full completion rule. Settings later migrated under DS020;
+that authorization does not convert the remaining native cells to Pass.
 
 ### Slice 2C Choice and selection
 
@@ -173,7 +176,7 @@ frames using both products' content shapes. Dynamic loading, empty, failed,
 stale, refreshed, selected, disabled, and invalid fixtures are represented.
 Manual pointer, popup, scrolling, native keyboard, long-label, and focus checks
 remain open, so Slice 2C has not passed its full completion rule and no product
-call site has migrated.
+call site had migrated at that checkpoint. Settings later migrated under DS020.
 
 ### Slice 2D Information and containers
 
@@ -192,12 +195,12 @@ facade without becoming supported Components.
 Implementation status: Card, Status, Notice, Menu, and Disclosure now have
 contracts, tokens, reference Components, structural and contrast checks, safe
 container or popup lifecycle behavior, semantic action events, and
-deterministic Light and Dark Gallery frames. The current 123-test ReaToolUI
-suite, 133-test ReaProjectLink suite, and unchanged 40-scenario product UI smoke
+deterministic Light and Dark Gallery frames. The current 127-test ReaToolUI
+suite, 136-test ReaProjectLink suite, and 40-scenario product UI smoke
 matrix pass. Manual pointer, keyboard,
 focus, wrapping, popup-placement, and nested-control inspection remains open,
-so Slice 2D has not passed its full completion rule and no product call site has
-migrated.
+so Slice 2D has not passed its full completion rule. Settings later migrated
+under DS020; the remaining native cells stay open.
 
 ### Component completion rule
 
@@ -269,6 +272,14 @@ Acceptance:
 - narrow-window behavior conforms to DS008;
 - reset uses the DS013 consequence-appropriate safeguard;
 - direct product use of migrated raw style values is removed.
+
+Implementation status: complete in code and automated validation. Settings now
+uses Review Header, Path Selection, Checkbox, Segmented Control, Button, and
+Confirmation Dialog. Product-owned copy/value rows remain in a named
+compatibility layer; other pages continue using the old UI. ReaProjectLink now
+declares runtime usage and vendors ReaToolUI into each self-contained release.
+Native pointer, keyboard, focus, theme, and supported-scale acceptance remains
+open.
 
 ### Pilot 4B One Review
 
@@ -397,8 +408,8 @@ The implementation now contains:
 6. public-catalog conformance, contract, behavior, contrast, and stack-balance
    checks;
 7. migration-readiness mappings for Settings and Delivery Publish Review;
-8. one-command validation of 123 ReaToolUI tests, 30 Gallery scenarios, 133
-   ReaProjectLink tests, 40 unchanged ReaProjectLink UI scenarios, 13
+8. one-command validation of 127 ReaToolUI tests, 30 Gallery scenarios, 136
+   ReaProjectLink tests, 40 ReaProjectLink UI scenarios, 13
    ReaAssetFlow tests, one ReaAssetFlow UI frame, and both release inventories.
 
 The automated Gallery matrix reuses one hidden REAPER instance, while the core
@@ -406,8 +417,8 @@ suite and product UI smoke each use their own isolated instance. This preserves
 active-project isolation without opening and closing one process for every
 Gallery scene.
 
-Product call sites remain unchanged until the relevant native DS016 cells pass.
-Structural extraction to `packages/ReaToolUI` may proceed without changing
-product presentation. After native evidence is recorded, the next product
-implementation package is Milestone 4A Settings followed by the Delivery
-Publish Review pilot and the staged ReaAssetFlow adoption sequence.
+ReaProjectLink Settings is the first migrated Product call site. Its native
+DS016 cells remain pending and must be reported separately from the passing
+automation. The next product implementation package is the Delivery Publish
+Review pilot after the required Review cells are accepted, followed by staged
+ReaProjectLink and ReaAssetFlow adoption.

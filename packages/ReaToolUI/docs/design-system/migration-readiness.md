@@ -1,8 +1,9 @@
 # Product Migration Readiness
 
-Status: Automated preparation complete on 2026-10-12. Product migration remains
-blocked by the recorded DS016 native manual matrix; no product call site has
-migrated.
+Status: Milestone 4A Settings is implemented on 2026-10-13 under explicit
+Product-owner authorization. Automated product, UI-frame, and self-contained
+release checks pass. Native pointer, keyboard, focus, and display-scale
+validation remains open and is not inferred from automation.
 
 This record separates verified implementation readiness from the visual and
 interaction evidence that still requires a real REAPER window. Passing the
@@ -47,9 +48,15 @@ A consumer declaration will require:
 | Reset explanation and trigger | Button plus Confirmation Dialog | reset service, exact consequence, outcome | Ready |
 | Page width and sections | internal layout composition | section labels and ordering | Ready |
 
-The existing copy-value rows remain behind the named compatibility boundary
+The existing copy-value rows remain behind the named Product compatibility boundary
 because Key Value Row has not met the DS011 promotion gate. The Settings pilot
 must not silently promote it or replace copying with a less capable text label.
+
+The migrated page now consumes the listed shared targets. The old UI continues
+to render every other ReaProjectLink surface, establishing the temporary
+dual-track boundary required for an incremental migration. Product composition
+was designed at the Settings call site; the provisional Cross-product Gallery
+fixture was not copied into the product.
 
 ## Representative Review pilot mapping
 
@@ -80,22 +87,29 @@ Product boundary; the shared Pattern does not call workflow or services.
 - deterministic Gallery smoke frames pass in Light and Dark for Foundations,
   Components, Patterns, Cross-product Scenarios, and Diagnostics where
   applicable;
-- all 40 unchanged ReaProjectLink product UI smoke scenarios pass;
+- all 40 ReaProjectLink product UI smoke scenarios pass, including migrated
+  Source and Master Settings frames at 320 px and 1040 px;
+- focused Settings routing tests preserve picker subscription, alignment mode,
+  theme persistence, Back, destructive confirmation, reset, and recheck effects;
+- the ReaProjectLink release inventory contains the vendored ReaToolUI entry and
+  the product entry resolves that self-contained runtime path;
 - ReaAssetFlow product presentation remains unchanged. Its monorepo package,
   setup diagnostics, stable user-data boundary, and UI smoke are now validated
   independently of the design-system adoption gate.
 
-## Remaining migration gate
+## Remaining native validation
 
-Before the Settings call site changes, record the applicable DS016 manual cells
-for Button, Icon Button, Field Shell, Checkbox, Segmented Control, Path
-Selection, and Confirmation Dialog in a visible REAPER session. Before the
-Review pilot changes, additionally record Notice, Disclosure, Review Shell,
-Stale Review, Footer, and long-content behavior.
+Record the applicable DS016 manual cells for Button, Icon Button, Field Shell,
+Checkbox, Segmented Control, Path Selection, and Confirmation Dialog in the
+migrated Settings page in a visible REAPER session. Before the Review pilot
+changes, additionally record Notice, Disclosure, Review Shell, Stale Review,
+Footer, and long-content behavior.
 
 The focused Settings checklist is
 [`validation/2026-10-13-reaprojectlink-settings-pilot.md`](validation/2026-10-13-reaprojectlink-settings-pilot.md).
-It remains Blocked until its native visual and interaction cells are inspected.
+The earlier complete-page candidate remains only a provisional integration
+fixture. It is not the migrated product composition and does not provide native
+acceptance evidence.
 
 Required checks include both rebuilt themes; compact, standard, and wide
 widths; focus and disabled presentation; pointer and ordinary native keyboard

@@ -12,9 +12,10 @@ log.
 
 ## Resolved Q18: Shared package identity and distribution mechanism
 
-Background: the automated reference implementation now covers the supported
+Background: the automated reference implementation covers the supported
 Foundations, Components, Patterns, Gallery matrix, conformance checks, and both
-products' representative content. No product surface has migrated to ReaToolUI.
+products' representative content. ReaProjectLink Settings subsequently became
+the first runtime product surface under DS020.
 
 Confirmed answer:
 

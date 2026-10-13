@@ -12,6 +12,91 @@ M.THEMES = { "light", "dark" }
 M.registry = {
   primitive = {
     color = {
+      -- Radix Colors 3.0 Slate and Teal scales. Keeping their 1-12 step
+      -- anatomy intact makes interaction-state mapping auditable against the
+      -- chosen visual reference instead of inventing one-off shades.
+      slate_light = {
+        [1] = { type = "color", value = 0xfcfcfdff },
+        [2] = { type = "color", value = 0xf9f9fbff },
+        [3] = { type = "color", value = 0xf0f0f3ff },
+        [4] = { type = "color", value = 0xe8e8ecff },
+        [5] = { type = "color", value = 0xe0e1e6ff },
+        [6] = { type = "color", value = 0xd9d9e0ff },
+        [7] = { type = "color", value = 0xcdced6ff },
+        [8] = { type = "color", value = 0xb9bbc6ff },
+        [9] = { type = "color", value = 0x8b8d98ff },
+        [10] = { type = "color", value = 0x80838dff },
+        [11] = { type = "color", value = 0x60646cff },
+        [12] = { type = "color", value = 0x1c2024ff },
+      },
+      slate_dark = {
+        [1] = { type = "color", value = 0x111113ff },
+        [2] = { type = "color", value = 0x18191bff },
+        [3] = { type = "color", value = 0x212225ff },
+        [4] = { type = "color", value = 0x272a2dff },
+        [5] = { type = "color", value = 0x2e3135ff },
+        [6] = { type = "color", value = 0x363a3fff },
+        [7] = { type = "color", value = 0x43484eff },
+        [8] = { type = "color", value = 0x5a6169ff },
+        [9] = { type = "color", value = 0x696e77ff },
+        [10] = { type = "color", value = 0x777b84ff },
+        [11] = { type = "color", value = 0xb0b4baff },
+        [12] = { type = "color", value = 0xedeef0ff },
+      },
+      teal_light = {
+        [1] = { type = "color", value = 0xfafefdff },
+        [2] = { type = "color", value = 0xf3fbf9ff },
+        [3] = { type = "color", value = 0xe0f8f3ff },
+        [4] = { type = "color", value = 0xccf3eaff },
+        [5] = { type = "color", value = 0xb8eae0ff },
+        [6] = { type = "color", value = 0xa1ded2ff },
+        [7] = { type = "color", value = 0x83cdc1ff },
+        [8] = { type = "color", value = 0x53b9abff },
+        [9] = { type = "color", value = 0x12a594ff },
+        [10] = { type = "color", value = 0x0d9b8aff },
+        [11] = { type = "color", value = 0x008573ff },
+        [12] = { type = "color", value = 0x0d3d38ff },
+      },
+      teal_dark = {
+        [1] = { type = "color", value = 0x0d1514ff },
+        [2] = { type = "color", value = 0x111c1bff },
+        [3] = { type = "color", value = 0x0d2d2aff },
+        [4] = { type = "color", value = 0x023b37ff },
+        [5] = { type = "color", value = 0x084843ff },
+        [6] = { type = "color", value = 0x145750ff },
+        [7] = { type = "color", value = 0x1c6961ff },
+        [8] = { type = "color", value = 0x207e73ff },
+        [9] = { type = "color", value = 0x12a594ff },
+        [10] = { type = "color", value = 0x0eb39eff },
+        [11] = { type = "color", value = 0x0bd8b6ff },
+        [12] = { type = "color", value = 0xadf0ddff },
+      },
+      radix_red_light = {
+        [9] = { type = "color", value = 0xe5484dff },
+        [10] = { type = "color", value = 0xdc3e42ff },
+        [11] = { type = "color", value = 0xce2c31ff },
+        [12] = { type = "color", value = 0x641723ff },
+      },
+      radix_red_dark = {
+        [8] = { type = "color", value = 0xb54548ff },
+        [9] = { type = "color", value = 0xe5484dff },
+        [10] = { type = "color", value = 0xec5d5eff },
+        [11] = { type = "color", value = 0xff9592ff },
+        [12] = { type = "color", value = 0xffd1d9ff },
+      },
+      radix_green_light = {
+        [11] = { type = "color", value = 0x218358ff },
+      },
+      radix_green_dark = {
+        [11] = { type = "color", value = 0x3dd68cff },
+      },
+      radix_amber_light = {
+        [11] = { type = "color", value = 0xab6400ff },
+        [12] = { type = "color", value = 0x4f3422ff },
+      },
+      radix_amber_dark = {
+        [11] = { type = "color", value = 0xffca16ff },
+      },
       neutral = {
         [0] = { type = "color", value = 0xffffffff },
         [50] = { type = "color", value = 0xf6f7f9ff },
@@ -26,12 +111,15 @@ M.registry = {
         [950] = { type = "color", value = 0x11161bff },
       },
       blue = {
+        [100] = { type = "color", value = 0xd8efedff },
+        [200] = { type = "color", value = 0xb9dfdcff },
         [300] = { type = "color", value = 0x8cc9c5ff },
         [400] = { type = "color", value = 0x67b3afff },
         [500] = { type = "color", value = 0x3d9693ff },
         [600] = { type = "color", value = 0x287a79ff },
         [700] = { type = "color", value = 0x205f60ff },
         [800] = { type = "color", value = 0x184a4cff },
+        [900] = { type = "color", value = 0x123a3cff },
       },
       red = {
         [300] = { type = "color", value = 0xffa0a6ff },
@@ -113,8 +201,8 @@ M.registry = {
     },
     radius = {
       [0] = { type = "logical_unit", value = 0 },
-      [1] = { type = "logical_unit", value = 6 },
-      [2] = { type = "logical_unit", value = 10 },
+      [1] = { type = "logical_unit", value = 4 },
+      [2] = { type = "logical_unit", value = 8 },
     },
   },
   semantic = {
@@ -123,22 +211,22 @@ M.registry = {
         primary = {
           type = "color",
           themes = {
-            light = "primitive.color.neutral.900",
-            dark = "primitive.color.neutral.100",
+            light = "primitive.color.slate_light.12",
+            dark = "primitive.color.slate_dark.12",
           },
         },
         disabled = {
           type = "color",
           themes = {
-            light = "primitive.color.neutral.600",
-            dark = "primitive.color.neutral.400",
+            light = "primitive.color.slate_light.8",
+            dark = "primitive.color.slate_dark.8",
           },
         },
         secondary = {
           type = "color",
           themes = {
-            light = "primitive.color.neutral.600",
-            dark = "primitive.color.neutral.400",
+            light = "primitive.color.slate_light.11",
+            dark = "primitive.color.slate_dark.11",
           },
         },
       },
@@ -146,22 +234,22 @@ M.registry = {
         canvas = {
           type = "color",
           themes = {
-            light = "primitive.color.neutral.50",
-            dark = "primitive.color.neutral.950",
+            light = "primitive.color.slate_light.1",
+            dark = "primitive.color.slate_dark.1",
           },
         },
         panel = {
           type = "color",
           themes = {
             light = "primitive.color.neutral.0",
-            dark = "primitive.color.neutral.800",
+            dark = "primitive.color.slate_dark.2",
           },
         },
         popup = {
           type = "color",
           themes = {
             light = "primitive.color.neutral.0",
-            dark = "primitive.color.neutral.800",
+            dark = "primitive.color.slate_dark.2",
           },
         },
       },
@@ -169,25 +257,32 @@ M.registry = {
         subtle = {
           type = "color",
           themes = {
-            light = "primitive.color.neutral.200",
-            dark = "primitive.color.neutral.700",
+            light = "primitive.color.slate_light.6",
+            dark = "primitive.color.slate_dark.6",
           },
         },
         default = {
           type = "color",
           themes = {
-            light = "primitive.color.neutral.600",
-            dark = "primitive.color.neutral.600",
+            light = "primitive.color.slate_light.8",
+            dark = "primitive.color.slate_dark.7",
+          },
+        },
+        divider = {
+          type = "color",
+          themes = {
+            light = "primitive.color.slate_light.5",
+            dark = "primitive.color.slate_dark.4",
           },
         },
       },
       scrollbar = {
         track = { type = "color", ref = "semantic.color.surface.canvas" },
         grab = { type = "color", themes = {
-          light = "primitive.color.neutral.600", dark = "primitive.color.neutral.500",
+          light = "primitive.color.slate_light.9", dark = "primitive.color.slate_dark.8",
         } },
         hover = { type = "color", themes = {
-          light = "primitive.color.neutral.700", dark = "primitive.color.neutral.400",
+          light = "primitive.color.slate_light.10", dark = "primitive.color.slate_dark.9",
         } },
         active = { type = "color", ref = "semantic.color.focus.ring" },
       },
@@ -195,13 +290,29 @@ M.registry = {
         default = { type = "color", ref = "semantic.color.action.quiet.background.default" },
         hover = { type = "color", ref = "semantic.color.action.secondary.background.hover" },
         pressed = { type = "color", ref = "semantic.color.action.secondary.background.pressed" },
+        active = {
+          background = {
+            default = { type = "color", themes = {
+              light = "primitive.color.teal_light.4", dark = "primitive.color.teal_dark.4",
+            } },
+            hover = { type = "color", themes = {
+              light = "primitive.color.teal_light.5", dark = "primitive.color.teal_dark.5",
+            } },
+            pressed = { type = "color", themes = {
+              light = "primitive.color.teal_light.6", dark = "primitive.color.teal_dark.6",
+            } },
+          },
+          foreground = { type = "color", themes = {
+            light = "primitive.color.teal_light.12", dark = "primitive.color.teal_dark.12",
+          } },
+        },
       },
       focus = {
         ring = {
           type = "color",
           themes = {
-            light = "primitive.color.blue.600",
-            dark = "primitive.color.blue.400",
+            light = "primitive.color.teal_light.11",
+            dark = "primitive.color.teal_dark.8",
           },
         },
       },
@@ -209,106 +320,104 @@ M.registry = {
         primary = {
           background = {
             default = { type = "color", themes = {
-              light = "primitive.color.blue.600", dark = "primitive.color.blue.400",
+              light = "primitive.color.teal_light.9", dark = "primitive.color.teal_dark.9",
             } },
             hover = { type = "color", themes = {
-              light = "primitive.color.blue.700", dark = "primitive.color.blue.300",
+              light = "primitive.color.teal_light.10", dark = "primitive.color.teal_dark.10",
             } },
             pressed = { type = "color", themes = {
-              light = "primitive.color.blue.800", dark = "primitive.color.blue.500",
+              light = "primitive.color.teal_light.8", dark = "primitive.color.teal_dark.11",
             } },
           },
           foreground = { default = { type = "color", themes = {
-            light = "primitive.color.neutral.0", dark = "primitive.color.neutral.950",
+            light = "primitive.color.slate_light.12", dark = "primitive.color.slate_dark.1",
           } } },
           border = { default = { type = "color", themes = {
-            light = "primitive.color.blue.600", dark = "primitive.color.blue.400",
+            light = "primitive.color.teal_light.9", dark = "primitive.color.teal_dark.9",
           } } },
         },
         secondary = {
           background = {
             default = { type = "color", themes = {
-              light = "primitive.color.neutral.0", dark = "primitive.color.neutral.800",
+              light = "primitive.color.slate_light.3", dark = "primitive.color.slate_dark.3",
             } },
             hover = { type = "color", themes = {
-              light = "primitive.color.neutral.100", dark = "primitive.color.neutral.700",
+              light = "primitive.color.slate_light.4", dark = "primitive.color.slate_dark.4",
             } },
             pressed = { type = "color", themes = {
-              light = "primitive.color.neutral.200", dark = "primitive.color.neutral.600",
+              light = "primitive.color.slate_light.5", dark = "primitive.color.slate_dark.5",
             } },
           },
           foreground = { default = { type = "color", themes = {
-            light = "primitive.color.neutral.900", dark = "primitive.color.neutral.100",
+            light = "primitive.color.slate_light.12", dark = "primitive.color.slate_dark.12",
           } } },
-          border = { default = { type = "color", themes = {
-            light = "primitive.color.neutral.600", dark = "primitive.color.neutral.600",
-          } } },
+          border = { default = { type = "color", ref = "primitive.color.transparent" } },
         },
         quiet = {
           background = {
             default = { type = "color", ref = "primitive.color.transparent" },
             hover = { type = "color", themes = {
-              light = "primitive.color.neutral.100", dark = "primitive.color.neutral.700",
+              light = "primitive.color.slate_light.3", dark = "primitive.color.slate_dark.3",
             } },
             pressed = { type = "color", themes = {
-              light = "primitive.color.neutral.200", dark = "primitive.color.neutral.600",
+              light = "primitive.color.slate_light.4", dark = "primitive.color.slate_dark.4",
             } },
           },
           foreground = { default = { type = "color", themes = {
-            light = "primitive.color.neutral.900", dark = "primitive.color.neutral.100",
+            light = "primitive.color.slate_light.12", dark = "primitive.color.slate_dark.12",
           } } },
           border = { default = { type = "color", ref = "primitive.color.transparent" } },
         },
         danger = {
           background = {
             default = { type = "color", themes = {
-              light = "primitive.color.red.700", dark = "primitive.color.red.400",
+              light = "primitive.color.radix_red_light.12", dark = "primitive.color.radix_red_dark.9",
             } },
             hover = { type = "color", themes = {
-              light = "primitive.color.red.800", dark = "primitive.color.red.300",
+              light = "primitive.color.radix_red_light.11", dark = "primitive.color.radix_red_dark.10",
             } },
             pressed = { type = "color", themes = {
-              light = "primitive.color.red.800", dark = "primitive.color.red.500",
+              light = "primitive.color.radix_red_light.12", dark = "primitive.color.radix_red_dark.11",
             } },
           },
           foreground = { default = { type = "color", themes = {
-            light = "primitive.color.neutral.0", dark = "primitive.color.neutral.950",
+            light = "primitive.color.neutral.0", dark = "primitive.color.slate_dark.1",
           } } },
           border = { default = { type = "color", themes = {
-            light = "primitive.color.red.700", dark = "primitive.color.red.400",
+            light = "primitive.color.radix_red_light.12", dark = "primitive.color.radix_red_dark.9",
           } } },
         },
       },
       validation = {
         pending = { type = "color", ref = "semantic.color.text.secondary" },
         valid = { type = "color", themes = {
-          light = "primitive.color.green.700", dark = "primitive.color.green.400",
+          light = "primitive.color.radix_green_light.11", dark = "primitive.color.radix_green_dark.11",
         } },
         invalid = { type = "color", themes = {
-          light = "primitive.color.red.700", dark = "primitive.color.red.400",
+          light = "primitive.color.radix_red_light.11", dark = "primitive.color.radix_red_dark.11",
         } },
       },
       status = {
         neutral = { type = "color", ref = "semantic.color.text.secondary" },
         ready = { type = "color", ref = "semantic.color.validation.valid" },
         warning = { type = "color", themes = {
-          light = "primitive.color.amber.700", dark = "primitive.color.amber.400",
+          light = "primitive.color.radix_amber_light.12", dark = "primitive.color.radix_amber_dark.11",
         } },
         blocked = { type = "color", ref = "semantic.color.validation.invalid" },
       },
       input = {
         background = {
           default = { type = "color", themes = {
-            light = "primitive.color.neutral.0", dark = "primitive.color.neutral.800",
+            light = "primitive.color.neutral.0", dark = "primitive.color.slate_dark.2",
           } },
           hover = { type = "color", themes = {
-            light = "primitive.color.neutral.50", dark = "primitive.color.neutral.700",
+            light = "primitive.color.slate_light.2", dark = "primitive.color.slate_dark.3",
           } },
           focused = { type = "color", themes = {
-            light = "primitive.color.neutral.0", dark = "primitive.color.neutral.800",
+            light = "primitive.color.neutral.0", dark = "primitive.color.slate_dark.2",
           } },
           read_only = { type = "color", themes = {
-            light = "primitive.color.neutral.100", dark = "primitive.color.neutral.900",
+            light = "primitive.color.slate_light.3", dark = "primitive.color.slate_dark.2",
           } },
         },
         foreground = {
@@ -357,6 +466,7 @@ M.registry = {
     },
     space = {
       inline = {
+        none = { type = "logical_unit", ref = "primitive.space.0" },
         tight = { type = "logical_unit", ref = "primitive.space.1" },
         default = { type = "logical_unit", ref = "primitive.space.2" },
       },
@@ -379,10 +489,10 @@ M.registry = {
         padding = { type = "logical_unit", ref = "primitive.space.4" },
       },
       page = {
-        padding = { type = "logical_unit", ref = "primitive.space.5" },
+        padding = { type = "logical_unit", ref = "primitive.space.6" },
       },
       indent = {
-        default = { type = "logical_unit", ref = "primitive.space.5" },
+        default = { type = "logical_unit", ref = "primitive.space.6" },
       },
       control = {
         padding_x = { type = "logical_unit", ref = "primitive.space.3" },
@@ -595,14 +705,15 @@ M.registry = {
       },
     },
     segmented_control = {
+      gap = { type = "logical_unit", ref = "semantic.space.inline.none" },
       selected = {
         background = {
-          default = { type = "color", ref = "semantic.color.action.primary.background.default" },
-          hover = { type = "color", ref = "semantic.color.action.primary.background.hover" },
-          pressed = { type = "color", ref = "semantic.color.action.primary.background.pressed" },
+          default = { type = "color", ref = "semantic.color.selection.active.background.default" },
+          hover = { type = "color", ref = "semantic.color.selection.active.background.hover" },
+          pressed = { type = "color", ref = "semantic.color.selection.active.background.pressed" },
         },
-        foreground = { type = "color", ref = "semantic.color.action.primary.foreground.default" },
-        border = { type = "color", ref = "semantic.color.action.primary.border.default" },
+        foreground = { type = "color", ref = "semantic.color.selection.active.foreground" },
+        border = { type = "color", ref = "semantic.color.action.quiet.border.default" },
       },
       unselected = {
         background = {

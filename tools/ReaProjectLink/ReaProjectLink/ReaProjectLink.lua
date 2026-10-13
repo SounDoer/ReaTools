@@ -13,6 +13,8 @@
 --   [nomain] lib/reaprojectlink/*.lua
 --   [nomain] lib/reaprojectlink/ui/*.lua
 --   [nomain] lib/reaprojectlink/ui/views/*.lua
+--   [nomain] vendor/ReaToolUI/lib/reaui.lua
+--   [nomain] vendor/ReaToolUI/lib/reaui/*.lua
 
 local source = debug.getinfo(1, "S").source:sub(2)
 local script_dir = source:match("^(.*)[/\\]")
@@ -21,6 +23,11 @@ if not script_dir then
   return
 end
 package.path = script_dir .. "/lib/?.lua;" .. package.path
+-- Releases vendor the validated ReaToolUI implementation beside the product.
+-- The repository-relative fallback keeps the development action on that same
+-- canonical source without requiring a copied package tree in the checkout.
+package.path = script_dir .. "/vendor/ReaToolUI/lib/?.lua;" ..
+  script_dir .. "/../../../packages/ReaToolUI/lib/?.lua;" .. package.path
 local runtime_requirements = require("reaprojectlink.runtime_requirements")
 local runtime_ok, runtime_error = runtime_requirements.check_reaper(reaper)
 if not runtime_ok then
@@ -47,6 +54,15 @@ if not ok_imgui then
   )
   return
 end
+local ok_reaui, reaui = pcall(require, "reaui")
+if not ok_reaui then
+  reaper.ShowMessageBox(
+    "Could not load the bundled ReaToolUI runtime:\n" .. tostring(reaui),
+    "ReaProjectLink",
+    0
+  )
+  return
+end
 
 local function script_version()
   local file = io.open(source, "r")
@@ -64,6 +80,7 @@ local shell = require("reaprojectlink.ui.app").create({
   adapter = require("reaprojectlink.reaper_adapter"),
   fs = require("reaprojectlink.filesystem").create(reaper),
   version = script_version(),
+  design_system = reaui.create(ImGui, ctx, "dark"),
   services = {
     project_service = require("reaprojectlink.project_service"),
     reference_subscription = require("reaprojectlink.reference_subscription"),

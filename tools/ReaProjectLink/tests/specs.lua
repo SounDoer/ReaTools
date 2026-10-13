@@ -20,6 +20,7 @@ return {
   "delivery_update_spec.lua",
   "ui_theme_spec.lua",
   "ui_view_models_spec.lua",
+  "ui_settings_spec.lua",
   "ui_app_state_spec.lua",
   "pointer_peek_spec.lua",
   "ui_modules_spec.lua",

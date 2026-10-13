@@ -9,11 +9,11 @@ from being mistaken for contract `0.1.0`.
 | Supported Components documented and validated | Automated-ready | Component contracts, Gallery fixtures, and structural tests |
 | Supported Patterns documented and validated | Automated-ready | Milestone 3 catalog, Gallery fixtures, and semantic event tests |
 | Adapter behavior documented and validated | Automated-ready | ReaImGui 0.9 adapter and stack-balance tests |
-| Complete native DS016 matrix | Blocked | Native Windows UI control is unavailable; see validation record |
-| ReaProjectLink Settings pilot | Not started by gate | Focused native checklist prepared; applicable Component and Pattern cells remain Blocked |
+| Complete native DS016 matrix | In progress, blocking | Manual Windows review is available; Foundation and Component calibration is active and other scales remain unavailable |
+| ReaProjectLink Settings pilot | Implemented; native validation pending | Settings consumes the confirmed shared Components and Patterns behind a dual-track boundary; automated product and release checks pass |
 | ReaProjectLink Review pilot | Not started by gate | Requires Settings pilot and Review native cells |
 | Remaining ReaProjectLink migration | Not started | Requires both pilots |
-| Distribution mechanism approved | Confirmed | ReaTools monorepo with self-contained tool releases; see repository decision M005 |
+| Distribution mechanism approved | Confirmed and exercised | ReaTools monorepo with a self-contained vendored ReaToolUI runtime in the ReaProjectLink release; see M005, M007, and M010 |
 | Product-neutral package name and namespace | Complete | `ReaToolUI` and `reaui` are extracted under `packages/ReaToolUI` |
 | ReaAssetFlow declaration and adoption | Declaration complete; adoption gated | Package declaration, release boundary, UI smoke, setup diagnostics, and user-data migration pass; ReaToolUI presentation adoption awaits DS016 |
 | Both consumers pass one exact contract version | Not started | Depends on adoption |

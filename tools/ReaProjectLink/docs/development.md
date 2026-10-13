@@ -31,6 +31,10 @@ tooling/                        repository validation and release automation
 The release tree contains only the Git-tracked files declared by
 `reatools-package.json`. ReaProjectLink is staged as the
 `ReaTools/ReaProjectLink` ReaPack category and remains self-contained.
+Its Settings page loads the canonical `packages/ReaToolUI/lib` source during
+development. The release builder vendors that same pinned package under
+`vendor/ReaToolUI/lib`; the installed tool never depends on another tool's UI
+copy or a network lookup.
 
 ## Development actions
 
@@ -79,6 +83,10 @@ Modules in `lib/reaprojectlink/`, `lib/reaprojectlink/ui/`, and
 `lib/reaprojectlink/ui/views/` are covered by the `@provides` globs; a new
 subdirectory needs its own `@provides` line. Any other new shipped file must
 be added to `@provides`.
+
+The vendored ReaToolUI entry and modules are also declared by `@provides`.
+`tooling/test_release.ps1` verifies the runtime entry and vendored load path in
+the self-contained release inventory.
 
 ## Verification
 

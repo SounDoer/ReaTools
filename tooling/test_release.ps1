@@ -20,5 +20,16 @@ foreach ($manifestFile in Get-ChildItem -LiteralPath (Join-Path $repoRoot 'tools
     $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actual -ne $file.sha256) { throw "Inventory hash mismatch: $path" }
   }
+  if ($manifest.uiContract.usage -eq 'runtime') {
+    $vendoredEntry = Join-Path $releaseRoot (Join-Path $manifest.uiContract.vendorTarget 'reaui.lua')
+    if (-not (Test-Path -LiteralPath $vendoredEntry -PathType Leaf)) {
+      throw "Runtime ReaToolUI entry is missing: $vendoredEntry"
+    }
+    $entryContent = Get-Content -LiteralPath (Join-Path $releaseRoot $manifest.entry) -Raw
+    $runtimePath = $manifest.uiContract.vendorTarget.Replace('\', '/') + '/?.lua'
+    if (-not $entryContent.Contains($runtimePath)) {
+      throw "Product entry does not load its vendored ReaToolUI path: $($manifest.entry)"
+    }
+  }
   Write-Output "PASS $($manifest.displayName) release inventory ($($inventory.files.Count) files)"
 }

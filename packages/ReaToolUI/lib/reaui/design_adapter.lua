@@ -60,7 +60,7 @@ function M.create(ImGui, ctx, initial_theme)
     ImGui.PushStyleColor(ctx, ImGui.Col_WindowBg, resolve("semantic.color.surface.canvas"))
     ImGui.PushStyleColor(ctx, ImGui.Col_PopupBg, resolve("semantic.color.surface.popup"))
     ImGui.PushStyleColor(ctx, ImGui.Col_Border, resolve("semantic.color.border.subtle"))
-    ImGui.PushStyleColor(ctx, ImGui.Col_Separator, resolve("semantic.color.border.subtle"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Separator, resolve("semantic.color.border.divider"))
     ImGui.PushStyleColor(ctx, ImGui.Col_ScrollbarBg, resolve("semantic.color.scrollbar.track"))
     ImGui.PushStyleColor(ctx, ImGui.Col_ScrollbarGrab, resolve("semantic.color.scrollbar.grab"))
     ImGui.PushStyleColor(ctx, ImGui.Col_ScrollbarGrabHovered,

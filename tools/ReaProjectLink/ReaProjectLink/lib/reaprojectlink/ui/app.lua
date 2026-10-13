@@ -22,6 +22,8 @@ local M = {}
 function M.create(deps)
   local ImGui, ctx, adapter = deps.ImGui, deps.ctx, deps.adapter
   local theme = theme_module.create(ImGui, ctx, deps.reaper)
+  local design_system = assert(deps.design_system, "ReaToolUI design system is required")
+  local settings_view = settings.create()
   local env = {
     ImGui = ImGui,
     ctx = ctx,
@@ -31,6 +33,8 @@ function M.create(deps)
     services = deps.services,
     version = deps.version,
     theme = theme,
+    design_system = design_system,
+    settings_compat = components.create_settings_compat(ImGui, ctx, design_system.adapter),
     c = components.create(ImGui, ctx, theme),
     app = app_state.new(deps.reaper.time_precise),
   }
@@ -54,7 +58,7 @@ function M.create(deps)
     if not state.project_type or state.project_type == "" then
       setup.draw(env, state)
     elseif app.view == "settings" then
-      settings.draw(env, state)
+      settings_view:draw(env, state)
     elseif app.review and REVIEWS[app.review.kind] then
       REVIEWS[app.review.kind].draw(env, state)
     elseif state.project_type == constants.PROJECT_TYPES.source then
@@ -71,6 +75,7 @@ function M.create(deps)
     if token ~= project_token then
       project_token = token
       env.app:reset()
+      settings_view:reset()
       env.app:request_check()
     end
     theme:refresh()
@@ -107,6 +112,7 @@ function M.create(deps)
     theme:use(scenario.theme)
     fixed_width = scenario.width
     env.app:reset()
+    settings_view:reset()
     env.app:request_check()
     -- Force the "shown" phase so the pointer check runs during this scenario's
     -- frame, exercising checks.run_source/run_master and the checked states.

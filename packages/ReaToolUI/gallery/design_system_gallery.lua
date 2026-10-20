@@ -228,6 +228,10 @@ function M.create(deps)
     status.draw({ role = "ready", text = "Project requirements are satisfied and publishing can continue." })
     status.draw({ role = "warning", text = "Two changed references should be reviewed before publishing." })
     status.draw({ role = "blocked", text = "Destination is unavailable. Reconnect the NAS to continue." })
+    status.draw({ role = "ready", text = "Ready to publish", presentation = "prominent",
+      detail = "Last checked 2 minutes ago" })
+    status.draw({ role = "warning", text = "Two references changed since the last publish",
+      presentation = "prominent", detail = "Review them before publishing revision 8." })
 
     ImGui.Text(ctx, "Notice")
     for _,fixture in ipairs({

@@ -4,6 +4,7 @@ local MODULES = {
   "reaui.design_contract",
   "reaui.design_system",
   "reaui.design_adapter",
+  "reaui.design_layout",
   "reaui.design_button",
   "reaui.design_field_shell",
   "reaui.design_input_control",

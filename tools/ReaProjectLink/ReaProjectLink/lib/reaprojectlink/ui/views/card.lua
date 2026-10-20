@@ -6,7 +6,7 @@ local M = {}
 local function draw_row(c, row)
   local label = row.label or row[1]
   local value = row.value or row[2]
-  c.value_row(label, value)
+  c.value_row(label, tostring(value))
 end
 
 -- Draws the two `selection_actions` (Register Selected / Unregister Selected)
@@ -40,7 +40,7 @@ function M.draw(env, id, icon, title, card, highlighted, width, menu_entries, dr
     c.card_header(icon, title)
     if menu_entries then chosen = c.menu(id .. "-menu", menu_entries) end
     c.status(card.status, card.level)
-    for _, row in ipairs(card.rows or {}) do
+    for _, row in ipairs(card.rows or card.stats or {}) do
       draw_row(c, row)
       if after_row then chosen = after_row(row) or chosen end
     end

@@ -95,6 +95,14 @@ function tests.reset_clears_transient_state()
   equal(app.moved_items_change_count, -1, "moved-item tracking reset")
 end
 
+function tests.reset_collapses_reference_names()
+  local app = app_state.new(clock)
+  equal(app.reference_names_expanded, false, "collapsed by default")
+  app.reference_names_expanded = true
+  app:reset()
+  equal(app.reference_names_expanded, false, "reset collapses")
+end
+
 local passed = 0
 for name, test in pairs(tests) do
   local ok, err = pcall(test)

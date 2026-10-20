@@ -35,6 +35,14 @@ local function master_input(overrides)
   return input
 end
 
+local function assert_stats(stats, expected, label)
+  equal(#stats, #expected / 2, label .. " stat count")
+  for index = 1, #stats do
+    equal(stats[index].label, expected[index * 2 - 1], label .. " stat label " .. index)
+    equal(stats[index].value, expected[index * 2], label .. " stat value " .. index)
+  end
+end
+
 local tests = {}
 
 function tests.formats_project_and_subscription_names()
@@ -81,17 +89,19 @@ function tests.source_reference_card_text_and_actions()
   local newer = view_models.source_cards(source_input({ check = { state = "done", latest = 5 } })).reference
   equal(newer.status, "Reference r5 Available", "newer status")
   equal(newer.level, "warning", "newer level")
-  equal(newer.rows[1][1], "Synchronized", "synchronized label")
-  equal(newer.rows[1][2], "r4", "synchronized value")
+  equal(newer.status_detail, "Synchronized r4", "synchronized revision under the status")
   equal(newer.action.id, "review_update", "newer action")
   local unsubscribed = view_models.source_cards(source_input({ subscribed = false })).reference
   equal(unsubscribed.action.id, "choose_reference", "subscribe action")
   equal(unsubscribed.status, "Not Connected", "unsubscribed status")
   equal(unsubscribed.level, "warning", "unsubscribed level")
+  equal(unsubscribed.status_detail, nil, "no revision before subscribing")
+  equal(unsubscribed.stats, nil, "no counts before subscribing")
   local unreachable = view_models.source_cards(source_input({ check = { state = "unreachable" } })).reference
   equal(unreachable.status, "Couldn't Reach Shared Storage", "unreachable status")
   equal(unreachable.action.id, "retry", "retry action")
   equal(unreachable.level, "blocked", "unreachable level")
+  equal(unreachable.status_detail, "Synchronized r4", "last known revision while unreachable")
   local invalid = view_models.source_cards(source_input({ check = { state = "invalid", error = "bad" } })).reference
   equal(invalid.note, "bad", "invalid detail")
   equal(invalid.status, "Couldn't Read the Reference", "invalid status")
@@ -104,32 +114,27 @@ function tests.source_reference_card_text_and_actions()
   equal(checking.level, "neutral", "checking level")
   local current = view_models.source_cards(source_input()).reference
   equal(current.status, "Up to Date", "current status")
-  equal(current.rows[1][2], "r4", "current revision")
-  equal(current.rows[2][1], "Tracks", "current track label")
-  equal(current.rows[2][2], "1", "current track count")
-  equal(current.rows[3][2], "2", "current marker count")
-  equal(current.rows[4][2], "3", "current region count")
+  equal(current.status_detail, "Reference r4", "current revision")
+  assert_stats(current.stats, { "Tracks", 1, "Markers", 2, "Regions", 3 }, "current")
   equal(current.action, nil, "no action when current")
   equal(current.level, "ready", "current level")
-  equal(newer.rows[2][2], "1", "newer card still shows the synchronized tracks")
+  assert_stats(newer.stats, { "Tracks", 1, "Markers", 2, "Regions", 3 }, "newer keeps synchronized counts")
   local pending = view_models.source_cards(source_input({
     synchronized = 0, check = { state = "done", latest = 5 },
   })).reference
-  equal(#pending.rows, 1, "counts are omitted before the first synchronization")
+  equal(pending.stats, nil, "counts are omitted before the first synchronization")
+  equal(pending.status_detail, nil, "no revision before the first synchronization")
 end
 
 function tests.source_delivery_card_states()
   local empty = view_models.source_cards(source_input({ track_count = 0, item_count = 0 })).delivery
   equal(empty.status, "No Delivery Tracks", "no tracks")
   equal(empty.action, nil, "no card action when unconfigured")
-  equal(empty.rows[1].label, "Tracks", "tracks row label")
-  equal(empty.rows[1].value, "0", "tracks row value")
-  equal(empty.rows[2].label, "Items", "items row label")
-  equal(empty.rows[2].value, "0", "items row value")
+  assert_stats(empty.stats, { "Tracks", 0, "Items", 0 }, "unconfigured")
   equal(empty.selection_actions[1].id, "register_selected", "register selected action id")
-  equal(empty.selection_actions[1].label, "Register Selected", "register selected label")
+  equal(empty.selection_actions[1].label, "Register", "register label")
   equal(empty.selection_actions[2].id, "unregister_selected", "unregister selected action id")
-  equal(empty.selection_actions[2].label, "Unregister Selected", "unregister selected label")
+  equal(empty.selection_actions[2].label, "Unregister", "unregister label")
   equal(empty.selection_note, "Nothing selected in REAPER", "default selection note")
   local never = view_models.source_cards(source_input({ delivery_revision = 0 })).delivery
   equal(never.status, "Not Published Yet", "never published")
@@ -137,8 +142,7 @@ function tests.source_delivery_card_states()
   local published = view_models.source_cards(source_input()).delivery
   equal(published.status, "Last Published r12", "published")
   equal(published.level, "ready", "published delivery matches Up to Date")
-  equal(published.rows[1].value, "3", "track count")
-  equal(published.rows[2].value, "18", "item count")
+  assert_stats(published.stats, { "Tracks", 3, "Items", 18 }, "published")
   equal(published.action.id, "review_publish", "publish action")
   equal(published.note, nil, "no pending note")
   local selecting = view_models.source_cards(source_input({
@@ -192,14 +196,8 @@ function tests.master_highlight_priority()
   equal(no_tracks_no_rows.highlight, "reference", "reference wins over no subscriptions")
 end
 
-local function assert_master_rows(rows, track_count, marker_count, region_count)
-  equal(#rows, 3, "three rows")
-  equal(rows[1].label, "Tracks", "tracks label")
-  equal(rows[1].value, tostring(track_count), "tracks value")
-  equal(rows[2].label, "Markers", "markers label")
-  equal(rows[2].value, tostring(marker_count), "markers value")
-  equal(rows[3].label, "Regions", "regions label")
-  equal(rows[3].value, tostring(region_count), "regions value")
+local function assert_master_rows(stats, track_count, marker_count, region_count)
+  assert_stats(stats, { "Tracks", track_count, "Markers", marker_count, "Regions", region_count }, "master")
 end
 
 function tests.master_reference_card_states()
@@ -211,7 +209,7 @@ function tests.master_reference_card_states()
     "nothing registered note")
   equal(unregistered.action, nil, "nothing registered has no publish action")
   equal(unregistered.attention, true, "nothing registered needs attention")
-  assert_master_rows(unregistered.rows, 0, 0, 0)
+  assert_master_rows(unregistered.stats, 0, 0, 0)
   equal(unregistered.selection_actions[1].id, "register_selected", "register selected action id")
   equal(unregistered.selection_actions[2].id, "unregister_selected", "unregister selected action id")
   equal(unregistered.selection_note, "Nothing selected in REAPER", "default selection note")
@@ -221,13 +219,13 @@ function tests.master_reference_card_states()
   equal(unpublished.action.id, "review_publish", "publish action")
   equal(unpublished.level, "warning", "master not-published level")
   equal(unpublished.attention, true, "unpublished needs attention")
-  assert_master_rows(unpublished.rows, 1, 2, 0)
+  assert_master_rows(unpublished.stats, 1, 2, 0)
 
   local published = view_models.master_cards(master_input()).reference
   equal(published.status, "Published r8", "published")
   equal(published.level, "neutral", "published level")
   equal(published.attention, false, "published needs no attention")
-  assert_master_rows(published.rows, 1, 2, 0)
+  assert_master_rows(published.stats, 1, 2, 0)
 
   local selecting = view_models.master_cards(master_input({
     selection_counts = {
@@ -252,7 +250,7 @@ function tests.master_reference_package_missing()
   equal(missing.action.id, "review_publish", "package missing action")
   equal(missing.note, "Published files for Reference r8 weren't found. Publish again to restore them.",
     "package missing note")
-  assert_master_rows(missing.rows, 1, 2, 0)
+  assert_master_rows(missing.stats, 1, 2, 0)
   local highlight = view_models.master_cards(master_input({
     package_check = { state = "missing" },
   })).highlight
@@ -386,6 +384,84 @@ function tests.whole_project_shift_texts_state_the_direction()
   equal(label, "Move All Project Content 0.500 s Earlier", "earlier label")
   equal(note, "The whole Reference moved 0.500 s earlier. Move your items, markers, and regions with it to stay in sync.",
     "earlier note")
+end
+
+function tests.source_delivery_and_master_reference_stats()
+  local delivery = view_models.source_cards(source_input({ track_count = 3, item_count = 12 })).delivery
+  assert_stats(delivery.stats, { "Tracks", 3, "Items", 12 }, "source delivery")
+  local reference = view_models.master_cards(master_input({ track_count = 4, marker_count = 1, region_count = 2 }))
+  assert_master_rows(reference.reference.stats, 4, 1, 2)
+end
+
+function tests.card_footer_orders_primary_last()
+  local card = view_models.master_cards(master_input({
+    selection_counts = { tracks = { selected = 2 } },
+  })).reference
+  local footer = view_models.card_footer(card, true)
+  equal(footer.context, "Selected: 2 Tracks", "selection context")
+  local ids = {}
+  for index, action in ipairs(footer.actions) do ids[index] = action.id end
+  equal(table.concat(ids, ","), "register_selected,unregister_selected,review_publish", "action order")
+  equal(footer.actions[3].variant, "primary", "card action is primary when highlighted")
+  equal(footer.actions[1].variant, nil, "selection actions stay secondary")
+  local quiet = view_models.card_footer(card, false)
+  for _, action in ipairs(quiet.actions) do equal(action.variant, nil, action.id .. " not primary") end
+  equal(view_models.card_footer({ status = "Checking..." }, true), nil, "no footer without actions or context")
+end
+
+function tests.deliveries_status_aggregates_rows()
+  local function status(levels)
+    local rows = {}
+    for index, spec in ipairs(levels) do
+      rows[index] = { state = spec[1], level = spec[2], attention = spec[3] }
+    end
+    return view_models.deliveries_status(rows)
+  end
+  local two = status({ { "newer", "warning", true }, { "unmapped", "neutral", true } })
+  equal(two.text, "2 Need Attention", "two need attention")
+  equal(two.role, "warning", "warning role")
+  local blocked = status({ { "unreachable", "blocked", true }, { "current", "ready", false } })
+  equal(blocked.text, "1 Needs Attention", "one needs attention")
+  equal(blocked.role, "blocked", "blocked role wins")
+  local checking = status({ { "current", "ready", false }, { "checking", "neutral", false } })
+  equal(checking.text, "Checking...", "checking")
+  equal(checking.role, "neutral", "checking role")
+  local current = status({ { "current", "ready", false }, { "older_reference", "warning", false } })
+  equal(current.text, "All Up to Date", "all current")
+  equal(current.role, "ready", "ready role")
+end
+
+function tests.reference_name_list_collapses_after_limit()
+  equal(view_models.REFERENCE_NAME_LIMIT, 5, "limit")
+  local surface = {
+    tracks = { { name = "DX", ref = "t1" }, { name = "", ref = "t2" }, { name = "FX", ref = "t3" }, { name = "MX", ref = "t4" } },
+    markers = { { name = "Hit", entry_id = "m1" }, { name = "Cue", entry_id = "m2" } },
+    regions = { { name = "Intro", entry_id = "r1" } },
+  }
+  local items, overflow, lookup = view_models.reference_name_list(surface, false)
+  local shape = {}
+  for index, item in ipairs(items) do shape[index] = item.kind == "group" and item.label or item.id end
+  equal(table.concat(shape, ","), "Tracks,track-1,track-2,track-3,track-4,Markers,marker-1", "collapsed items")
+  equal(items[3].title, "Unnamed Track", "fallback name")
+  equal(items[2].action.id, "detach", "detach action id")
+  equal(items[2].action.label, "Detach...", "detach label")
+  equal(overflow.label, "+ 2 more", "collapsed overflow")
+  equal(overflow.expanded, false, "collapsed state")
+  equal(lookup["track-1"].id, "detach_track", "track lookup")
+  equal(lookup["track-1"].ref, "t1", "track ref")
+  equal(lookup["marker-1"].id, "detach_entry", "marker lookup")
+  equal(lookup["marker-1"].kind, "Marker", "marker kind")
+
+  local all, expanded = view_models.reference_name_list(surface, true)
+  local rows = 0
+  for _, item in ipairs(all) do if item.kind == "row" then rows = rows + 1 end end
+  equal(rows, 7, "all rows when expanded")
+  equal(all[#all - 1].label, "Regions", "regions group")
+  equal(expanded.label, "Showing all 7", "expanded overflow")
+  equal(expanded.expanded, true, "expanded state")
+
+  local _, none = view_models.reference_name_list({ tracks = { { name = "A" } }, markers = {}, regions = {} }, false)
+  equal(none, nil, "no overflow within the limit")
 end
 
 local passed = 0

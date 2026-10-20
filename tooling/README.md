@@ -12,8 +12,9 @@ release-inventory checks.
 The command adds no runtime dependency. It expects the same local REAPER,
 ReaImGui, Python, and test environment already required by the copied tools.
 
-Repository CI runs the portable Python, release-inventory, scaffold, and full
-official ReaPack index checks on Linux with Pandoc. Native REAPER, ReaImGui,
+Repository CI runs the portable Python, release-inventory, scaffold, UI layout
+scan self-test, and full official ReaPack index checks on Linux with Pandoc.
+Native REAPER, ReaImGui,
 Gallery, and product UI smoke checks remain in the Windows local command above.
 
 ## Commands
@@ -30,6 +31,13 @@ Gallery, and product UI smoke checks remain in the Windows local command above.
 - `new_tool.ps1` creates a future ReaTools product from the repository template.
 - `test_new_tool.ps1` expands the template in an isolated generated sandbox and
   rejects missing files or unreplaced placeholders.
+- `check_ui_layout.ps1 -Path <dir> [-Report]` lists raw ImGui layout calls
+  (`raw-layout`) and numeric layout literals other than 0 and 1 in `c.*` or
+  `ImGui.*` calls (`layout-literal`) in the Lua files directly under `<dir>`.
+  It exits 1 on any finding unless `-Report` is set. `run_all_tests.ps1`
+  reports the ReaProjectLink views without failing until their migration is
+  complete.
+- `test_check_ui_layout.ps1` runs the scan against clean and dirty fixtures.
 
 On validated pushes to `main`, `.github/workflows/deploy-reapack.yml` publishes
 the output of `build_reapack_repository.ps1` to the generated `reapack` branch

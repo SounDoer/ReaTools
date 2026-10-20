@@ -39,3 +39,4 @@ jobs:
           ./tooling/test_release.ps1
           ./tooling/test_reapack_repository.ps1
           ./tooling/test_new_tool.ps1
+          ./tooling/test_check_ui_layout.ps1

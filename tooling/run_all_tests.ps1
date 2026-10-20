@@ -55,5 +55,14 @@ Invoke-Step 'Future-tool template' {
   & (Join-Path $PSScriptRoot 'test_new_tool.ps1')
 }
 
+Invoke-Step 'UI layout scan' {
+  & (Join-Path $PSScriptRoot 'test_check_ui_layout.ps1')
+}
+
+Invoke-Step 'ReaProjectLink layout report' {
+  & (Join-Path $PSScriptRoot 'check_ui_layout.ps1') -Report `
+    -Path (Join-Path $reaprojectlink 'ReaProjectLink\lib\reaprojectlink\ui\views')
+}
+
 Write-Output '==> Summary'
 $results | ForEach-Object { Write-Output $_ }

@@ -23,6 +23,9 @@ venv/
 **/.runner-project.rpp
 **/.manual-runner-project.rpp
 
+# Agent brainstorming and execution scratch
+.superpowers/
+
 # Build and release output
 dist/
 build/

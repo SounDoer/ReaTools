@@ -668,3 +668,50 @@ or Component tokens through the adapter and must not recreate a parallel theme.
 Automated product and release validation is required for implementation
 readiness; native DS016 visual and interaction evidence remains a separate
 acceptance gate.
+
+### DS022: Adopt Direction C and move layout into ReaToolUI
+
+Confirmed: 2026-10-20.
+
+ReaToolUI adopts "Direction C" (status-forward cards) as its visual language.
+The test for every rule is first-glance clarity: within about two seconds a
+user can tell each area's state and the next step. The design record is
+`docs/superpowers/specs/2026-10-20-visual-language-design.md` at the
+repository root.
+
+Foundations:
+
+- Typography roles become title 20, heading 16, status 15 bold, metric 22
+  bold, body 14, label 13, metadata 12, and code 13. Buttons use `body`.
+- `semantic.color.surface.inset` marks raised blocks inside a card: Stat Group
+  tiles, List rows, and inset Disclosure headers.
+- `semantic.color.tint.warning.*` and `semantic.color.tint.blocked.*` color
+  Issue Items.
+- The separator rule: shared components draw a divider only between a
+  container body and its footer, and inside Menu and Dropdown option groups.
+
+Status keeps DS005 by replacing the visible `Info:` / `Ready:` /
+`Attention:` / `Blocked:` prefixes with a role glyph:
+
+- neutral: dot;
+- ready: check;
+- warning: warning triangle;
+- blocked: cross.
+
+The role label remains part of the contract as the glyph's tooltip and
+accessible label. This amends `components/status.md`.
+
+Layout ownership moves into ReaToolUI. Card anatomy, Card Row, Stat Group,
+List, Action Bar, Issue Item, and Page Header become shared contracts, which
+revises the DS021 boundary that kept card composition and key/value-style rows
+in the product. These compositions stay in the product:
+
+- grouped Lane Mapping options;
+- virtualized domain lists;
+- Settings copy/value rows;
+- Toast placement.
+
+Product views must not hand-write layout. The repository layout scan (`tooling/check_ui_layout.ps1`) makes that
+checkable.
+
+Accent remains DS019 Teal.

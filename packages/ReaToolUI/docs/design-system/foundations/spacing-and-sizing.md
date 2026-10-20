@@ -108,6 +108,28 @@ larger `semantic.space.page.padding` (24). Tree and disclosure indentation uses
 `semantic.space.indent.default` (24). These values align the final baseline to
 Radix Themes spacing step 5 while preserving the four-unit rhythm.
 
+DS022 adds the Direction C layout roles consumed by shared layout components:
+
+| Relationship | Token | Logical units |
+| --- | --- | ---: |
+| blocks inside a card or Review body | `semantic.space.block.gap` | 16 |
+| rows, tiles, and issue items in one list | `semantic.space.list.gap` | 8 |
+| inset surface padding (x / y) | `semantic.space.inset.padding_x` / `padding_y` | 12 / 8 |
+| container footer padding (x / y) | `semantic.space.footer.padding_x` / `padding_y` | 16 / 12 |
+| page padding in a compact window | `semantic.space.page.padding_compact` | 16 |
+| page header to content (wide / compact) | `semantic.space.header.gap_below` / `gap_below_compact` | 20 / 16 |
+
+| Size | Token | Logical units |
+| --- | --- | ---: |
+| single-line list row | `semantic.size.row.single` | 40 |
+| two-line list row | `semantic.size.row.double` | 56 |
+| compact list row | `semantic.size.row.compact` | 32 |
+| compact control | `semantic.size.control.compact` | 28 |
+
+Card Row stacks and Page Header collapses below
+`semantic.layout.card_row.stack_below` and
+`semantic.layout.page_header.collapse_below` (both 560).
+
 Adjacent components do not choose a gap by appearance. The composition decides
 whether they belong to the same stack, section, or page region and uses that
 relationship's token. These assignments remain subject to native DS016

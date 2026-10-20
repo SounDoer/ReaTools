@@ -636,6 +636,8 @@ function M.create(deps)
     for _, sample in ipairs({
       { "title", "Tool title · 项目工具" },
       { "heading", "Section heading · 结构预览" },
+      { "status", "Ready to publish · 可以发布" },
+      { "metric", "128" },
       { "body", "Body text explains the current task and consequence." },
       { "label", "Field label" },
       { "metadata", "Metadata · revision 7 · 2026-10-12" },
@@ -644,6 +646,32 @@ function M.create(deps)
       adapter.push_text(sample[1])
       ImGui.TextWrapped(ctx, sample[2])
       adapter.pop_text()
+    end
+    ImGui.Separator(ctx)
+    ImGui.Text(ctx, "Inset and tint surfaces")
+    for _, surface in ipairs({
+      { "inset", "semantic.color.surface.inset", "semantic.color.border.default" },
+      { "tint-warning", "semantic.color.tint.warning.background",
+        "semantic.color.tint.warning.border" },
+      { "tint-blocked", "semantic.color.tint.blocked.background",
+        "semantic.color.tint.blocked.border" },
+    }) do
+      local padding_x = adapter.resolve("semantic.space.inset.padding_x")
+      local padding_y = adapter.resolve("semantic.space.inset.padding_y")
+      ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, adapter.resolve(surface[2]))
+      ImGui.PushStyleColor(ctx, ImGui.Col_Border, adapter.resolve(surface[3]))
+      ImGui.PushStyleVar(ctx, ImGui.StyleVar_ChildRounding,
+        adapter.resolve("semantic.radius.control"))
+      ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, padding_x, padding_y)
+      local visible = ImGui.BeginChild(ctx, "##foundation-surface-" .. surface[1], 0, 0,
+        ImGui.ChildFlags_Border | ImGui.ChildFlags_AutoResizeY |
+        ImGui.ChildFlags_AlwaysUseWindowPadding)
+      ImGui.PopStyleVar(ctx, 2)
+      ImGui.PopStyleColor(ctx, 2)
+      if visible then
+        ImGui.TextWrapped(ctx, surface[2] .. " · primary text stays readable")
+        ImGui.EndChild(ctx)
+      end
     end
     ImGui.Separator(ctx)
     ImGui.Text(ctx, "Token resolution sample")

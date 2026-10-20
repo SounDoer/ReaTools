@@ -44,6 +44,13 @@ the default way to make every element look finished.
   border is used only when adjacent surfaces do not establish the boundary.
 - Dividers separate persistent regions such as a fixed action footer. They do
   not replace section spacing or appear between every consecutive field.
+- DS022 narrows this further. Shared components draw a divider only between a
+  container body and its footer (Card footer, Review footer), and inside Menu
+  and Dropdown option groups. List rows, card titles, and the page header have
+  no divider. Grouping uses spacing and the inset surface.
+
+Inset surfaces (`semantic.color.surface.inset`: Stat Group tiles, List rows,
+inset Disclosure headers) and tinted Issue Items use the control radius.
 
 The adapter owns a dedicated low-emphasis divider color. Product views do not
 reuse input borders for separators or add decorative lines around local groups.

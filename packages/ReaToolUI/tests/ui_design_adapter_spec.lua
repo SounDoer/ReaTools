@@ -42,6 +42,7 @@ local function fake_imgui()
   }
   function ImGui.CreateFont(family, size)
     calls.created_font = { family = family, size = size }
+    calls.created_count = (calls.created_count or 0) + 1
     return family .. "-" .. size
   end
   function ImGui.Attach(ctx, font)
@@ -117,6 +118,18 @@ function tests.exposes_semantic_typography_roles()
     adapter.with_text("body", function() error("render failed") end)
   end), "renderer error")
   equal(calls.popped_fonts, before + 1, "error restores font")
+end
+
+function tests.creates_direction_c_typography_roles()
+  local ImGui, calls = fake_imgui()
+  local adapter = design_adapter.create(ImGui, "ctx", "light")
+  equal(calls.created_count, 8, "one font per typography role")
+  adapter.push_text("status")
+  equal(calls.fonts[#calls.fonts].font, "sans-serif-15", "status font")
+  adapter.push_text("metric")
+  equal(calls.fonts[#calls.fonts].font, "sans-serif-22", "metric font")
+  adapter.push_text("body")
+  equal(calls.fonts[#calls.fonts].font, "sans-serif-14", "body font")
 end
 
 function tests.switches_themes_without_recreating_the_contract()

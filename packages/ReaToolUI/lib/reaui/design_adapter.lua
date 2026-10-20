@@ -16,7 +16,7 @@ function M.create(ImGui, ctx, initial_theme)
   end
 
   local fonts = {}
-  for _, role in ipairs({ "title", "heading", "body", "label", "metadata", "code" }) do
+  for _, role in ipairs({ "title", "heading", "status", "metric", "body", "label", "metadata", "code" }) do
     local weight = resolve("semantic.typography." .. role .. ".font_weight")
     fonts[role] = ImGui.CreateFont(
       resolve("semantic.typography." .. role .. ".font_family"),

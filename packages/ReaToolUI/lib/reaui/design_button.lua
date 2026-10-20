@@ -45,7 +45,7 @@ function M.create(ImGui, ctx, adapter, icon_renderer)
       error("running_label is required while a button is running")
     end
 
-    return with_text("label", function()
+    return with_text("body", function()
       local visible_label = options.running and options.running_label or options.label
       local label_width = ImGui.CalcTextSize(ctx, options.label)
       if options.running_label then

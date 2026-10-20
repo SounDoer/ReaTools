@@ -72,12 +72,16 @@ M.registry = {
         [12] = { type = "color", value = 0xadf0ddff },
       },
       radix_red_light = {
+        [3] = { type = "color", value = 0xfeebecff },
+        [6] = { type = "color", value = 0xfdbdbeff },
         [9] = { type = "color", value = 0xe5484dff },
         [10] = { type = "color", value = 0xdc3e42ff },
         [11] = { type = "color", value = 0xce2c31ff },
         [12] = { type = "color", value = 0x641723ff },
       },
       radix_red_dark = {
+        [3] = { type = "color", value = 0x3b1219ff },
+        [6] = { type = "color", value = 0x72232dff },
         [8] = { type = "color", value = 0xb54548ff },
         [9] = { type = "color", value = 0xe5484dff },
         [10] = { type = "color", value = 0xec5d5eff },
@@ -91,10 +95,14 @@ M.registry = {
         [11] = { type = "color", value = 0x3dd68cff },
       },
       radix_amber_light = {
+        [3] = { type = "color", value = 0xfff7c2ff },
+        [6] = { type = "color", value = 0xf3d673ff },
         [11] = { type = "color", value = 0xab6400ff },
         [12] = { type = "color", value = 0x4f3422ff },
       },
       radix_amber_dark = {
+        [3] = { type = "color", value = 0x302008ff },
+        [6] = { type = "color", value = 0x5c3d05ff },
         [11] = { type = "color", value = 0xffca16ff },
       },
       neutral = {
@@ -146,7 +154,9 @@ M.registry = {
       [75] = { type = "logical_unit", value = 12 },
       [100] = { type = "logical_unit", value = 13 },
       [125] = { type = "logical_unit", value = 14 },
+      [135] = { type = "logical_unit", value = 15 },
       [150] = { type = "logical_unit", value = 16 },
+      [175] = { type = "logical_unit", value = 22 },
       [200] = { type = "logical_unit", value = 20 },
     },
     font_weight = {
@@ -174,6 +184,7 @@ M.registry = {
       [8] = { type = "logical_unit", value = 32 },
       [10] = { type = "logical_unit", value = 40 },
       [12] = { type = "logical_unit", value = 48 },
+      [14] = { type = "logical_unit", value = 56 },
       [20] = { type = "logical_unit", value = 80 },
       [24] = { type = "logical_unit", value = 96 },
       [30] = { type = "logical_unit", value = 120 },
@@ -251,6 +262,31 @@ M.registry = {
             light = "primitive.color.neutral.0",
             dark = "primitive.color.slate_dark.2",
           },
+        },
+        inset = {
+          type = "color",
+          themes = {
+            light = "primitive.color.slate_light.2",
+            dark = "primitive.color.slate_dark.3",
+          },
+        },
+      },
+      tint = {
+        warning = {
+          background = { type = "color", themes = {
+            light = "primitive.color.radix_amber_light.3", dark = "primitive.color.radix_amber_dark.3",
+          } },
+          border = { type = "color", themes = {
+            light = "primitive.color.radix_amber_light.6", dark = "primitive.color.radix_amber_dark.6",
+          } },
+        },
+        blocked = {
+          background = { type = "color", themes = {
+            light = "primitive.color.radix_red_light.3", dark = "primitive.color.radix_red_dark.3",
+          } },
+          border = { type = "color", themes = {
+            light = "primitive.color.radix_red_light.6", dark = "primitive.color.radix_red_dark.6",
+          } },
         },
       },
       border = {
@@ -443,9 +479,19 @@ M.registry = {
         font_size = { type = "logical_unit", ref = "primitive.font_size.150" },
         font_weight = { type = "font_weight", ref = "primitive.font_weight.bold" },
       },
+      status = {
+        font_family = { type = "font_family", ref = "primitive.font_family.system" },
+        font_size = { type = "logical_unit", ref = "primitive.font_size.135" },
+        font_weight = { type = "font_weight", ref = "primitive.font_weight.bold" },
+      },
+      metric = {
+        font_family = { type = "font_family", ref = "primitive.font_family.system" },
+        font_size = { type = "logical_unit", ref = "primitive.font_size.175" },
+        font_weight = { type = "font_weight", ref = "primitive.font_weight.bold" },
+      },
       body = {
         font_family = { type = "font_family", ref = "primitive.font_family.system" },
-        font_size = { type = "logical_unit", ref = "primitive.font_size.100" },
+        font_size = { type = "logical_unit", ref = "primitive.font_size.125" },
         font_weight = { type = "font_weight", ref = "primitive.font_weight.regular" },
       },
       label = {
@@ -490,6 +536,25 @@ M.registry = {
       },
       page = {
         padding = { type = "logical_unit", ref = "primitive.space.6" },
+        padding_compact = { type = "logical_unit", ref = "primitive.space.4" },
+      },
+      block = {
+        gap = { type = "logical_unit", ref = "primitive.space.4" },
+      },
+      list = {
+        gap = { type = "logical_unit", ref = "primitive.space.2" },
+      },
+      inset = {
+        padding_x = { type = "logical_unit", ref = "primitive.space.3" },
+        padding_y = { type = "logical_unit", ref = "primitive.space.2" },
+      },
+      footer = {
+        padding_x = { type = "logical_unit", ref = "primitive.space.4" },
+        padding_y = { type = "logical_unit", ref = "primitive.space.3" },
+      },
+      header = {
+        gap_below = { type = "logical_unit", ref = "primitive.space.5" },
+        gap_below_compact = { type = "logical_unit", ref = "primitive.space.4" },
       },
       indent = {
         default = { type = "logical_unit", ref = "primitive.space.6" },
@@ -503,6 +568,12 @@ M.registry = {
     size = {
       control = {
         medium = { type = "logical_unit", ref = "primitive.size.8" },
+        compact = { type = "logical_unit", ref = "primitive.size.7" },
+      },
+      row = {
+        single = { type = "logical_unit", ref = "primitive.size.10" },
+        double = { type = "logical_unit", ref = "primitive.size.14" },
+        compact = { type = "logical_unit", ref = "primitive.size.8" },
       },
       icon = {
         medium = { type = "logical_unit", ref = "primitive.size.4" },
@@ -526,6 +597,12 @@ M.registry = {
     layout = {
       content = {
         max_width = { type = "logical_unit", ref = "primitive.size.180" },
+      },
+      card_row = {
+        stack_below = { type = "logical_unit", ref = "primitive.size.140" },
+      },
+      page_header = {
+        collapse_below = { type = "logical_unit", ref = "primitive.size.140" },
       },
       preview = {
         compact = { type = "logical_unit", ref = "primitive.size.80" },

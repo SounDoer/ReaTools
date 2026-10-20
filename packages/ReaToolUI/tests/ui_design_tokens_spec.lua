@@ -75,6 +75,60 @@ function tests.foundation_scales_and_roles_are_registered()
     "code family")
 end
 
+function tests.direction_c_foundation_values()
+  local expect = {
+    ["semantic.typography.body.font_size"] = 14,
+    ["semantic.typography.status.font_size"] = 15,
+    ["semantic.typography.metric.font_size"] = 22,
+    ["semantic.typography.status.font_weight"] = "bold",
+    ["semantic.typography.metric.font_weight"] = "bold",
+    ["semantic.space.block.gap"] = 16,
+    ["semantic.space.list.gap"] = 8,
+    ["semantic.space.inset.padding_x"] = 12,
+    ["semantic.space.inset.padding_y"] = 8,
+    ["semantic.space.footer.padding_x"] = 16,
+    ["semantic.space.footer.padding_y"] = 12,
+    ["semantic.space.page.padding_compact"] = 16,
+    ["semantic.space.header.gap_below"] = 20,
+    ["semantic.space.header.gap_below_compact"] = 16,
+    ["semantic.size.row.single"] = 40,
+    ["semantic.size.row.double"] = 56,
+    ["semantic.size.row.compact"] = 32,
+    ["semantic.size.control.compact"] = 28,
+    ["semantic.layout.card_row.stack_below"] = 560,
+    ["semantic.layout.page_header.collapse_below"] = 560,
+  }
+  for _, theme in ipairs({ "light", "dark" }) do
+    for id, value in pairs(expect) do
+      equal(design_tokens.resolve(id, theme), value, theme .. " " .. id)
+    end
+    for _, id in ipairs({
+      "semantic.color.surface.inset",
+      "semantic.color.tint.warning.background", "semantic.color.tint.warning.border",
+      "semantic.color.tint.blocked.background", "semantic.color.tint.blocked.border",
+    }) do
+      assert(math.type(design_tokens.resolve(id, theme)) == "integer", theme .. " " .. id)
+    end
+  end
+  equal(design_tokens.resolve("semantic.color.tint.warning.background", "dark"), 0x302008ff,
+    "dark amber 3")
+  equal(design_tokens.resolve("semantic.color.tint.blocked.border", "light"), 0xfdbdbeff,
+    "light red 6")
+  equal(design_tokens.resolve("semantic.color.surface.inset", "dark"), 0x212225ff,
+    "dark inset is slate 3")
+  equal(#design_tokens.validate(), 0, "registry valid")
+end
+
+function tests.inset_and_tint_surfaces_keep_primary_text_readable()
+  for _, theme in ipairs(design_tokens.THEMES) do
+    local text = assert(design_tokens.resolve("semantic.color.text.primary", theme))
+    for _, id in ipairs({ "semantic.color.surface.inset",
+      "semantic.color.tint.warning.background", "semantic.color.tint.blocked.background" }) do
+      assert(contrast(text, assert(design_tokens.resolve(id, theme))) >= 4.5, theme .. " " .. id)
+    end
+  end
+end
+
 function tests.rejects_unknown_tokens_and_themes()
   local value, err = design_tokens.resolve("semantic.color.missing", "light")
   equal(value, nil, "missing token value")

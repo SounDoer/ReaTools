@@ -80,7 +80,9 @@ The initial roles are:
 | --- | --- |
 | `title` | Primary title of a tool or major Review |
 | `heading` | Section, card, or grouped-content heading |
-| `body` | Default explanatory and value text |
+| `status` | The prominent condition line of a Card (DS022) |
+| `metric` | The number in a Stat Group tile (DS022) |
+| `body` | Default explanatory and value text, buttons, list row titles |
 | `label` | Control, field, and concise action labeling |
 | `metadata` | Secondary supporting information |
 | `code` | Machine-oriented content that benefits from monospace |
@@ -90,6 +92,8 @@ Representative canonical IDs are:
 ```text
 semantic.typography.title
 semantic.typography.heading
+semantic.typography.status
+semantic.typography.metric
 semantic.typography.body
 semantic.typography.label
 semantic.typography.metadata
@@ -123,16 +127,22 @@ compatibility requirements. Final sizes are selected by rendering the semantic
 roles with representative content and then fitting DS007 control heights and
 spacing to those metrics.
 
-The provisional first-implementation mapping is:
+The Direction C mapping (DS022) is:
 
 | Role | Family | Size | Weight |
 | --- | --- | ---: | --- |
 | `title` | system sans-serif | 20 | bold |
 | `heading` | system sans-serif | 16 | bold |
-| `body` | system sans-serif | 13 | regular |
+| `status` | system sans-serif | 15 | bold |
+| `metric` | system sans-serif | 22 | bold |
+| `body` | system sans-serif | 14 | regular |
 | `label` | system sans-serif | 13 | regular |
 | `metadata` | system sans-serif | 12 | regular |
 | `code` | system monospace | 13 | regular |
+
+Body moved from 13 to 14 because 13 rendered too small in ReaImGui's system
+font during the ReaProjectLink review. Buttons use `body`; `label` remains for
+field labels, footer context, and summaries.
 
 These values are centralized tokens rather than preserved product literals.
 Changing them before the first contract release requires the same Gallery and

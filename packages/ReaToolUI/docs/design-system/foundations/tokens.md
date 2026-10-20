@@ -58,6 +58,11 @@ semantic.size.control.medium
 A component asks for `semantic.color.text.primary`, not a particular gray. The
 theme controls which raw gray fulfills that role.
 
+DS022 adds `semantic.color.surface.inset` (one step raised from the card
+surface) and `semantic.color.tint.<warning|blocked>.<background|border>`
+(Radix amber and red steps 3 and 6) for Stat Group tiles, List rows, and Issue
+Items.
+
 Semantic tokens are the default interface between foundations and components.
 They are also the lowest layer that a product view may consume.
 

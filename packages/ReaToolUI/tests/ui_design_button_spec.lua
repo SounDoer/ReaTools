@@ -69,6 +69,14 @@ function tests.emits_a_semantic_activation_event()
   equal(calls.popped_colors, 5, "styles restored")
 end
 
+function tests.button_text_uses_the_body_role()
+  local ImGui, adapter, icons = fake_dependencies()
+  local roles = {}
+  function adapter.with_text(role, renderer) table.insert(roles, role); return renderer() end
+  design_button.create(ImGui, "ctx", adapter, icons).draw({ id = "publish", label = "Publish" })
+  equal(roles[1], "body", "button typography role")
+end
+
 function tests.stretch_fills_the_available_width()
   local ImGui, adapter, icons, calls = fake_dependencies()
   local button = design_button.create(ImGui, "ctx", adapter, icons)

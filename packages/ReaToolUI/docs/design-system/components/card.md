@@ -1,31 +1,79 @@
 # Card Contract
 
-Status: Initial Slice 2D contract and reference implementation completed on
-2026-10-12. Automated Light and Dark Gallery frames pass. Manual narrow and
-wide composition, clipping, padding, border, and nested-control checks remain
-open before product migration.
+Status: Initial Slice 2D contract completed on 2026-10-12. DS022 revised the
+anatomy on 2026-10-20: title row, status slot, body, and footer. Automated
+layout and event checks pass; visual review happens in round 2 of the visual
+language plan.
 
 Card groups related content inside one bounded surface. It improves scanning and
-layout hierarchy but is not inherently clickable, selectable, collapsible, or a
-status message.
+layout hierarchy but is not inherently clickable, selectable, or collapsible.
 
-## Inputs and content
+## Anatomy
 
-Card requires a stable `id` and accepts an optional title, description, parent-
-supplied width, and content-rendering slot. The default variant provides ordinary
-grouping. `emphasized` strengthens the border for a currently important region;
-it does not imply selection or an action.
+Top to bottom:
 
-The Product owns content, ordering, responsive column composition, state, and
-effects. Card does not add a header action API; Buttons, Menu, Status, or other
-Components are composed explicitly in the content slot.
+1. **Title row**: optional `icon` (a `reaui.icons` name), optional `title`
+   (heading role), and an optional `trailing` control. The row has the fixed
+   height `semantic.size.control.medium`, so cards with and without a trailing
+   control align. A long title wraps before the trailing control and may make
+   the row taller.
+2. **Description**: optional secondary text.
+3. **Status slot**: optional `status = { role, text, detail?, role_label? }`,
+   drawn with the `prominent` Status presentation.
+4. **Body**: the caller's `render_body` content, composed from shared blocks
+   (Stat Group, List, Notice, text).
+5. **Footer**: optional `footer = { context?, actions }`, drawn by Action Bar
+   below the card's only separator. The footer sticks to the card bottom when
+   the card is taller than its content.
 
-## Layout and safety
+Blocks are separated by `semantic.space.block.gap`. The footer content sits
+`semantic.space.footer.padding_y` below its separator.
 
-Card uses tokenized background, border, padding, and emphasis width. Height grows
-with content. Parent layouts decide whether cards are full width, stacked, or in
-columns; Card only consumes the width it receives. Titles and descriptions wrap
-rather than forcing horizontal scrolling.
+```lua
+local result = card.draw({
+  id = "master-reference",
+  icon = "film",
+  title = "Reference",
+  trailing = { kind = "menu", id = "menu", accessible_label = "Reference actions", items = items },
+  status = { role = "ready", text = "Ready to publish", detail = "Synchronized r2" },
+  footer = { context = "2 changes", actions = { { id = "publish", label = "Publish", variant = "primary" } } },
+  min_height = row_height, -- supplied by Card Row
+}, function() --[[ body ]] end)
+-- result = { events, action, body_result, natural_height }
+```
+
+`trailing` is either `{ kind = "icon_button", id, icon, accessible_label }` or
+`{ kind = "menu", id, accessible_label, items }`.
+
+## Results and events
+
+`draw` returns a table:
+
+- `events`: `{ type = "card.action_selected", id = <card id>, action = <id> }`
+  for the trailing button, a chosen menu item, or a footer action;
+- `action`: the same action id, or `nil`;
+- `body_result`: the value returned by `render_body`;
+- `natural_height`: the card's content height from this frame, measured
+  independently of `min_height`.
+
+The Product executes effects. Disabled footer actions never emit.
+
+## Height
+
+The first frame of a card without `min_height` auto-resizes to its content.
+Later frames use a fixed height of `max(natural_height, min_height)`, where
+`natural_height` comes from the previous frame. Because `natural_height` ignores
+`min_height`, content that shrinks makes the card shrink on the next frame.
+Card Row uses `min_height` to give cards in a row equal height.
+
+## Variants and width
+
+The default variant provides ordinary grouping. `emphasized` strengthens the
+border for the region that holds the next step; it does not imply selection or
+an action. Parent layouts decide whether cards are full width, stacked, or in
+columns; Card only consumes the `width` it receives.
+
+## Safety
 
 The implementation closes its native Child region and restores style state even
 when the content callback fails, then rethrows the original error. This prevents
@@ -33,8 +81,8 @@ one faulty Gallery or product composition from corrupting later UI frames.
 
 ## Validation
 
-Automated checks cover variants, tokens, width, optional header content,
-callback results and failures, balanced Child and style stacks, and invalid
-inputs. Gallery fixtures cover default, emphasized, title-free, long content,
-and both themes. Manual validation covers narrow and wide composition, clipping,
-padding, border visibility, and nested interactive controls before product use.
+Automated checks cover the fixed title row, prominent status, footer pinning,
+natural height and shrinking, trailing, menu, and footer actions, empty cards,
+variants, callback failures, balanced Child and style stacks, and invalid
+inputs. Gallery fixtures cover default, emphasized, trailing icon, trailing
+menu, status detail, footer, and title-free cards in both themes.

@@ -1,40 +1,173 @@
+local default_icons = require("reaui.icons")
+local button_module = require("reaui.design_button")
+local status_module = require("reaui.design_status")
+local menu_module = require("reaui.design_menu")
+local action_bar_module = require("reaui.design_action_bar")
+
 local M = {}
 
 local CHILD_BORDERS = 1 << 0
 local CHILD_ALWAYS_USE_PADDING = 1 << 1
 local CHILD_AUTO_RESIZE_Y = 1 << 5
-local CARD_FLAGS = CHILD_BORDERS | CHILD_ALWAYS_USE_PADDING | CHILD_AUTO_RESIZE_Y
+local FIXED_FLAGS = CHILD_BORDERS | CHILD_ALWAYS_USE_PADDING
+local AUTO_FLAGS = FIXED_FLAGS | CHILD_AUTO_RESIZE_Y
+local TRAILING_KINDS = { icon_button = true, menu = true }
 
 local function required_string(value, name)
   if type(value) ~= "string" or value == "" then error(name .. " is required") end
 end
 
-function M.create(ImGui, ctx, adapter)
+local function optional_size(value, name)
+  if value ~= nil and (type(value) ~= "number" or value < 0) then
+    error(name .. " must be a non-negative number")
+  end
+end
+
+function M.create(ImGui, ctx, adapter, deps)
+  deps = deps or {}
+  local button = deps.button or button_module.create(ImGui, ctx, adapter)
+  local status = deps.status or status_module.create(ImGui, ctx, adapter)
+  local menu = deps.menu or menu_module.create(ImGui, ctx, adapter, button)
+  local action_bar = deps.action_bar or action_bar_module.create(ImGui, ctx, adapter, button)
+  local icons = deps.icons or default_icons
   local component = {}
+  -- Heights measured on the previous frame, keyed by card id.
+  local natural, footer_heights = {}, {}
+
   local function resolve(id) return adapter.resolve(id) end
   local function with_text(role, renderer)
     if adapter.with_text then return adapter.with_text(role, renderer) end
     return renderer()
   end
 
-  local function wrapped(token, value)
-    ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve(token))
-    ImGui.TextWrapped(ctx, value)
-    ImGui.PopStyleColor(ctx)
-  end
-
-  function component.draw(options, render_content)
-    options = options or {}
+  local function validate(options, render_body)
     required_string(options.id, "card id")
-    if render_content ~= nil and type(render_content) ~= "function" then
+    if render_body ~= nil and type(render_body) ~= "function" then
       error("card content renderer must be a function")
     end
-    if options.width ~= nil and (type(options.width) ~= "number" or options.width < 0) then
-      error("card width must be a non-negative number")
-    end
-    local emphasized = options.variant == "emphasized"
-    if options.variant ~= nil and options.variant ~= "default" and not emphasized then
+    optional_size(options.width, "card width")
+    optional_size(options.min_height, "card min_height")
+    if options.variant ~= nil and options.variant ~= "default" and options.variant ~= "emphasized" then
       error("unsupported card variant " .. tostring(options.variant))
+    end
+    if options.title ~= nil then required_string(options.title, "card title") end
+    if options.trailing ~= nil and not TRAILING_KINDS[options.trailing.kind] then
+      error("unsupported card trailing kind " .. tostring(options.trailing.kind))
+    end
+  end
+
+  local function draw_contents(options, render_body, height, result)
+    local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
+    local padding = resolve("semantic.space.container.padding")
+    local block_gap = resolve("semantic.space.block.gap")
+    local bottom, next_y = nil, nil
+    local function item_bottom() return ImGui.GetCursorPosY(ctx) - spacing_y end
+    local function begin_block() if next_y then ImGui.SetCursorPosY(ctx, next_y) end end
+    local function end_block(y) bottom = y; next_y = y + block_gap end
+    local function choose(action)
+      if action == nil then return end
+      result.action = action
+      table.insert(result.events, { type = "card.action_selected", id = options.id, action = action })
+    end
+
+    if options.title or options.icon or options.trailing then
+      local row_x, row_y = ImGui.GetCursorPosX(ctx), ImGui.GetCursorPosY(ctx)
+      local row_width = ImGui.GetContentRegionAvail(ctx)
+      local row_height = resolve("semantic.size.control.medium")
+      local trailing_width = options.trailing and row_height or 0
+      local title_x = row_x
+      if options.icon then
+        local icon_size = resolve("semantic.size.icon.medium")
+        local screen_x, screen_y = ImGui.GetCursorScreenPos(ctx)
+        icons.draw(ImGui, ImGui.GetWindowDrawList(ctx), options.icon, screen_x,
+          screen_y + (row_height - icon_size) / 2, icon_size, resolve("component.card.title"))
+        title_x = row_x + icon_size + resolve("semantic.space.inline.default")
+      end
+      local row_bottom = row_y + row_height
+      if options.title then
+        with_text("heading", function()
+          ImGui.SetCursorPos(ctx, title_x, row_y + (row_height - ImGui.GetTextLineHeight(ctx)) / 2)
+          ImGui.PushTextWrapPos(ctx, row_x + row_width - trailing_width -
+            (options.trailing and resolve("semantic.space.inline.default") or 0))
+          ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("component.card.title"))
+          ImGui.TextWrapped(ctx, options.title)
+          ImGui.PopStyleColor(ctx)
+          ImGui.PopTextWrapPos(ctx)
+        end)
+        row_bottom = math.max(row_bottom, item_bottom())
+      end
+      if options.trailing then
+        local trailing = options.trailing
+        ImGui.SetCursorPos(ctx, row_x + row_width - trailing_width, row_y)
+        if trailing.kind == "icon_button" then
+          local event = button.draw_icon({
+            id = options.id .. "-" .. trailing.id, icon = trailing.icon,
+            accessible_label = trailing.accessible_label, variant = "quiet",
+          })
+          if event then choose(trailing.id) end
+        else
+          choose(menu.draw({
+            id = options.id .. "-" .. trailing.id, accessible_label = trailing.accessible_label,
+            items = trailing.items,
+          }).action)
+        end
+      end
+      end_block(row_bottom)
+    end
+
+    if options.description and options.description ~= "" then
+      -- The description belongs to the title row, so it skips the block gap.
+      if bottom then ImGui.SetCursorPosY(ctx, bottom) end
+      ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("component.card.description"))
+      ImGui.TextWrapped(ctx, options.description)
+      ImGui.PopStyleColor(ctx)
+      end_block(item_bottom())
+    end
+
+    if options.status then
+      begin_block()
+      status.draw({
+        role = options.status.role, text = options.status.text, detail = options.status.detail,
+        role_label = options.status.role_label, presentation = "prominent",
+      })
+      end_block(item_bottom())
+    end
+
+    if render_body then
+      begin_block()
+      result.body_result = render_body()
+      end_block(item_bottom())
+    end
+
+    local content_bottom = bottom or (ImGui.GetCursorPosY(ctx) - spacing_y)
+    local footer_height = 0
+    if options.footer then
+      local top = next_y or content_bottom
+      local previous = footer_heights[options.id]
+      if previous and height > 0 then top = math.max(top, height - padding - previous) end
+      ImGui.SetCursorPosY(ctx, top)
+      ImGui.Separator(ctx)
+      ImGui.SetCursorPosY(ctx, top + resolve("semantic.space.footer.padding_y"))
+      local footer_options = options.footer
+      choose(action_bar.draw({
+        id = options.id .. "-footer", context = footer_options.context, actions = footer_options.actions or {},
+      }).action)
+      footer_height = item_bottom() - top
+      footer_heights[options.id] = footer_height
+      content_bottom = (next_y or content_bottom) + footer_height
+    end
+    natural[options.id] = content_bottom + padding
+  end
+
+  function component.draw(options, render_body)
+    options = options or {}
+    validate(options, render_body)
+    local emphasized = options.variant == "emphasized"
+    local stored = natural[options.id]
+    local height, flags = 0, AUTO_FLAGS
+    if stored or options.min_height then
+      height = math.max(stored or 0, options.min_height or 0)
+      flags = FIXED_FLAGS
     end
 
     ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, resolve("component.card.background"))
@@ -45,27 +178,18 @@ function M.create(ImGui, ctx, adapter)
     local padding = resolve("semantic.space.container.padding")
     ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding, padding, padding)
     local visible = ImGui.BeginChild(ctx, "##card-" .. options.id,
-      options.width or 0, 0, CARD_FLAGS)
+      options.width or 0, height, flags, ImGui.WindowFlags_NoScrollbar)
     ImGui.PopStyleVar(ctx, 2)
     ImGui.PopStyleColor(ctx, 2)
 
-    local ok, result
+    local result = { events = {} }
+    local ok, err = true, nil
     if visible then
-      if options.title then
-        required_string(options.title, "card title")
-        with_text("heading", function()
-          ImGui.TextColored(ctx, resolve("component.card.title"), options.title)
-        end)
-      end
-      if options.description and options.description ~= "" then
-        wrapped("component.card.description", options.description)
-      end
-      if render_content then ok, result = pcall(render_content) else ok = true end
-    else
-      ok = true
+      ok, err = pcall(draw_contents, options, render_body, height, result)
+      ImGui.EndChild(ctx)
     end
-    if visible then ImGui.EndChild(ctx) end
-    if not ok then error(result, 0) end
+    if not ok then error(err, 0) end
+    result.natural_height = natural[options.id] or height
     return result
   end
 

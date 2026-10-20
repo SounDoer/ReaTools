@@ -221,6 +221,25 @@ function M.create(deps)
     }, function()
       ImGui.TextWrapped(ctx, "Actor-Mixer Hierarchy / Ambience / Forest / Night")
     end)
+    for _, fixture in ipairs({
+      { id = "card-trailing-icon", icon = "film", title = "Reference",
+        trailing = { kind = "icon_button", id = "check", icon = "check", accessible_label = "Check now" },
+        status = { role = "ready", text = "Synchronized" } },
+      { id = "card-trailing-menu", icon = "upload", title = "Delivery",
+        trailing = { kind = "menu", id = "menu", accessible_label = "Delivery actions",
+          items = { { id = "rename", label = "Rename" }, { id = "detach", label = "Detach", danger = true } } },
+        status = { role = "warning", text = "2 references changed", detail = "Last published r7 · 3 hours ago" } },
+      { id = "card-footer", icon = "film", title = "Reference", variant = "emphasized",
+        status = { role = "ready", text = "Ready to publish", detail = "Synchronized r2" },
+        footer = { context = "Selected: 2 Tracks", actions = {
+          { id = "unregister", label = "Unregister" },
+          { id = "register", label = "Register", variant = "primary" },
+        } } },
+    }) do
+      for _, event in ipairs(card.draw(fixture).events) do
+        last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
+      end
+    end
     card.draw({ id = "title-free-card" }, function()
       ImGui.TextWrapped(ctx, "A Card may group content without inventing a heading when its surrounding context already names the region.")
     end)

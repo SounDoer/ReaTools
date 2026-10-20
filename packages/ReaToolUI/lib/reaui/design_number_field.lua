@@ -124,7 +124,8 @@ function M.create(ImGui, ctx, adapter, field_shell, input_control, button)
       end
       local action_width
       if options.action then
-        action_width = ImGui.CalcTextSize(ctx, options.action.label) +
+        local function label_width() return (ImGui.CalcTextSize(ctx, options.action.label)) end
+        action_width = (adapter.with_text and adapter.with_text("body", label_width) or label_width()) +
           resolve("semantic.space.control.padding_x") * 2
         inline = available >= resolve("component.number_field.layout.inline_min_width") and
           available - action_width - gap >= resolve("component.number_field.layout.minimum_input_width")

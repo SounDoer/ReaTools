@@ -129,11 +129,13 @@ end
 function tests.action_sits_inline_and_reports_activation()
   local ImGui, adapter, shell, input, button, calls = dependencies()
   calls.clicked = "revision-load"
+  function adapter.with_text(role, renderer) calls.text_role = role; return renderer() end
   local field = number_field_module.create(ImGui, "ctx", adapter, shell, input, button)
   local result = field.draw({
     id = "revision", label = "Target revision", buffer = "2",
     action = { id = "load", label = "Load" },
   })
+  equal(calls.text_role, "body", "action measured in the button font")
   equal(calls.input_options.width, 438, "input leaves room for the action")
   equal(calls.same_line, 1, "action shares the input line")
   equal(calls.buttons[1].label, "Load", "action label")

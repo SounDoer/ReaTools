@@ -54,12 +54,16 @@ Icon Button contains:
 
 ## Size and layout
 
-The initial contract has one `medium` size:
+The default `medium` size:
 
 - control height: 32 logical units;
 - horizontal text padding: 12 logical units on each side;
 - icon-button hit area: 32 by 32 logical units;
 - icon size: 16 logical units.
+
+DS022 adds a `compact` size (`semantic.size.control.compact`, 28 logical
+units) for actions inside List rows. It changes the control height and the
+icon-button hit area; padding and icon size stay the same.
 
 Content-sized Button width is the default. `stretch` may fill the available
 container width when the parent composition requires it. Product code cannot
@@ -113,7 +117,8 @@ Button accepts:
 - `disabled`: optional boolean;
 - `running`: optional boolean;
 - `running_label`: required when `running` is true;
-- `stretch`: optional boolean.
+- `stretch`: optional boolean;
+- `size`: optional, `medium` (default) or `compact`.
 
 Icon Button accepts:
 
@@ -121,9 +126,10 @@ Icon Button accepts:
 - `icon`: required supported shared icon name;
 - `accessible_label`: required semantic name and tooltip text;
 - `variant`: `secondary`, `quiet`, or `danger`;
-- `disabled`: optional boolean.
+- `disabled`: optional boolean;
+- `size`: optional, `medium` (default) or `compact`.
 
-Unknown variants, missing required content, a Button running without
+Unknown variants or sizes, missing required content, a Button running without
 `running_label`, and an Icon Button requesting `primary` or `running` are
 contract errors.
 

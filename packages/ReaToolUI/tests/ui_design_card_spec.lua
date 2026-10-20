@@ -37,11 +37,11 @@ local function dependencies(options)
     cursor.x, cursor.y = 16, 16
     return true
   end
-  function ImGui.EndChild() calls.ended = calls.ended + 1 end
+  function ImGui.EndChild() calls.ended = calls.ended + 1; calls.last_before_end = calls.last end
   function ImGui.GetCursorPosX() return cursor.x end
   function ImGui.GetCursorPosY() return cursor.y end
   function ImGui.SetCursorPosX(_, x) cursor.x = x end
-  function ImGui.SetCursorPosY(_, y) cursor.y = y; table.insert(calls.set_y, y) end
+  function ImGui.SetCursorPosY(_, y) cursor.y = y; table.insert(calls.set_y, y); calls.last = "set" end
   function ImGui.SetCursorPos(_, x, y) cursor.x, cursor.y = x, y end
   function ImGui.GetCursorScreenPos() return cursor.x, cursor.y end
   function ImGui.GetContentRegionAvail() return 300, 200 end
@@ -51,7 +51,7 @@ local function dependencies(options)
   function ImGui.PopTextWrapPos() end
   function ImGui.TextWrapped(_, value) table.insert(calls.wrapped, value); cursor.x = 16; advance(16) end
   function ImGui.Separator() calls.separator_y = cursor.y; advance(1) end
-  function ImGui.Dummy(_, _, h) advance(h) end
+  function ImGui.Dummy(_, w, h) advance(h); calls.last = "dummy " .. w .. "x" .. h end
   local adapter = {
     resolve = function(id)
       table.insert(calls.tokens, id)
@@ -62,7 +62,9 @@ local function dependencies(options)
   }
   local deps = {
     icons = { draw = function(_, _, name) table.insert(calls.icons, name) return true end },
-    status = { draw = function(status_options) table.insert(calls.statuses, status_options); advance(16) end },
+    status = { draw = function(status_options)
+      table.insert(calls.statuses, status_options); calls.status_y = cursor.y; advance(16)
+    end },
     button = { draw_icon = function(button_options)
       calls.trailing_y = cursor.y; calls.trailing = button_options; advance(28)
       if options.click == "trailing" then return { type = "button.activated", id = button_options.id } end
@@ -105,6 +107,7 @@ function tests.renders_content_and_balances_stacks()
   equal(calls.ended, 1, "child end")
   equal(calls.colors, calls.popped_colors, "color stack")
   equal(calls.vars, calls.popped_vars, "var stack")
+  equal(calls.last_before_end, "dummy 0x0", "contents end with an item, not a cursor move")
 end
 
 function tests.title_row_height_is_fixed_with_or_without_trailing()
@@ -117,8 +120,8 @@ function tests.title_row_height_is_fixed_with_or_without_trailing()
     trailing = { kind = "icon_button", id = "more", icon = "more", accessible_label = "More" },
   })
   equal(trailing.trailing_y, 16, "trailing control sits on the title row")
-  equal(plain.set_y[#plain.set_y], 16 + 28 + 16, "status after fixed row and block gap")
-  equal(trailing.set_y[#trailing.set_y], 16 + 28 + 16, "same status position with trailing")
+  equal(plain.status_y, 16 + 28 + 16, "status after fixed row and block gap")
+  equal(trailing.status_y, 16 + 28 + 16, "same status position with trailing")
   equal(trailing.icons[1], "film", "title icon")
   equal(trailing.statuses[1].presentation, "prominent", "prominent status")
 end

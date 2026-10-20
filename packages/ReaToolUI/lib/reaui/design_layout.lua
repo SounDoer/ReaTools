@@ -36,6 +36,16 @@ function M.create(ImGui, ctx, adapter)
     return wrapped
   end
 
+  -- A child window begun twice in one frame (ReaImGui does this once at
+  -- startup) submits no item to its parent, so a container whose last action
+  -- was SetCursorPos fails ImGui's boundary check. Call at the end of any
+  -- component that may end with a child window; the cursor does not move.
+  function layout.settle()
+    local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
+    ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y)
+    ImGui.Dummy(ctx, 0, 0)
+  end
+
   return layout
 end
 

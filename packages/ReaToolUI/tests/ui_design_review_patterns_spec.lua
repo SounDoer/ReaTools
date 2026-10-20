@@ -117,9 +117,19 @@ function tests.stale_review_emits_only_refresh_request()
   equal(result.events[1].type, "review.refresh_requested", "event")
 end
 
+-- Adds the cursor calls the shell uses to end its children with an item.
+local function with_cursor(ImGui, order)
+  ImGui.StyleVar_ItemSpacing = ImGui.StyleVar_ItemSpacing or 3
+  ImGui.GetStyleVar = ImGui.GetStyleVar or function() return 8, 4 end
+  ImGui.GetCursorPosY = ImGui.GetCursorPosY or function() return 0 end
+  ImGui.SetCursorPosY = ImGui.SetCursorPosY or function() end
+  ImGui.Dummy = function(_, w, h) if order then table.insert(order, "dummy " .. w .. "x" .. h) end end
+  return ImGui
+end
+
 function tests.shell_replaces_body_when_stale_and_disables_completion()
   local calls = { children = {}, ended = 0 }
-  local ImGui = {
+  local ImGui = with_cursor({
     WindowFlags_NoScrollbar = 1,
     GetContentRegionAvail = function() return 900, 640 end,
     GetCursorPosX = function() return 0 end, SetCursorPosX = function(_, x) calls.x = x end,
@@ -127,7 +137,7 @@ function tests.shell_replaces_body_when_stale_and_disables_completion()
       table.insert(calls.children, { id = id, width = width, height = height }) return true
     end,
     EndChild = function() calls.ended = calls.ended + 1 end,
-  }
+  })
   local adapter = { resolve = function(id) return id:find("max_width", 1, true) and 720 or 80 end }
   local header = { draw = function() return { events = { { type = "review.back_requested" } } } end }
   local footer = { draw = function(options) calls.footer = options return { events = {} } end }
@@ -148,11 +158,11 @@ function tests.shell_replaces_body_when_stale_and_disables_completion()
 end
 
 function tests.shell_forwards_body_events_between_header_and_footer()
-  local ImGui = {
+  local ImGui = with_cursor({
     WindowFlags_NoScrollbar = 1, GetContentRegionAvail = function() return 600, 500 end,
     GetCursorPosX = function() return 0 end, SetCursorPosX = function() end,
     BeginChild = function() return true end, EndChild = function() end,
-  }
+  })
   local adapter = { resolve = function(id) return id:find("max_width", 1, true) and 720 or 80 end }
   local header = { draw = function() return { events = { { type = "review.back_requested" } } } end }
   local footer = { draw = function() return { events = { { type = "review.complete_requested" } } } end }
@@ -167,7 +177,7 @@ end
 
 function tests.shell_footer_passes_window_flags_in_the_window_slot()
   local children = {}
-  local ImGui = {
+  local ImGui = with_cursor({
     WindowFlags_NoScrollbar = 8, GetContentRegionAvail = function() return 600, 500 end,
     GetCursorPosX = function() return 0 end, SetCursorPosX = function() end,
     BeginChild = function(_, id, _, _, child_flags, window_flags)
@@ -175,7 +185,7 @@ function tests.shell_footer_passes_window_flags_in_the_window_slot()
       return true
     end,
     EndChild = function() end,
-  }
+  })
   local adapter = { resolve = function(id) return id:find("max_width", 1, true) and 720 or 80 end }
   local stub = { draw = function() return { events = {} } end }
   shell_module.create(ImGui, "ctx", adapter, stub, stub, {}).draw({
@@ -187,10 +197,30 @@ function tests.shell_footer_passes_window_flags_in_the_window_slot()
   equal(children[2].window_flags, 8, "no scrollbar window flag")
 end
 
+function tests.shell_body_and_shell_end_with_an_item()
+  local order = {}
+  local ImGui = with_cursor({
+    WindowFlags_NoScrollbar = 8, GetContentRegionAvail = function() return 600, 500 end,
+    GetCursorPosX = function() return 0 end, SetCursorPosX = function() table.insert(order, "set") end,
+    BeginChild = function(_, id) table.insert(order, "begin " .. id) return true end,
+    EndChild = function() table.insert(order, "end") end,
+  }, order)
+  local adapter = { resolve = function(id) return id:find("max_width", 1, true) and 720 or 80 end }
+  local stub = { draw = function() return { events = {} } end }
+  shell_module.create(ImGui, "ctx", adapter, stub, stub, {}).draw({
+    id = "review", header = { title = "Review" }, footer = { summary = "Ready", complete_label = "Apply" },
+    render_body = function() return { events = {} } end,
+  })
+  equal(table.concat(order, ","), table.concat({
+    "set", "begin ##review-shell-review-body", "dummy 0x0", "end",
+    "set", "begin ##review-shell-review-footer", "end", "dummy 0x0",
+  }, ","), "call order")
+end
+
 function tests.review_sections_are_separated_by_section_loose()
   local calls = { y = 0, texts = {}, set_y = {} }
   local role = "body"
-  local ImGui = {
+  local ImGui = with_cursor({
     WindowFlags_NoScrollbar = 1, Col_Text = 2, StyleVar_ItemSpacing = 3,
     GetContentRegionAvail = function() return 600, 500 end,
     GetCursorPosX = function() return 0 end, SetCursorPosX = function() end,
@@ -202,7 +232,7 @@ function tests.review_sections_are_separated_by_section_loose()
     TextWrapped = function(_, text)
       table.insert(calls.texts, { text = text, role = role, color = calls.color }); calls.y = calls.y + 20 + 4
     end,
-  }
+  })
   local adapter = {
     resolve = function(id)
       if id:find("max_width", 1, true) then return 720 end
@@ -224,7 +254,7 @@ function tests.review_sections_are_separated_by_section_loose()
     local first = shell.section({ id = "issues", title = "Issues" }, function() calls.y = calls.y + 40; return "issues" end)
     local before = calls.y
     local second = shell.section({ id = "details", title = "Details" }, function() return "details" end)
-    return { events = {}, first = first, second = second, before = before }
+    return { events = {}, first = first, second = second, before = before, gaps = #calls.set_y }
   end
   for frame = 1, 2 do
     calls.y, calls.texts, calls.set_y = 0, {}, {}
@@ -233,7 +263,7 @@ function tests.review_sections_are_separated_by_section_loose()
     local inner = result.body_result
     equal(inner.first, "issues", "section returns render result")
     equal(inner.second, "details", "second result")
-    equal(#calls.set_y, 1, "only the second section adds a gap on frame " .. frame)
+    equal(inner.gaps, 1, "only the second section adds a gap on frame " .. frame)
     equal(calls.set_y[1], inner.before - 4 + 24, "section loose gap")
     equal(calls.texts[1].text, "Issues", "first title")
     equal(calls.texts[1].role, "heading", "heading font")

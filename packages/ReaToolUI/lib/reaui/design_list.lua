@@ -187,6 +187,7 @@ function M.create(ImGui, ctx, adapter, deps)
         table.insert(result.events, { type = "list.overflow_toggled", id = options.id })
       end)
     end
+    layout.settle()
     return result
   end
 

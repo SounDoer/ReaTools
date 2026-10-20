@@ -12,7 +12,8 @@ local function fake(available)
   function ImGui.SameLine(_, _, spacing) table.insert(calls.same, spacing) end
   function ImGui.GetStyleVar() return 8, 8 end
   function ImGui.GetCursorPosY() return 100 end
-  function ImGui.SetCursorPosY(_, y) table.insert(calls.set_y, y) end
+  function ImGui.SetCursorPosY(_, y) table.insert(calls.set_y, y); calls.last = "set" end
+  function ImGui.Dummy(_, w, h) calls.last = "dummy " .. w .. "x" .. h end
   local adapter = { resolve = function(id)
     return ({
       ["semantic.layout.card_row.stack_below"] = 560,
@@ -21,6 +22,7 @@ local function fake(available)
   end }
   local card = { draw = function(options, render_body)
     table.insert(calls.drawn, { options = options, render_body = render_body })
+    calls.last = "card"
     local events = {}
     if actions[options.id] then
       events[1] = { type = "card.action_selected", id = options.id, action = actions[options.id] }
@@ -61,6 +63,7 @@ function tests.stacked_below_560()
   equal(calls.drawn[2].options.min_height, nil, "no equal height when stacked")
   equal(#calls.same, 0, "no SameLine")
   equal(calls.set_y[1], 100 - 8 + 16, "block gap between stacked cards")
+  equal(calls.last, "dummy 0x0", "row ends with an item, not a cursor move")
 end
 
 function tests.equal_height_uses_previous_frame_max()

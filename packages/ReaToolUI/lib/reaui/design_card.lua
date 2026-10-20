@@ -3,6 +3,7 @@ local button_module = require("reaui.design_button")
 local status_module = require("reaui.design_status")
 local menu_module = require("reaui.design_menu")
 local action_bar_module = require("reaui.design_action_bar")
+local layout_module = require("reaui.design_layout")
 
 local M = {}
 
@@ -30,6 +31,7 @@ function M.create(ImGui, ctx, adapter, deps)
   local menu = deps.menu or menu_module.create(ImGui, ctx, adapter, button)
   local action_bar = deps.action_bar or action_bar_module.create(ImGui, ctx, adapter, button)
   local icons = deps.icons or default_icons
+  local layout = deps.layout or layout_module.create(ImGui, ctx, adapter)
   local component = {}
   -- Heights measured on the previous frame, keyed by card id.
   local natural, footer_heights = {}, {}
@@ -157,6 +159,7 @@ function M.create(ImGui, ctx, adapter, deps)
       content_bottom = (next_y or content_bottom) + footer_height
     end
     natural[options.id] = content_bottom + padding
+    layout.settle()
   end
 
   function component.draw(options, render_body)

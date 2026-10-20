@@ -23,6 +23,14 @@ local function fake(available_widths)
     GetCursorPosX = function() return 40 end,
     SetCursorPosX = function(_, x) calls.x = x end,
     CalcTextSize = function() return 50, 14 end,
+    StyleVar_ItemSpacing = 14,
+    GetStyleVar = function() return 8, 4 end,
+    GetCursorPosY = function() return calls.y or 120 end,
+    SetCursorPosY = function(_, y) calls.y = y end,
+    Dummy = function(_, w, h)
+      calls.dummy = { w, h, calls.y }
+      calls.y = calls.y + h + 4
+    end,
   }
   local adapter = {
     resolve = function(id) return TOKENS[id] end,
@@ -66,6 +74,16 @@ function tests.icon_button_width_and_gap_come_from_tokens()
   local layout = fake({ 300 })
   equal(layout.icon_button_width(), 28, "icon button")
   equal(layout.gap(), 8, "gap")
+end
+
+function tests.settle_submits_an_empty_item_without_moving_the_cursor()
+  local layout, calls = fake({ 300 })
+  calls.y = 120
+  layout.settle()
+  equal(calls.dummy[1], 0, "dummy width")
+  equal(calls.dummy[2], 0, "dummy height")
+  equal(calls.dummy[3], 116, "dummy sits on the last item bottom")
+  equal(calls.y, 120, "cursor unchanged")
 end
 
 local passed = 0

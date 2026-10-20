@@ -1,4 +1,5 @@
 local card_module = require("reaui.design_card")
+local layout_module = require("reaui.design_layout")
 
 local M = {}
 
@@ -10,6 +11,7 @@ end
 
 function M.create(ImGui, ctx, adapter, card)
   card = card or card_module.create(ImGui, ctx, adapter)
+  local layout = layout_module.create(ImGui, ctx, adapter)
   local component = {}
   -- Tallest card height of the previous frame, keyed by row id. Recomputed
   -- every frame so a row shrinks when its content shrinks.
@@ -46,6 +48,7 @@ function M.create(ImGui, ctx, adapter, card)
     end
 
     row_max[options.id] = not stacked and tallest or nil
+    layout.settle()
     return result
   end
 

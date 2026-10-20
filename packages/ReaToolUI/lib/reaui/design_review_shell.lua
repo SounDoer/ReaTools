@@ -1,6 +1,7 @@
 local header_module = require("reaui.design_review_header")
 local footer_module = require("reaui.design_review_footer")
 local stale_module = require("reaui.design_stale_review")
+local layout_module = require("reaui.design_layout")
 
 local M = {}
 local function required_string(value, name)
@@ -11,6 +12,7 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
   header = header or header_module.create(ImGui, ctx, adapter)
   footer = footer or footer_module.create(ImGui, ctx, adapter)
   stale_review = stale_review or stale_module.create(ImGui, ctx, adapter)
+  local layout = layout_module.create(ImGui, ctx, adapter)
   local pattern = {}
   -- Sections drawn since the last shell draw; only later sections get a gap.
   local section_count = 0
@@ -75,6 +77,7 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
         ok, body_result = pcall(options.render_body)
         if ok then append(events, body_result) else err = body_result end
       end
+      if ok then layout.settle() end
     end
     if body_visible then ImGui.EndChild(ctx) end
     if not ok then error(err, 0) end
@@ -90,6 +93,7 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
       append(events, footer.draw(footer_options))
     end
     if footer_visible then ImGui.EndChild(ctx) end
+    layout.settle()
     return { stale = options.stale ~= nil, body_result = body_result, events = events }
   end
   return pattern

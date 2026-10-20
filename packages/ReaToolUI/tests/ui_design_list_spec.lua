@@ -70,7 +70,8 @@ local function fake(options)
   function ImGui.GetCursorPosX() return cursor.x end
   function ImGui.GetCursorPosY() return cursor.y end
   function ImGui.SetCursorPosX(_, x) cursor.x = x; table.insert(calls.set_x, x) end
-  function ImGui.SetCursorPosY(_, y) cursor.y = y end
+  function ImGui.SetCursorPosY(_, y) cursor.y = y; calls.last = "set" end
+  function ImGui.Dummy(_, w, h) item(w, h); calls.last = "dummy " .. w .. "x" .. h end
   function ImGui.GetContentRegionAvail() return x0 + width - cursor.x, 100 end
   function ImGui.CalcTextSize(_, text) return #text * CHAR, LINE end
   function ImGui.GetTextLineHeight() return LINE end
@@ -130,6 +131,7 @@ local function fake(options)
     end },
   }
   deps.layout = layout_module.create(ImGui, "ctx", adapter)
+  calls.cursor_y = function() return cursor.y end
   return list_module.create(ImGui, "ctx", adapter, deps), calls, width
 end
 
@@ -209,6 +211,14 @@ function tests.group_labels_render_between_rows()
   for _, text in ipairs(calls.texts) do if text.text == "Dialogue" and text.role == "metadata" then label = text end end
   assert(label, "group label in metadata font")
   equal(calls.children[2].y > calls.children[1].y + calls.children[1].height + 8, true, "label sits between rows")
+end
+
+function tests.list_ends_with_an_item_without_moving_the_cursor()
+  local list, calls = fake()
+  list.draw({ id = "refs", items = { ROWS[1], ROWS[2] } })
+  local last = calls.children[#calls.children]
+  equal(calls.last, "dummy 0x0", "list ends with an item, not a cursor move")
+  equal(calls.cursor_y(), last.y + last.height + 8, "cursor after the last row")
 end
 
 function tests.overflow_toggle_label_and_event()

@@ -208,6 +208,10 @@ data and effects are supplied.
   contract.
 - A product-specific exception stays in Product and is documented rather than
   widening a shared API prematurely.
+- A component that may end with a child window, or with a cursor move before
+  one, ends with the internal `layout.settle()`. At startup ReaImGui runs two
+  defer cycles in one frame; a child begun twice in a frame submits no item to
+  its parent, and ImGui then rejects the parent's trailing cursor move.
 
 ## Migration approach
 

@@ -67,6 +67,12 @@ function M.create(ImGui, ctx, adapter, field_shell)
     ImGui.PushStyleColor(ctx, ImGui.Col_Header, resolve("component.dropdown.option.selected"))
     ImGui.PushStyleColor(ctx, ImGui.Col_HeaderHovered, resolve("component.dropdown.option.hover"))
     ImGui.PushStyleColor(ctx, ImGui.Col_HeaderActive, resolve("component.dropdown.option.pressed"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Button, resolve("component.dropdown.background.default"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ButtonHovered, resolve("component.dropdown.background.hover"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ButtonActive, resolve("component.dropdown.background.pressed"))
+    local padding_x = ImGui.GetStyleVar(ctx, ImGui.StyleVar_FramePadding)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_FramePadding, padding_x,
+      (resolve("semantic.size.control.medium") - ImGui.GetFontSize(ctx)) / 2)
   end
 
   function component.draw(options)
@@ -97,7 +103,8 @@ function M.create(ImGui, ctx, adapter, field_shell)
       ImGui.EndCombo(ctx)
     end
     if blocked then ImGui.EndDisabled(ctx) end
-    ImGui.PopStyleColor(ctx, 8)
+    ImGui.PopStyleVar(ctx)
+    ImGui.PopStyleColor(ctx, 11)
     if combo_hovered then ImGui.SetTooltip(ctx, visible) end
 
     local changed = chosen ~= nil and chosen.id ~= options.value and not blocked

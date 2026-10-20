@@ -147,9 +147,83 @@ local reviews = {
   },
 }
 
+-- Populated main views: Delivery footer with three actions, the Reference
+-- name List with overflow, and Delivery rows in each check state.
+local populated_source = {
+  project_values = {
+    reference_manifest_path = "C:/smoke/reference.json",
+    synchronized_reference_revision = "5",
+    delivery_revision = "12",
+  },
+  services = {
+    reference_subscription = {
+      peek = function() return { latest_revision = 6 } end,
+      local_surface = function()
+        return {
+          tracks = { { name = "Picture", ref = {} }, { name = "Dialogue Guide", ref = {} } },
+          markers = { { name = "FFOP", entry_id = "m1" }, { name = "LFOA", entry_id = "m2" } },
+          regions = { { name = "Scene 1", entry_id = "r1" }, { name = "Scene 2", entry_id = "r2" },
+            { name = "", entry_id = "r3" } },
+        }
+      end,
+    },
+    project_service = {
+      delivery_tracks = function()
+        return { { lane_id = "a", display_name = "SFX_Impacts", item_count = 4 },
+          { lane_id = "b", display_name = "SFX_Whooshes", item_count = 2 } }
+      end,
+      selection_counts = function() return { tracks = { selected = 1, registered = 1 } } end,
+    },
+  },
+}
+
+local peeks = {
+  dx = { latest_revision = 15, reviewed_reference_revision = 9 },
+  sfx = { latest_revision = 8, reviewed_reference_revision = 9 },
+  mx = { latest_revision = 3, reviewed_reference_revision = 7 },
+}
+local populated_master = {
+  project_values = {
+    reference_revision = "9",
+    delivery_subscriptions = '[' ..
+      '{"sourceProjectId":"dx","sourceProjectName":"Dialogue","acceptedDeliveryRevision":14,"lanes":[]},' ..
+      '{"sourceProjectId":"sfx","sourceProjectName":"SFX","acceptedDeliveryRevision":8,' ..
+        '"lanes":[{"unmapped":true}]},' ..
+      '{"sourceProjectId":"mx","sourceProjectName":"Music","acceptedDeliveryRevision":3,"lanes":[]},' ..
+      '{"sourceProjectId":"fol","sourceProjectName":"Foley","acceptedDeliveryRevision":2,"lanes":[]}]',
+  },
+  services = {
+    delivery_update = {
+      peek = function(_, entry)
+        local status = peeks[entry.sourceProjectId]
+        if status then return status end
+        return nil, "Shared storage is offline.", "unreachable"
+      end,
+    },
+    reference_publish = {
+      reference_tracks = function() return { {}, {}, {} } end,
+      timeline_entries = function()
+        return { { kind = "marker", registered = true }, { kind = "marker", registered = true },
+          { kind = "region", registered = true } }
+      end,
+      selection_counts = function() return { tracks = { selected = 2 } } end,
+    },
+  },
+}
+
+local function with(base, fields)
+  local view = {}
+  for key, value in pairs(base) do view[key] = value end
+  for key, value in pairs(fields) do view[key] = value end
+  return view
+end
+
 local views = {
   { project_type = "" },
   { project_type = "source" },
+  with(populated_source, { project_type = "source" }),
+  with(populated_source, { project_type = "source", reference_names_expanded = true }),
+  with(populated_master, { project_type = "master" }),
   { project_type = "source", view = "settings" },
   { project_type = "source", review = reviews.reference_update },
   { project_type = "source", review = reviews.delivery_publish },
@@ -167,10 +241,7 @@ local scenarios = {}
 for _, theme in ipairs({ "light", "dark" }) do
   for _, width in ipairs({ 320, 1040 }) do
     for _, view in ipairs(views) do
-      table.insert(scenarios, {
-        theme = theme, width = width,
-        project_type = view.project_type, view = view.view, review = view.review,
-      })
+      table.insert(scenarios, with(view, { theme = theme, width = width }))
     end
   end
 end

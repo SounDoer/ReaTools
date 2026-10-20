@@ -106,13 +106,37 @@ function M.create(deps)
     design_system.adapter.pop_base()
   end
 
-  -- Prepares one smoke-test frame: project type, theme, width, and view.
-  function shell.apply_smoke(scenario)
+  local real_services = env.services
+  local smoke_values = {}
+
+  local function set_project_value(key, value)
     deps.reaper.SetProjExtState(0, constants.EXTENSION_NAME,
-      constants.PROJECT_KEYS.project_type, scenario.project_type)
+      assert(constants.PROJECT_KEYS[key], "unknown project key " .. key), value)
+  end
+
+  -- Prepares one smoke-test frame: project type, theme, width, and view.
+  -- `project_values` (PROJECT_KEYS name -> string) and `services` (service
+  -- name -> overriding functions) populate the main views; both are undone
+  -- by the next scenario.
+  function shell.apply_smoke(scenario)
+    set_project_value("project_type", scenario.project_type)
+    for key in pairs(smoke_values) do set_project_value(key, "") end
+    smoke_values = scenario.project_values or {}
+    for key, value in pairs(smoke_values) do set_project_value(key, value) end
+    env.services = real_services
+    if scenario.services then
+      env.services = setmetatable({}, { __index = real_services })
+      for name, overrides in pairs(scenario.services) do
+        env.services[name] = setmetatable({}, { __index = function(_, key)
+          if overrides[key] ~= nil then return overrides[key] end
+          return real_services[name][key]
+        end })
+      end
+    end
     theme:use(scenario.theme)
     fixed_width = scenario.width
     env.app:reset()
+    env.app.reference_names_expanded = scenario.reference_names_expanded == true
     settings_view:reset()
     env.app:request_check()
     -- Force the "shown" phase so the pointer check runs during this scenario's

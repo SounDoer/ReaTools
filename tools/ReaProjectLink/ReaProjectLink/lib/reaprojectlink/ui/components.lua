@@ -139,6 +139,13 @@ function M.create(ImGui, ctx, design_system)
     if available < width then ImGui.NewLine(ctx); available = ImGui.GetContentRegionAvail(ctx) end
     ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + math.max(0, available - width))
   end
+  -- The next item starts one block gap below the previous one. Ends on an
+  -- item so a container may close right after it.
+  function c.block_gap()
+    local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
+    ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y * 2 + resolve("semantic.space.block.gap"))
+    ImGui.Dummy(ctx, 0, 0)
+  end
   function c.card_width()
     local available = ImGui.GetContentRegionAvail(ctx)
     if available < STACK_BELOW then return 0, false end

@@ -2,38 +2,41 @@ local workflow = require("reaprojectlink.ui.workflow")
 
 local M = {}
 
-local function choice(env, id, width, icon, title, text, label)
-  local c = env.c
-  local clicked = false
-  if c.begin_card(id, width, false) then
-    c.card_header(icon, title)
-    c.muted(text)
-    env.ImGui.Dummy(env.ctx, 0, 4)
-    clicked = c.button(label .. "##" .. id)
-  end
-  c.end_card()
-  return clicked
+local function choice(id, icon, title, description, label)
+  return {
+    options = {
+      id = id, icon = icon, title = title, description = description,
+      footer = { actions = { { id = "initialize", label = label, variant = "secondary" } } },
+    },
+  }
 end
 
 function M.draw(env, state)
-  local ImGui, ctx, c, app = env.ImGui, env.ctx, env.c, env.app
+  local c, app = env.c, env.app
+  local components = env.design_system.components
   local service = env.services.project_service
-  local source, master = false, false
+  local actions = {}
   workflow.draw_notices(env, state)
   if c.begin_page("setup", false) then
-    c.title("Set Up ReaProjectLink")
-    c.muted("Choose the type for this project.")
-    ImGui.Dummy(ctx, 0, 8)
-    local width, side_by_side = c.card_width()
-    source = choice(env, "setup-source", width, "upload", "Source Project",
-      "An editing project that publishes Deliveries to the Master Project.",
-      "Initialize Source Project")
-    if side_by_side then ImGui.SameLine(ctx, 0, 12) end
-    master = choice(env, "setup-master", width, "download", "Master Project",
-      "An integration project that publishes the Reference and receives Deliveries.",
-      "Initialize Master Project")
+    components.page_header.draw({
+      id = "setup",
+      title = "Set Up ReaProjectLink",
+      summary = "Choose the type for this project.",
+    })
+    actions = components.card_row.draw({
+      id = "setup",
+      cards = {
+        choice("setup-source", "upload", "Source Project",
+          "An editing project that publishes Deliveries to the Master Project.",
+          "Initialize Source Project"),
+        choice("setup-master", "download", "Master Project",
+          "An integration project that publishes the Reference and receives Deliveries.",
+          "Initialize Master Project"),
+      },
+    }).actions
   end
   c.end_page()
+  local source, master = actions["setup-source"] ~= nil, actions["setup-master"] ~= nil
   if source then
     local result, err = service.initialize_source(env.adapter)
     workflow.apply(env, result, err)

@@ -86,10 +86,13 @@ end
 -- header; the toast floats over the window and is drawn by the shell.
 function M.draw_notices(env, state)
   local c, app = env.c, env.app
+  local drawn = false
   if state and state.path == "" then
     c.notice("unsaved", "blocked", "Save this project in REAPER to use ReaProjectLink.")
+    drawn = true
   end
   if app.lock then
+    drawn = true
     local lock = app.lock.info
     local text = string.format("Publishing is locked by %s on %s since %s.",
       lock.user or "an unknown user", lock.machine or "an unknown computer",
@@ -98,6 +101,7 @@ function M.draw_notices(env, state)
       M.unlock(env)
     end
   end
+  if drawn then c.block_gap() end
 end
 
 return M

@@ -4,24 +4,22 @@ local workflow = require("reaprojectlink.ui.workflow")
 local M = {}
 
 function M.draw(env, state, badge, status_text)
-  local ImGui, ctx, c, app = env.ImGui, env.ctx, env.c, env.app
-  c.title(view_models.project_name(state.path))
-  ImGui.SameLine(ctx, 0, 8)
-  c.badge(badge)
-
-  local label = app.check_phase and "Checking..." or
+  local app = env.app
+  local meta = app.check_phase and "Checking..." or
     view_models.checked_text(app:seconds_since_check()) or "Not checked yet"
-  if status_text then label = status_text .. "  ·  " .. label end
-  local label_width = c.text_width("metadata", label)
-  c.same_line_right(label_width + 8 + c.button_width("Check Now") + 8 + ImGui.GetFrameHeight(ctx))
-  ImGui.AlignTextToFramePadding(ctx)
-  c.inline_muted(label)
-  ImGui.SameLine(ctx, 0, 8)
-  if c.button("Check Now") then app:request_check() end
-  ImGui.SameLine(ctx, 0, 8)
-  if c.icon_button("open-settings", "gear", "Settings") then app:open_settings() end
-
-  ImGui.Separator(ctx)
+  if status_text then meta = status_text .. "  ·  " .. meta end
+  local result = env.design_system.components.page_header.draw({
+    id = "main-header",
+    title = view_models.project_name(state.path),
+    badge = badge,
+    meta = meta,
+    actions = {
+      { id = "check", label = "Check Now", icon = "refresh" },
+      { id = "settings", label = "Settings", icon = "gear", icon_only = true, variant = "quiet" },
+    },
+  })
+  if result.action == "check" then app:request_check()
+  elseif result.action == "settings" then app:open_settings() end
   workflow.draw_notices(env, state)
 end
 

@@ -24,6 +24,7 @@ return {
   "ui_components_spec.lua",
   "ui_view_models_spec.lua",
   "ui_settings_spec.lua",
+  "ui_views_spec.lua",
   "ui_app_state_spec.lua",
   "ui_app_spec.lua",
   "pointer_peek_spec.lua",

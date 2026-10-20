@@ -89,6 +89,49 @@ assert(
   "real Publish media"
 )
 
+local native_commands = {}
+local command_fs = filesystem.create({
+  ExecProcess = function(command)
+    table.insert(native_commands, command)
+    if command:find("certutil", 1, true) then
+      return "0\n" .. string.rep("a", 64) .. "\n"
+    end
+    return "0\n"
+  end,
+})
+assert(command_fs.copy_file("source path.wav", "destination path.wav"))
+assert(#native_commands == 1, "copy uses one native process")
+if package.config:sub(1, 1) == "\\" then
+  assert(native_commands[1]:find("[IO.File]::Copy", 1, true), "Windows copy uses the native file API")
+  local joined = command_fs.join([[\\server\share]], "media/clip/file.wav")
+  assert(joined == [[\\server\share\media\clip\file.wav]],
+    "Windows joins normalize manifest path separators")
+  native_commands = {}
+  assert(command_fs.copy_file([[\\server\share\source.wav]],
+    [[\\server\share\media\clip\long destination.wav]]))
+  assert(native_commands[1]:find([[\\?\UNC\server\share\source.wav]], 1, true),
+    "Windows native copy uses an extended UNC source path")
+  assert(native_commands[1]:find([[\\?\UNC\server\share\media\clip\long destination.wav]], 1, true),
+    "Windows native copy uses an extended UNC destination path")
+  native_commands = {}
+  assert(command_fs.hash_file([[\\server\share\media\clip\long destination.wav]]) ==
+    string.rep("a", 64))
+  assert(native_commands[1]:find([[\\?\UNC\server\share\media\clip\long destination.wav]], 1, true),
+    "Windows native hash uses an extended UNC path")
+else
+  assert(native_commands[1]:find("/bin/cp", 1, true), "POSIX copy uses the native copy tool")
+  local joined = command_fs.join("/server/share", [[media\clip\file.wav]])
+  assert(joined == "/server/share/media/clip/file.wav",
+    "POSIX joins normalize manifest path separators")
+end
+
+local failed_command_fs = filesystem.create({
+  ExecProcess = function() return "1\nnative copy failed" end,
+})
+local copied, copy_error = failed_command_fs.copy_file("source.wav", "destination.wav")
+assert(copied == nil and copy_error:find("native copy failed", 1, true),
+  "native copy errors are returned")
+
 assert(fs.remove_tree(root))
 assert(not fs.exists(root), "fixture directory is removed")
 

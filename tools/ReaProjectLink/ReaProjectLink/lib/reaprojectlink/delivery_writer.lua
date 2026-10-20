@@ -11,7 +11,7 @@ local function assert_ok(ok, err)
 end
 
 local function parent_path(path)
-  return path:match("^(.*)/[^/]+$")
+  return path:match("^(.*)[/\\][^/\\]+$")
 end
 
 local function current_revision(input, fs)

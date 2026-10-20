@@ -152,6 +152,22 @@ function M.draw(env)
   local c, app = env.c, env.app
   local review = app.review
   local data = review.data
+  if review.publish_ready then
+    review.publish_ready = nil
+    local result, err = env.services.delivery_publish.publish(
+      data, env.adapter, env.fs, workflow.metadata()
+    )
+    if result then
+      local message, is_error = workflow.publish_message("Delivery", result.delivery_revision, result)
+      app:back()
+      app:notify(message, is_error)
+    else
+      review.publishing = nil
+      app:notify(err, true)
+      workflow.inspect_lock(env, data.package_root)
+    end
+    return
+  end
   local options = {}
   for key, value in pairs(review.options) do options[key] = value end
   local stale = workflow.is_stale(env, data)
@@ -178,7 +194,12 @@ function M.draw(env)
   elseif data.blocker_count > 0 then
     summary, level = view_models.blocked_summary(data.blocker_count, "publish"), "blocked"
   end
-  local publish = c.footer(page, summary, level, "Publish", not stale and data.blocker_count == 0)
+  if review.publishing then
+    summary, level = "Publishing Delivery...", "neutral"
+  end
+  local publish = c.footer(page, summary, level,
+    review.publishing and "Publishing..." or "Publish",
+    not review.publishing and not stale and data.blocker_count == 0)
 
   if back then
     app:back()
@@ -186,16 +207,10 @@ function M.draw(env)
     refresh(env, review.options)
   elseif changed then
     refresh(env, options)
+  elseif review.publishing then
+    review.publish_ready = true
   elseif publish then
-    local result, err = env.services.delivery_publish.publish(data, env.adapter, env.fs, workflow.metadata())
-    if result then
-      local message, is_error = workflow.publish_message("Delivery", result.delivery_revision, result)
-      app:back()
-      app:notify(message, is_error)
-    else
-      app:notify(err, true)
-      workflow.inspect_lock(env, data.package_root)
-    end
+    review.publishing = true
   end
 end
 

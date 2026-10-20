@@ -29,12 +29,26 @@ function M.create(reaper_api)
     return "'" .. value:gsub("'", "'\\''") .. "'"
   end
 
+  local function native_path(path)
+    if separator == "\\" then return path:gsub("/", "\\") end
+    return path:gsub("\\", "/")
+  end
+
+  local function windows_extended_path(path)
+    if path:sub(1, 4) == "\\\\?\\" then return path end
+    if path:sub(1, 2) == "\\\\" then return "\\\\?\\UNC\\" .. path:sub(3) end
+    if path:match("^%a:\\") then return "\\\\?\\" .. path end
+    return path
+  end
+
   -- The pure Lua digest runs at a few MB/s, which stalls the UI thread on
   -- reference and media files. Prefer the platform hashing tool and keep the
   -- Lua implementation as a fallback.
   local function native_hash_file(path)
+    path = native_path(path)
     local command
     if separator == "\\" then
+      path = windows_extended_path(path)
       command = 'certutil -hashfile "' .. path .. '" SHA256'
     else
       command = "shasum -a 256 " .. posix_literal(path)
@@ -49,6 +63,31 @@ function M.create(reaper_api)
       if token and #token == 64 then return token:lower() end
     end
     return nil
+  end
+
+  local function native_copy_file(source, destination)
+    source, destination = native_path(source), native_path(destination)
+    local command
+    if separator == "\\" then
+      source, destination = windows_extended_path(source), windows_extended_path(destination)
+      local script = table.concat({
+        "& {",
+        "$ErrorActionPreference = 'Stop';",
+        "try { [IO.File]::Copy(" .. powershell_literal(source) .. ", " ..
+          powershell_literal(destination) .. ", $false) }",
+        "catch { [Console]::Error.WriteLine($_); exit 1 }",
+        "}",
+      }, " ")
+      command = 'powershell.exe -NoProfile -NonInteractive -Command "' .. script .. '"'
+    else
+      command = "/bin/cp " .. posix_literal(source) .. " " .. posix_literal(destination)
+    end
+    local output = reaper_api.ExecProcess(command, 0)
+    local exit_code = output and tonumber(tostring(output):match("^%s*(-?%d+)"))
+    if exit_code ~= 0 then
+      return nil, output or "native file copy failed"
+    end
+    return true
   end
 
   local function windows_atomic_replace(source, destination)
@@ -104,7 +143,7 @@ function M.create(reaper_api)
     local parts = { ... }
     local result = tostring(parts[1] or "")
     for index = 2, #parts do
-      local part = tostring(parts[index])
+      local part = native_path(tostring(parts[index]))
       result = result:gsub("[/\\]+$", "") .. separator ..
         part:gsub("^[/\\]+", "")
     end
@@ -150,33 +189,7 @@ function M.create(reaper_api)
   end
 
   function fs.copy_file(source, destination)
-    local input, input_error = io.open(source, "rb")
-    if not input then
-      return nil, input_error
-    end
-    local output, output_error = io.open(destination, "wb")
-    if not output then
-      input:close()
-      return nil, output_error
-    end
-
-    while true do
-      local bytes = input:read(1024 * 1024)
-      if not bytes then break end
-      local ok, write_error = output:write(bytes)
-      if not ok then
-        input:close()
-        output:close()
-        return nil, write_error
-      end
-    end
-
-    input:close()
-    local close_ok, close_error = output:close()
-    if not close_ok then
-      return nil, close_error
-    end
-    return true
+    return native_copy_file(source, destination)
   end
 
   function fs.file_size(path)

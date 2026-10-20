@@ -255,6 +255,7 @@ reviewable, and testable.
   parent-owned width, and safe content-slot rendering.
 - `components/card-row.md` defines side-by-side and stacked card layout and
   equal card height.
+- `components/stat-group.md` defines equal-width metric tiles for counts.
 - `components/status.md` defines neutral, ready, warning, and blocked conditions
   with persistent readable role cues.
 - `components/notice.md` defines actionable condition messages and responsive

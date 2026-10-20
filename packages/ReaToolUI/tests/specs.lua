@@ -14,6 +14,7 @@ return {
   "ui_design_single_selection_list_spec.lua",
   "ui_design_card_spec.lua",
   "ui_design_card_row_spec.lua",
+  "ui_design_stat_group_spec.lua",
   "ui_design_status_spec.lua",
   "ui_design_action_bar_spec.lua",
   "ui_design_information_spec.lua",

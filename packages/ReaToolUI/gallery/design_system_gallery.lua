@@ -11,6 +11,7 @@ local design_segmented_control = require("reaui.design_segmented_control")
 local design_single_selection_list = require("reaui.design_single_selection_list")
 local design_card = require("reaui.design_card")
 local design_card_row = require("reaui.design_card_row")
+local design_stat_group = require("reaui.design_stat_group")
 local design_status = require("reaui.design_status")
 local design_action_bar = require("reaui.design_action_bar")
 local design_notice = require("reaui.design_notice")
@@ -51,6 +52,7 @@ function M.create(deps)
   local selection_list = design_single_selection_list.create(ImGui, ctx, adapter)
   local card = design_card.create(ImGui, ctx, adapter)
   local card_row = design_card_row.create(ImGui, ctx, adapter, card)
+  local stat_group = design_stat_group.create(ImGui, ctx, adapter)
   local status = design_status.create(ImGui, ctx, adapter)
   local action_bar = design_action_bar.create(ImGui, ctx, adapter)
   local notice = design_notice.create(ImGui, ctx, adapter)
@@ -261,6 +263,14 @@ function M.create(deps)
     } }).events) do
       last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
     end
+
+    ImGui.Text(ctx, "Stat Group")
+    stat_group.draw({ id = "stats-two", stats = {
+      { label = "Registered tracks", value = 12 }, { label = "Pending changes", value = 2 },
+    } })
+    stat_group.draw({ id = "stats-three", stats = {
+      { label = "Tracks", value = 4 }, { label = "Markers", value = 128 }, { label = "Regions", value = 2 },
+    } })
 
     ImGui.Text(ctx, "Status")
     status.draw({ role = "neutral", text = "No transfer has run in this session." })

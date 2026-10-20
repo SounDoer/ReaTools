@@ -1,14 +1,16 @@
 local button_module = require("reaui.design_button")
+local status_module = require("reaui.design_status")
 local M = {}
-local ROLES = { neutral="Info", ready="Ready", warning="Attention", blocked="Blocked" }
+local ROLES = { neutral=true, ready=true, warning=true, blocked=true }
 local FLAGS = (1 << 0) | (1 << 1) | (1 << 5)
 
-function M.create(ImGui,ctx,adapter,button)
-  button=button or button_module.create(ImGui,ctx,adapter); local component={}
+function M.create(ImGui,ctx,adapter,button,status)
+  button=button or button_module.create(ImGui,ctx,adapter)
+  status=status or status_module.create(ImGui,ctx,adapter); local component={}
   local function resolve(id)return adapter.resolve(id)end
   function component.draw(options)
-    options=options or {}; local prefix=ROLES[options.role]
-    if not prefix then error("unsupported notice role "..tostring(options.role))end
+    options=options or {}
+    if not ROLES[options.role] then error("unsupported notice role "..tostring(options.role))end
     if type(options.id)~="string" or options.id=="" then error("notice id is required")end
     if type(options.text)~="string" or options.text=="" then error("notice text is required")end
     local actions=options.actions or {}; local ids={}
@@ -24,9 +26,7 @@ function M.create(ImGui,ctx,adapter,button)
     ImGui.PopStyleVar(ctx);ImGui.PopStyleColor(ctx,2)
     local chosen
     if visible then
-      ImGui.PushStyleColor(ctx,ImGui.Col_Text,resolve("component.notice."..options.role..".foreground"))
-      ImGui.TextWrapped(ctx,(options.role_label or prefix)..": "..options.text)
-      ImGui.PopStyleColor(ctx)
+      status.draw({role=options.role,text=options.text,role_label=options.role_label,presentation="inline"})
       local available=ImGui.GetContentRegionAvail(ctx);local gap=resolve("semantic.space.control.gap")
       local total=gap*math.max(0,#actions-1)
       for _,a in ipairs(actions)do total=total+ImGui.CalcTextSize(ctx,a.label)+resolve("semantic.space.control.padding_x")*2 end

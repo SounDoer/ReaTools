@@ -34,6 +34,7 @@ function M.create(ImGui, ctx, adapter, deps)
     required_string(options.title, "page header title")
     optional_string(options.badge, "page header badge")
     optional_string(options.meta, "page header meta")
+    optional_string(options.summary, "page header summary")
     optional_string(options.back_label, "page header back_label")
     if options.actions ~= nil and type(options.actions) ~= "table" then
       error("page header actions must be a table")
@@ -91,12 +92,13 @@ function M.create(ImGui, ctx, adapter, deps)
     if options.back_label then
       ImGui.SetCursorPosY(ctx, row_y)
       if button.draw_icon({ id = options.id .. "-back", icon = "back", accessible_label = options.back_label,
-          variant = "quiet" }) then
+          variant = "quiet", disabled = options.back_disabled }) and not options.back_disabled then
         result.back_requested = true
         table.insert(result.events, { type = "page_header.back_requested", id = options.id })
       end
       ImGui.SameLine(ctx, 0, inline)
     end
+    local title_x = ImGui.GetCursorPosX(ctx)
     -- The title wraps before the badge so the badge never leaves the row.
     local badge_space = 0
     if options.badge then
@@ -152,8 +154,23 @@ function M.create(ImGui, ctx, adapter, deps)
       end
     end
 
-    ImGui.SetCursorPosY(ctx, bottom + resolve(collapsed and "semantic.space.header.gap_below_compact" or
+    if options.summary then
+      ImGui.SetCursorPosY(ctx, bottom + spacing_y)
+      ImGui.SetCursorPosX(ctx, title_x)
+      with_text("label", function()
+        ImGui.PushTextWrapPos(ctx, row_x + available)
+        ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("semantic.color.text.secondary"))
+        ImGui.TextWrapped(ctx, options.summary)
+        ImGui.PopStyleColor(ctx)
+        ImGui.PopTextWrapPos(ctx)
+      end)
+      track()
+    end
+
+    -- ImGui rejects a window that ends on SetCursorPos, so the gap ends on an item.
+    ImGui.SetCursorPosY(ctx, bottom - spacing_y + resolve(collapsed and "semantic.space.header.gap_below_compact" or
       "semantic.space.header.gap_below"))
+    ImGui.Dummy(ctx, 0, 0)
     return result
   end
 

@@ -36,6 +36,11 @@ secondary text color. Text and detail wrap within the parent width and stay
 aligned to the text start, not the glyph. `measure(options)` returns the
 single-line width (glyph, gap, and text) for layout components.
 
+`draw_glyph({ role, role_label? })` draws only the glyph, at the `body` line
+height, with the same tooltip. Components that place their own text next to a
+role cue, such as Disclosure, use it so the glyph and its tooltip stay
+identical everywhere.
+
 Product code classifies the condition and supplies the message. Status owns only
 the shared semantic foreground and readable role cue; it emits no event and
 does not execute recovery. Longer messages with actions belong in Notice.

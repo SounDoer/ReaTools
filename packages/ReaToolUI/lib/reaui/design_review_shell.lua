@@ -12,8 +12,29 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
   footer = footer or footer_module.create(ImGui, ctx, adapter)
   stale_review = stale_review or stale_module.create(ImGui, ctx, adapter)
   local pattern = {}
+  -- Sections drawn since the last shell draw; only later sections get a gap.
+  local section_count = 0
   local function append(target, result)
     for _, event in ipairs((result and result.events) or {}) do table.insert(target, event) end
+  end
+
+  function pattern.section(options, render)
+    options = options or {}
+    required_string(options.id, "review section id")
+    required_string(options.title, "review section title")
+    if type(render) ~= "function" then error("review section renderer must be a function") end
+    if section_count > 0 then
+      local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
+      ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + adapter.resolve("semantic.space.section.loose"))
+    end
+    section_count = section_count + 1
+    local function title()
+      ImGui.PushStyleColor(ctx, ImGui.Col_Text, adapter.resolve("semantic.color.text.primary"))
+      ImGui.TextWrapped(ctx, options.title)
+      ImGui.PopStyleColor(ctx)
+    end
+    if adapter.with_text then adapter.with_text("heading", title) else title() end
+    return render()
   end
 
   function pattern.draw(options)
@@ -35,6 +56,7 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
     local body_height = math.max(1, available_height - footer_height)
     local events = {}
     local body_result
+    section_count = 0
 
     ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + indent)
     local body_visible = ImGui.BeginChild(ctx, "##review-shell-" .. options.id .. "-body", width, body_height)
@@ -59,7 +81,7 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
 
     ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + indent)
     local footer_visible = ImGui.BeginChild(ctx, "##review-shell-" .. options.id .. "-footer",
-      width, 0, ImGui.WindowFlags_NoScrollbar)
+      width, 0, 0, ImGui.WindowFlags_NoScrollbar)
     if footer_visible then
       local footer_options = {}
       for key, value in pairs(options.footer) do footer_options[key] = value end

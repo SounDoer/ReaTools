@@ -48,7 +48,8 @@ local function fake(options)
   function ImGui.GetCursorPosX() return cursor.x end
   function ImGui.GetCursorPosY() return cursor.y end
   function ImGui.SetCursorPosX(_, x) cursor.x = x; table.insert(calls.set_x, x) end
-  function ImGui.SetCursorPosY(_, y) cursor.y = y; calls.final_y = y end
+  function ImGui.SetCursorPosY(_, y) cursor.y = y end
+  function calls.cursor_y() return cursor.y end
   function ImGui.GetCursorScreenPos() return cursor.x, cursor.y end
   function ImGui.GetContentRegionAvail() return width - cursor.x, 400 end
   function ImGui.CalcTextSize(_, text) return #text * CHAR, LINES[role] end
@@ -211,10 +212,10 @@ end
 function tests.header_gap_below_uses_compact_value_when_collapsed()
   local wide_header, wide = fake({ width = 800 })
   wide_header.draw(HEADER)
-  equal(wide.final_y, 32 + 20, "wide gap below the control row")
+  equal(wide.cursor_y(), 32 + 20, "wide gap below the control row")
   local header, calls = fake({ width = 400 })
   header.draw({ id = "publish", title = "Publish", actions = { { id = "check", label = "Check", icon = "download" } } })
-  equal(calls.final_y, 32 + 16, "compact gap below")
+  equal(calls.cursor_y(), 32 + 16, "compact gap below")
 end
 
 function tests.header_long_title_moves_actions_below_at_320()
@@ -228,7 +229,23 @@ function tests.header_long_title_moves_actions_below_at_320()
   local publish = calls.buttons[1]
   assert(publish.y > 0, "actions moved below the title")
   equal(publish.x + #"Publish" * CHAR + 24, width, "right aligned")
-  equal(calls.final_y, publish.y + 32 + 16, "gap measured from the lowest item")
+  equal(calls.cursor_y(), publish.y + 32 + 16, "gap measured from the lowest item")
+end
+
+function tests.header_summary_sits_under_the_title_before_the_gap()
+  local header, calls = fake({ width = 800 })
+  header.draw({ id = "review", title = "Publish Reference", back_label = "Back", summary = "4 tracks · 8 markers" })
+  local summary = find_text(calls, "4 tracks · 8 markers")
+  equal(summary.role, "label", "summary font")
+  equal(summary.x, 32 + 12, "summary aligns with the title")
+  equal(summary.y, 32 + 8, "summary directly under the control row")
+  equal(calls.cursor_y(), summary.y + 14 + 20, "gap below the summary")
+end
+
+function tests.header_back_disabled_never_requests()
+  local header, calls = fake({ click = "review-back" })
+  header.draw({ id = "review", title = "Publish", back_label = "Back", back_disabled = true })
+  equal(calls.icons[1].options.disabled, true, "back button disabled")
 end
 
 function tests.header_validates_options()

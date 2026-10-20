@@ -1065,15 +1065,27 @@ function M.create(deps)
         header={title="Publish Reference r7",summary="4 tracks · 8 markers and regions"},
         footer={summary="Fix 1 issue to publish",role="blocked",complete_label="Publish",enabled=false},
         render_body=function()
-          notice.draw({id="review-save-as",role="blocked",text="This project was moved or saved under a new name. Choose how its identity should continue.",actions={{id="continue",label="Continue Existing"},{id="new",label="Start New"}}})
-          adapter.with_text("heading", function() ImGui.Text(ctx,"Decisions") end)
-          segmented.draw_field({id="review-reference",label="Checked against reference",value="r6",options={{id="r6",label="Reference r6"},{id="none",label="Not checked"}}})
-          adapter.with_text("heading", function() ImGui.Text(ctx,"Included material") end)
-          disclosure.draw({id="review-tracks",label="Tracks · 4",description="The publish scope stays visible before anything is written.",default_open=true},function()
-            ImGui.TextWrapped(ctx,"Dialogue / Main Character / Alternate Language / Close Perspective")
-            ImGui.TextWrapped(ctx,"Ambience / Forest / Night / Distant Perspective")
+          local events={}
+          local function record(result) for _,event in ipairs(result.events) do table.insert(events,event) end end
+          stat_group.draw({id="review-scope",stats={{label="Tracks",value=4},{label="Markers",value=8},{label="Regions",value=2}}})
+          review_shell.section({id="issues",title="Issues"},function()
+            record(issue_item.draw({id="review-save-as",role="blocked",message="Project was saved under a new name",
+              detail="Choose how its identity should continue.",actions={{id="continue",label="Continue Existing"},{id="new",label="Start New"}}}))
+            record(issue_item.draw({id="review-changed",role="warning",message="Two tracks changed since revision 6"}))
           end)
-          return {events={}}
+          review_shell.section({id="decisions",title="Decisions"},function()
+            segmented.draw_field({id="review-reference",label="Checked against reference",value="r6",options={{id="r6",label="Reference r6"},{id="none",label="Not checked"}}})
+          end)
+          review_shell.section({id="details",title="Details"},function()
+            disclosure.draw({id="review-tracks",label="Tracks",variant="inset",role="warning",detail="4 · 2 changed"},function()
+              ImGui.TextWrapped(ctx,"Dialogue / Main Character / Alternate Language / Close Perspective")
+              ImGui.TextWrapped(ctx,"Ambience / Forest / Night / Distant Perspective")
+            end)
+            disclosure.draw({id="review-markers",label="Markers and regions",variant="inset",detail="10"},function()
+              ImGui.TextWrapped(ctx,"8 markers · 2 regions")
+            end)
+          end)
+          return {events=events}
         end,
       })
       for _,event in ipairs(result.events)do last_event=event.type.." id="..event.id end

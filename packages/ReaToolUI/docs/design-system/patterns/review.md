@@ -25,6 +25,33 @@ and body a vertically scrolling child, and keeps the Footer in a separate
 non-scrolling child. Its order is Header, current body or Stale Review, then
 Footer. Product body events are forwarded between Header and Footer events.
 
+## Direction C layout (DS022)
+
+Revised on 2026-10-20. Automated checks pass; visual review happens in round 2
+of the visual language plan.
+
+- **Header.** Review Header renders through Page Header: the Back icon button,
+  the title in the `title` role, and the optional summary under the title in
+  the `label` role with the secondary text color. `disabled` disables Back.
+  Page Header adds the header gap below; there is no separator.
+- **Scope summary.** An optional Stat Group directly under the header
+  summarizes the scope (for example tracks, markers, regions).
+- **Sections.** `review_shell.section({ id, title }, render)` draws the title
+  in the `heading` role and then the body, and returns `render()`'s result.
+  Inside one Review Shell body, consecutive sections are separated by
+  `semantic.space.section.loose`. The count resets on every
+  `review_shell.draw`, so sections are meant to be drawn from `render_body`.
+  Typical sections are Issues, Decisions, and Details.
+- **Issues.** Each problem is an Issue Item (warning or blocked) with its fix
+  actions.
+- **Details.** Detail groups use the inset Disclosure variant. A group whose
+  `role` is `warning` or `blocked` opens by default.
+- **Footer.** Review Footer draws the only separator, then
+  `semantic.space.footer.padding_y`, then the summary as an inline Status and
+  the completion button right-aligned through the shared trailing layout.
+  Horizontal footer padding comes from the containing child window. Below
+  `semantic.size.field.inline_wide` the button stretches on its own line.
+
 The product supplies issue Notices, decisions, detail Disclosures, labels,
 summaries, current/stale state, enablement, operation state, and every domain
 effect. The Pattern never counts domain issues, refreshes data, mutates a

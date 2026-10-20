@@ -13,6 +13,11 @@ secondary or danger intent, and disabled state. Actions emit
 `notice.action_selected`; the Product executes effects. Buttons remain inline
 when they fit and become full-width stacked actions in narrow parents.
 
+Since DS022 (2026-10-20) the message renders through Status in the `inline`
+presentation: the role glyph comes first and the role label (or `role_label`)
+is the glyph's tooltip instead of a visible `Info:` / `Blocked:` prefix. The
+message text uses the role foreground color, as before.
+
 Notice is not a Toast lifetime policy, modal dialog, validation message, or
 automatic confirmation. Automated checks cover roles, action integrity,
 responsive action layout, disabled actions, event payloads, tokens, and stack

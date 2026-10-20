@@ -14,14 +14,28 @@ function M.create(ImGui, ctx, adapter, icon_renderer)
     return renderer()
   end
 
-  local function validate(options)
+  local function validate_role(options)
     if not ROLES[options.role] then error("unsupported status role " .. tostring(options.role)) end
+    local label = options.role_label or ROLES[options.role]
+    if type(label) ~= "string" or label == "" then error("status role_label must be non-empty") end
+    return label
+  end
+
+  local function validate(options)
+    local label = validate_role(options)
     if type(options.text) ~= "string" or options.text == "" then error("status text is required") end
     local presentation = options.presentation or "inline"
     if not FONTS[presentation] then error("unsupported status presentation " .. tostring(presentation)) end
-    local label = options.role_label or ROLES[options.role]
-    if type(label) ~= "string" or label == "" then error("status role_label must be non-empty") end
     return FONTS[presentation], label
+  end
+
+  -- Draws the role glyph at the current font's line height.
+  local function glyph(role, label, color)
+    local size = ImGui.GetTextLineHeight(ctx)
+    local x, y = ImGui.GetCursorScreenPos(ctx)
+    icon_renderer.draw(ImGui, ImGui.GetWindowDrawList(ctx), GLYPHS[role], x, y, size, color)
+    ImGui.Dummy(ctx, size, size)
+    if ImGui.IsItemHovered(ctx) then ImGui.SetTooltip(ctx, label) end
   end
 
   function component.draw(options)
@@ -29,11 +43,7 @@ function M.create(ImGui, ctx, adapter, icon_renderer)
     local font, label = validate(options)
     local color = adapter.resolve("component.status." .. options.role .. ".foreground")
     with_text(font, function()
-      local size = ImGui.GetTextLineHeight(ctx)
-      local x, y = ImGui.GetCursorScreenPos(ctx)
-      icon_renderer.draw(ImGui, ImGui.GetWindowDrawList(ctx), GLYPHS[options.role], x, y, size, color)
-      ImGui.Dummy(ctx, size, size)
-      if ImGui.IsItemHovered(ctx) then ImGui.SetTooltip(ctx, label) end
+      glyph(options.role, label, color)
       ImGui.SameLine(ctx, 0, adapter.resolve("semantic.space.inline.default"))
       ImGui.BeginGroup(ctx)
       ImGui.PushStyleColor(ctx, ImGui.Col_Text, color)
@@ -47,6 +57,15 @@ function M.create(ImGui, ctx, adapter, icon_renderer)
         end)
       end
       ImGui.EndGroup(ctx)
+    end)
+  end
+
+  -- The glyph alone, in body size, for components that place their own text.
+  function component.draw_glyph(options)
+    options = options or {}
+    local label = validate_role(options)
+    with_text("body", function()
+      glyph(options.role, label, adapter.resolve("component.status." .. options.role .. ".foreground"))
     end)
   end
 

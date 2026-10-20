@@ -23,11 +23,14 @@ page_header.draw({
 
 ## Rules
 
-- `id` and `title` are required. `badge`, `meta`, and `back_label` are
-  optional non-empty strings.
+- `id` and `title` are required. `badge`, `meta`, `summary`, and `back_label`
+  are optional non-empty strings.
 - `back_label` adds a quiet Icon Button with the `back` icon and uses
   `back_label` as its accessible label. Activation sets `back_requested` and
   emits `{ type = "page_header.back_requested", id = <header id> }`.
+  `back_disabled = true` disables it, and then it never emits.
+- `summary` renders under the header row, aligned with the title, in the
+  `label` role with the secondary text color. Review Header uses it.
 - Each action needs `id` and `label`; `icon` and `variant` are optional.
   Action button ids are `<header id>-<action id>`.
 - Disabled actions never emit events. Activation emits
@@ -48,7 +51,9 @@ page_header.draw({
 4. Meta (`label` role, secondary text color) and the actions are placed
    through the shared trailing layout: right-aligned on the title row when
    they fit, otherwise right-aligned on their own line below.
-5. The next content starts `semantic.space.header.gap_below` below the lowest
+5. The summary, when present, starts one item spacing below the lowest row
+   item.
+6. The next content starts `semantic.space.header.gap_below` below the lowest
    header item.
 
 ## Collapsed layout

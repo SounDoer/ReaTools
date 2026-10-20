@@ -19,6 +19,7 @@ return {
   "delivery_import_spec.lua",
   "delivery_update_spec.lua",
   "ui_theme_spec.lua",
+  "ui_components_spec.lua",
   "ui_view_models_spec.lua",
   "ui_settings_spec.lua",
   "ui_app_state_spec.lua",

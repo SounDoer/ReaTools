@@ -112,6 +112,10 @@ local function draw_declaration(env, review)
   local choices = view_models.reference_declaration_options(
     data.synchronized_reference_revision, data.last_declared_reference_revision
   )
+  if #choices == 1 then
+    c.value_row("Revision", choices[1].label)
+    return
+  end
   local chosen = c.segmented("declared-reference", choices, data.reviewed_reference_revision)
   if chosen ~= data.reviewed_reference_revision then
     review.options.declared_reference_revision = chosen

@@ -33,6 +33,8 @@ function M.create(ImGui, ctx, design_system)
   local cards, pages = {}, {}
   local toast_height = 64
   local confirmation
+  local list_clipper = ImGui.CreateListClipper(ctx)
+  ImGui.Attach(ctx, list_clipper)
 
   local function resolve(id) return adapter.resolve(id) end
   local function with_text(role, renderer) return adapter.with_text(role, renderer) end
@@ -246,10 +248,9 @@ function M.create(ImGui, ctx, design_system)
   end
   function c.end_group() ImGui.TreePop(ctx) end
   function c.clipped(count, draw_row)
-    local clipper = ImGui.CreateListClipper(ctx)
-    ImGui.ListClipper_Begin(clipper, count)
-    while ImGui.ListClipper_Step(clipper) do
-      local first, last = ImGui.ListClipper_GetDisplayRange(clipper)
+    ImGui.ListClipper_Begin(list_clipper, count)
+    while ImGui.ListClipper_Step(list_clipper) do
+      local first, last = ImGui.ListClipper_GetDisplayRange(list_clipper)
       for index = first + 1, last do draw_row(index) end
     end
   end

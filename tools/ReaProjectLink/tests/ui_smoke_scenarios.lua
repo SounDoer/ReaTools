@@ -39,6 +39,42 @@ local reviews = {
       }
     end,
   },
+  delivery_publish_first = {
+    kind = "delivery_publish",
+    fields = function()
+      return {
+        options = {},
+        data = {
+          delivery_revision = 1, blocker_count = 0, has_unprocessed_fx = false,
+          synchronized_reference_revision = 5, last_declared_reference_revision = 0,
+          reviewed_reference_revision = 5, package_root = "C:/smoke",
+          lanes = {
+            { lane_id = "lane-1", display_name = "SFX_Impacts", clips = {
+              { display_name = "Hit_01", blockers = {}, clip = {} },
+            } },
+          },
+        },
+      }
+    end,
+  },
+  delivery_publish_same_reference = {
+    kind = "delivery_publish",
+    fields = function()
+      return {
+        options = {},
+        data = {
+          delivery_revision = 14, blocker_count = 0, has_unprocessed_fx = false,
+          synchronized_reference_revision = 5, last_declared_reference_revision = 5,
+          reviewed_reference_revision = 5, package_root = "C:/smoke",
+          lanes = {
+            { lane_id = "lane-1", display_name = "SFX_Impacts", clips = {
+              { display_name = "Hit_01", blockers = {}, clip = {} },
+            } },
+          },
+        },
+      }
+    end,
+  },
   reference_publish = {
     kind = "reference_publish",
     fields = function()
@@ -99,6 +135,8 @@ local views = {
   { project_type = "source", view = "settings" },
   { project_type = "source", review = reviews.reference_update },
   { project_type = "source", review = reviews.delivery_publish },
+  { project_type = "source", review = reviews.delivery_publish_first },
+  { project_type = "source", review = reviews.delivery_publish_same_reference },
   { project_type = "master" },
   { project_type = "master", view = "settings" },
   { project_type = "master", review = reviews.reference_publish },

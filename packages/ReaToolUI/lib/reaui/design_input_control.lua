@@ -34,6 +34,9 @@ function M.create(ImGui, ctx, adapter)
     if options.read_only then flags = flags | ImGui.InputTextFlags_ReadOnly end
     ImGui.SetNextItemWidth(ctx, options.width or -1)
     push_style(options)
+    local padding_x = ImGui.GetStyleVar(ctx, ImGui.StyleVar_FramePadding)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_FramePadding, padding_x,
+      (resolve("semantic.size.control.medium") - ImGui.GetFontSize(ctx)) / 2)
     if options.disabled then ImGui.BeginDisabled(ctx, true) end
     local changed, value
     if options.placeholder and options.placeholder ~= "" then
@@ -44,6 +47,7 @@ function M.create(ImGui, ctx, adapter)
     end
     local committed = ImGui.IsItemDeactivatedAfterEdit(ctx)
     if options.disabled then ImGui.EndDisabled(ctx) end
+    ImGui.PopStyleVar(ctx)
     ImGui.PopStyleColor(ctx, 5)
 
     return {

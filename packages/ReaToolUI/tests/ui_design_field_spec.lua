@@ -26,7 +26,13 @@ local function fake_dependencies()
     Col_FrameBgActive = 4,
     Col_Border = 5,
     InputTextFlags_ReadOnly = 8,
+    StyleVar_FramePadding = 9,
   }
+  calls.vars, calls.popped_vars = {}, 0
+  function ImGui.GetFontSize() return 14 end
+  function ImGui.GetStyleVar() return 6, 3 end
+  function ImGui.PushStyleVar(_, key, x, y) table.insert(calls.vars, { key = key, x = x, y = y }) end
+  function ImGui.PopStyleVar(_, count) calls.popped_vars = calls.popped_vars + (count or 1) end
   function ImGui.TextColored(_, _, value) table.insert(calls.text, value) end
   function ImGui.TextWrapped(_, value) table.insert(calls.wrapped, value) end
   function ImGui.PushStyleColor(_, key, value)
@@ -53,6 +59,7 @@ local function fake_dependencies()
   local adapter = {}
   function adapter.resolve(id)
     table.insert(calls.tokens, id)
+    if id == "semantic.size.control.medium" then return 32 end
     return 0x112233ff
   end
   return ImGui, adapter, calls
@@ -104,6 +111,16 @@ function tests.text_field_emits_changed_then_committed_events()
   equal(result.events[2].id, "pattern", "event id")
   equal(calls.input.id, "##field-pattern", "native id")
   equal(calls.item_width, -1, "full available width")
+end
+
+function tests.input_frame_height_matches_control_height()
+  local ImGui, adapter, calls = fake_dependencies()
+  text_field_module.create(ImGui, "ctx", adapter).draw({ id = "name", label = "Name", value = "" })
+  equal(#calls.vars, 1, "one style var")
+  equal(calls.vars[1].key, ImGui.StyleVar_FramePadding, "frame padding")
+  equal(calls.vars[1].x, 6, "horizontal padding unchanged")
+  equal(calls.vars[1].y, 9, "frame height is the control height")
+  equal(calls.popped_vars, 1, "style var popped")
 end
 
 function tests.text_field_routes_placeholder_to_native_hint()

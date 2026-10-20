@@ -192,6 +192,7 @@ M.registry = {
       [55] = { type = "logical_unit", value = 220 },
       [80] = { type = "logical_unit", value = 320 },
       [90] = { type = "logical_unit", value = 360 },
+      [130] = { type = "logical_unit", value = 520 },
       [140] = { type = "logical_unit", value = 560 },
       [180] = { type = "logical_unit", value = 720 },
     },
@@ -603,6 +604,9 @@ M.registry = {
       },
       page_header = {
         collapse_below = { type = "logical_unit", ref = "primitive.size.140" },
+      },
+      toast = {
+        max_width = { type = "logical_unit", ref = "primitive.size.130" },
       },
       preview = {
         compact = { type = "logical_unit", ref = "primitive.size.80" },

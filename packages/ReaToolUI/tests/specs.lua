@@ -4,6 +4,7 @@ return {
   "ui_design_conformance_spec.lua",
   "ui_design_adapter_spec.lua",
   "ui_design_layout_spec.lua",
+  "ui_icons_spec.lua",
   "ui_design_button_spec.lua",
   "ui_design_field_spec.lua",
   "ui_design_number_field_spec.lua",

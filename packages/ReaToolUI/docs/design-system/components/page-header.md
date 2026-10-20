@@ -15,7 +15,7 @@ page_header.draw({
   meta = "Last checked 2 min ago",
   back_label = "Back to Main",
   actions = {
-    { id = "check", label = "Check Now", icon = "download" },
+    { id = "check", label = "Check Now", icon = "refresh" },
     { id = "publish", label = "Publish", variant = "primary" },
   },
 }) -- { events = { ... }, action = "publish" | nil, back_requested = boolean }

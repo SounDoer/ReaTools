@@ -97,6 +97,7 @@ function tests.direction_c_foundation_values()
     ["semantic.size.control.compact"] = 28,
     ["semantic.layout.card_row.stack_below"] = 560,
     ["semantic.layout.page_header.collapse_below"] = 560,
+    ["semantic.layout.toast.max_width"] = 520,
   }
   for _, theme in ipairs({ "light", "dark" }) do
     for id, value in pairs(expect) do

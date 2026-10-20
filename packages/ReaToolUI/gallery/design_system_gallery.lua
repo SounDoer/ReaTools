@@ -373,7 +373,7 @@ function M.create(deps)
     for _, fixture in ipairs({
       { id = "header-main", title = "Trailer Main", badge = "Master", meta = "Last published 2 min ago",
         actions = {
-          { id = "check", label = "Check Now", icon = "download" },
+          { id = "check", label = "Check Now", icon = "refresh" },
           { id = "publish", label = "Publish", icon = "upload", variant = "primary" },
         } },
       { id = "header-review", title = "Publish Reference", badge = "r7", back_label = "Back to Main",
@@ -914,7 +914,7 @@ function M.create(deps)
   } }
   local function main_header(id, title, badge, meta)
     record_events(page_header.draw({ id = id, title = title, badge = badge, meta = meta, actions = {
-      { id = "check", label = "Check Now" },
+      { id = "check", label = "Check Now", icon = "refresh" },
       { id = "settings", label = "Settings", icon = "gear", icon_only = true, variant = "quiet" },
     } }))
   end

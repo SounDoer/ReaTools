@@ -115,6 +115,10 @@ Text Field fills the content width provided by Field Shell. Compact, Standard,
 and Wide parent layouts change that available width; Text Field does not inspect
 the global window range.
 
+Text, Number, and Path inputs are `semantic.size.control.medium` high, the
+same height as a medium Button, so an input and its Browse or Load button line
+up on one row (DS022). The input keeps the host horizontal frame padding.
+
 Long values use native horizontal text scrolling while editing. Read-only values
 remain selectable so the full value can be inspected or copied. Labels,
 descriptions, and validation messages wrap vertically rather than clipping.

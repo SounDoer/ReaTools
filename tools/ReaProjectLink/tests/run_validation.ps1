@@ -59,6 +59,11 @@ try {
   Wait-ReaperExit $uiProcess 'Product UI'
   Assert-Pass 'Product UI' $uiText
 
+  $layoutScript = Join-Path $PSScriptRoot '..\..\..\tooling\check_ui_layout.ps1'
+  $viewsPath = Join-Path $PSScriptRoot '..\ReaProjectLink\lib\reaprojectlink\ui\views'
+  $layoutText = (& $layoutScript -Path $viewsPath | Out-String).Trim()
+  Assert-Pass 'Layout' $layoutText
+
   $results | ForEach-Object { Write-Output $_ }
 } finally {
   Remove-Item Env:REAPROJECTLINK_UI_SMOKE_RESULT -ErrorAction SilentlyContinue

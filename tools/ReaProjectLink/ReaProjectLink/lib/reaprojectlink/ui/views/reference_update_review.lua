@@ -3,31 +3,6 @@ local workflow = require("reaprojectlink.ui.workflow")
 
 local M = {}
 
-local function draw_contents(env, snapshot)
-  local c, disclosure = env.c, env.design_system.components.disclosure
-  local lanes = snapshot.lanes or {}
-  local markers = snapshot.markers or {}
-  local regions = snapshot.regions or {}
-  disclosure.draw({ id = "reference-tracks", label = "Tracks", variant = "inset",
-    detail = view_models.count(#lanes, "track") }, function()
-    for _, lane in ipairs(lanes) do
-      c.key_value(lane.displayName, view_models.count(#(lane.items or {}), "item"))
-    end
-  end)
-  disclosure.draw({ id = "reference-markers", label = "Markers", variant = "inset",
-    detail = view_models.count(#markers, "marker") }, function()
-    for _, marker in ipairs(markers) do
-      c.muted(marker.name ~= "" and marker.name or "Unnamed Marker")
-    end
-  end)
-  disclosure.draw({ id = "reference-regions", label = "Regions", variant = "inset",
-    detail = view_models.count(#regions, "region") }, function()
-    for _, region in ipairs(regions) do
-      c.muted(region.name ~= "" and region.name or "Unnamed Region")
-    end
-  end)
-end
-
 -- The full check hashes Reference media, so it only runs when the user opens
 -- this Review.
 function M.open(env)
@@ -42,7 +17,7 @@ function M.open(env)
 end
 
 function M.draw(env)
-  local c, app = env.c, env.app
+  local app = env.app
   local components, shell = env.design_system.components, env.design_system.patterns.review_shell
   local review = app.review
   local status = review.status
@@ -88,9 +63,11 @@ function M.draw(env)
         end)
       end
       shell.section({ id = "reference-update-contents", title = "Contents" }, function()
-        c.key_value("Alignment", status.alignment_mode == "relative" and
-          "Relative to Reference Start" or "Mirror Master Timeline")
-        draw_contents(env, snapshot)
+        components.list.draw({ id = "reference-update-alignment", items = {
+          { kind = "row", id = "alignment", title = "Alignment", detail = status.alignment_mode == "relative" and
+            "Relative to Reference Start" or "Mirror Master Timeline" },
+        } })
+        workflow.draw_reference_contents(env, snapshot.lanes or {}, snapshot.markers or {}, snapshot.regions or {})
       end)
     end,
   }))

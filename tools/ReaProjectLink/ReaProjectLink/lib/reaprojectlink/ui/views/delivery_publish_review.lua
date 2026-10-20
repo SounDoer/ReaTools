@@ -123,7 +123,9 @@ local function draw_declaration(env, review)
     data.synchronized_reference_revision, data.last_declared_reference_revision
   )
   if #choices == 1 then
-    c.value_row("Revision", choices[1].label)
+    env.design_system.components.list.draw({ id = "declared-reference", items = {
+      { kind = "row", id = "revision", title = "Revision", detail = choices[1].label },
+    } })
     return
   end
   local chosen = c.segmented("declared-reference", choices, data.reviewed_reference_revision)

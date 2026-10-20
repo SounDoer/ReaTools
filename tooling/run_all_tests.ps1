@@ -59,8 +59,8 @@ Invoke-Step 'UI layout scan' {
   & (Join-Path $PSScriptRoot 'test_check_ui_layout.ps1')
 }
 
-Invoke-Step 'ReaProjectLink layout report' {
-  & (Join-Path $PSScriptRoot 'check_ui_layout.ps1') -Report `
+Invoke-Step 'ReaProjectLink layout scan' {
+  & (Join-Path $PSScriptRoot 'check_ui_layout.ps1') `
     -Path (Join-Path $reaprojectlink 'ReaProjectLink\lib\reaprojectlink\ui\views')
 }
 

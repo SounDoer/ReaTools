@@ -86,24 +86,6 @@ local function handle_issue(env, action, options)
   return false
 end
 
-local function draw_details(env, data)
-  local c, disclosure = env.c, env.design_system.components.disclosure
-  disclosure.draw({ id = "reference-tracks", label = "Tracks", variant = "inset",
-    detail = view_models.count(#data.lanes, "track") }, function()
-    for _, lane in ipairs(data.lanes) do
-      c.key_value(lane.displayName, view_models.count(#(lane.items or {}), "item"))
-    end
-  end)
-  disclosure.draw({ id = "reference-markers", label = "Markers", variant = "inset",
-    detail = view_models.count(#data.markers, "marker") }, function()
-    for _, marker in ipairs(data.markers) do c.muted(marker.name ~= "" and marker.name or "Unnamed Marker") end
-  end)
-  disclosure.draw({ id = "reference-regions", label = "Regions", variant = "inset",
-    detail = view_models.count(#data.regions, "region") }, function()
-    for _, region in ipairs(data.regions) do c.muted(region.name ~= "" and region.name or "Unnamed Region") end
-  end)
-end
-
 function M.draw(env)
   local app = env.app
   local components, shell = env.design_system.components, env.design_system.patterns.review_shell
@@ -145,7 +127,7 @@ function M.draw(env)
         end)
       end
       shell.section({ id = "reference-publish-contents", title = "Contents" }, function()
-        draw_details(env, data)
+        workflow.draw_reference_contents(env, data.lanes, data.markers, data.regions)
       end)
     end,
   })

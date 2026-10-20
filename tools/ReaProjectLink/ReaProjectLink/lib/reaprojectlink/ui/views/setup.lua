@@ -17,7 +17,7 @@ function M.draw(env, state)
   local service = env.services.project_service
   local actions = {}
   workflow.draw_notices(env, state)
-  if c.begin_page("setup", false) then
+  if c.begin_page("setup") then
     components.page_header.draw({
       id = "setup",
       title = "Set Up ReaProjectLink",

@@ -1,4 +1,6 @@
 -- Helpers shared by views. `env` is the table built in ui/app.lua.
+local view_models = require("reaprojectlink.ui.view_models")
+
 local M = {}
 
 function M.metadata()
@@ -96,6 +98,39 @@ function M.review_flags(result)
     if flag then flags[flag] = true end
   end
   return flags
+end
+
+local function name_rows(prefix, entries, fallback)
+  local rows = {}
+  for index, entry in ipairs(entries) do
+    rows[index] = { kind = "row", id = prefix .. "-" .. index, title = entry.name ~= "" and entry.name or fallback }
+  end
+  return rows
+end
+
+-- Reference Tracks, Markers, and Regions as inset Disclosures holding Lists.
+function M.draw_reference_contents(env, lanes, markers, regions)
+  local components = env.design_system.components
+  local tracks = {}
+  for index, lane in ipairs(lanes) do
+    tracks[index] = { kind = "row", id = "track-" .. index, title = lane.displayName,
+      detail = view_models.count(#(lane.items or {}), "item") }
+  end
+  local groups = {
+    { id = "tracks", label = "Tracks", detail = view_models.count(#lanes, "track"), variant = "standard", rows = tracks },
+    { id = "markers", label = "Markers", detail = view_models.count(#markers, "marker"), variant = "compact",
+      rows = name_rows("marker", markers, "Unnamed Marker") },
+    { id = "regions", label = "Regions", detail = view_models.count(#regions, "region"), variant = "compact",
+      rows = name_rows("region", regions, "Unnamed Region") },
+  }
+  for _, group in ipairs(groups) do
+    components.disclosure.draw({ id = "reference-" .. group.id, label = group.label, variant = "inset",
+      detail = group.detail }, function()
+      if #group.rows > 0 then
+        components.list.draw({ id = "reference-" .. group.id .. "-list", variant = group.variant, items = group.rows })
+      end
+    end)
+  end
 end
 
 M.STALE_REVIEW = {

@@ -86,7 +86,7 @@ function M.create()
     end
 
     workflow.draw_notices(env)
-    if c.begin_page("settings", false) then
+    if c.begin_page("settings") then
       back = components.page_header.draw({ id = "settings", title = "Settings", back_label = "Back" }).back_requested
 
       section("project", "Project", function()

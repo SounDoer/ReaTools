@@ -124,6 +124,12 @@ function M.create(ImGui, ctx, design_system)
     ImGui.PushStyleColor(ctx, ImGui.Col_FrameBgActive, resolve("component.dropdown.background.pressed"))
     ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("component.dropdown.foreground.default"))
     ImGui.PushStyleColor(ctx, ImGui.Col_Border, resolve("component.dropdown.border.default"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_Button, resolve("component.dropdown.background.default"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ButtonHovered, resolve("component.dropdown.background.hover"))
+    ImGui.PushStyleColor(ctx, ImGui.Col_ButtonActive, resolve("component.dropdown.background.pressed"))
+    local padding_x = ImGui.GetStyleVar(ctx, ImGui.StyleVar_FramePadding)
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_FramePadding, padding_x,
+      (resolve("semantic.size.control.medium") - ImGui.GetFontSize(ctx)) / 2)
     if ImGui.BeginCombo(ctx, "##" .. id, preview) then
       for index, option in ipairs(options) do
         if option.separator then ImGui.Separator(ctx)
@@ -133,7 +139,8 @@ function M.create(ImGui, ctx, design_system)
       end
       ImGui.EndCombo(ctx)
     end
-    ImGui.PopStyleColor(ctx, 5)
+    ImGui.PopStyleVar(ctx)
+    ImGui.PopStyleColor(ctx, 8)
     return chosen
   end
   function c.segmented(id, options, selected)

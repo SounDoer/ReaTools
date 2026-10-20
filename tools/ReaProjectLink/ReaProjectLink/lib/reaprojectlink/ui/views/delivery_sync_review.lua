@@ -212,15 +212,13 @@ local function draw_target(env, review)
   local result = components.number_field.draw({
     id = "target-revision",
     label = "Target revision",
+    description = string.format("Latest is r%d", review.data.latest_revision),
     value = review.target_input,
     minimum = 1,
+    action = { id = "load", label = "Load" },
   })
   if result.changed and result.parse_state == "valid" then review.target_input = result.value end
-  return components.action_bar.draw({
-    id = "target",
-    context = string.format("Latest is r%d", review.data.latest_revision),
-    actions = { { id = "load", label = "Load" } },
-  }).action == "load"
+  return result.action == "load"
 end
 
 local function draw_bound_lanes(env, review)

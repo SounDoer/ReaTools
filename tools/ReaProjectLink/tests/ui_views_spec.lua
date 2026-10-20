@@ -37,7 +37,7 @@ local function fake_view_env(script)
   end
   local components = {}
   for _, key in ipairs({ "page_header", "card_row", "card", "list", "notice", "stat_group", "issue_item",
-    "disclosure", "checkbox", "number_field", "action_bar" }) do
+    "disclosure", "checkbox", "number_field" }) do
     components[key] = recorder(key)
   end
   components.segmented_control = {
@@ -475,9 +475,10 @@ function tests.update_load_reopens_review()
       blocker_count = 0, pending_count = 1, source_project_id = "a",
     },
   }
-  local env, calls = fake_view_env({ review = review, action_bar = { events = {}, action = "load" } })
+  local env, calls = fake_view_env({ review = review, number_field = { events = {}, action = "load" } })
   delivery_sync_review.draw(env)
-  equal(calls.action_bar.context, "Latest is r4", "load context")
+  equal(calls.number_field.description, "Latest is r4", "load context")
+  equal(calls.number_field.action.label, "Load", "load action")
   equal(calls.update_opened, "a", "load reopens the update review")
   equal(calls.update_target, 2, "load uses the typed target")
 end

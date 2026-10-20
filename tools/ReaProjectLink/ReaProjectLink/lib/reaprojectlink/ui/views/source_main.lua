@@ -30,43 +30,16 @@ local function display_name(name, fallback)
   return name ~= nil and name ~= "" and name or fallback
 end
 
-local function detach_row(env, id, label)
-  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
-  ImGui.AlignTextToFramePadding(ctx)
-  ImGui.Text(ctx, label)
-  c.same_line_right(c.button_width("Detach..."))
-  return c.button("Detach...##" .. id)
-end
-
-local function draw_entries(env, prefix, entries, fallback, action_for)
-  if #entries == 0 then return nil end
-  local ImGui, ctx = env.ImGui, env.ctx
-  ImGui.Indent(ctx)
-  local chosen
-  for index, entry in ipairs(entries) do
-    if detach_row(env, prefix .. "-" .. index, display_name(entry.name, fallback)) then
-      chosen = action_for(entry)
-    end
-  end
-  ImGui.Unindent(ctx)
-  return chosen
-end
-
-local function draw_under_count(env, surface, row)
-  local label = row.label or row[1]
-  if label == "Tracks" then
-    return draw_entries(env, "track", surface.tracks, "Unnamed Track", function(entry)
-      return { id = "detach_track", ref = entry.ref, name = entry.name, kind = "Track" }
-    end)
-  elseif label == "Markers" then
-    return draw_entries(env, "marker", surface.markers, "Unnamed Marker", function(entry)
-      return { id = "detach_entry", entry_id = entry.entry_id, kind = "Marker", name = entry.name }
-    end)
-  elseif label == "Regions" then
-    return draw_entries(env, "region", surface.regions, "Unnamed Region", function(entry)
-      return { id = "detach_entry", entry_id = entry.entry_id, kind = "Region", name = entry.name }
-    end)
-  end
+-- Returns the detach action chosen in the Reference name List, if any.
+local function draw_reference_names(env, surface)
+  local app = env.app
+  local items, overflow, lookup = view_models.reference_name_list(surface, app.reference_names_expanded)
+  if #items == 0 then return nil end
+  local result = env.design_system.components.list.draw({
+    id = "source-reference-names", variant = "compact", items = items, overflow = overflow,
+  })
+  if result.overflow_toggled then app.reference_names_expanded = not app.reference_names_expanded end
+  return result.action and lookup[result.action.row]
 end
 
 local function handle_detach(env, action)
@@ -123,21 +96,31 @@ local function handle(env, action)
 end
 
 function M.draw(env, state)
-  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
   local surface = env.services.reference_subscription.local_surface(env.adapter)
   local values = input(env, state, surface)
   local cards = view_models.source_cards(values)
   header.draw(env, state, "Source")
-  local width, side_by_side = c.card_width()
-  local reference_action = card.draw(env, "source-reference", "film", "Reference", cards.reference,
-    cards.highlight == "reference", width, nil, nil, function(row)
-      if (values.synchronized or 0) <= 0 then return nil end
-      return draw_under_count(env, surface, row)
-    end)
-  if side_by_side then ImGui.SameLine(ctx, 0, 12) end
-  local delivery_action = card.draw(env, "source-delivery", "upload", "Delivery", cards.delivery,
-    cards.highlight == "delivery", width, nil)
-  local action = reference_action or delivery_action
+  local detach
+  local result = env.design_system.components.card_row.draw({
+    id = "source-cards",
+    cards = {
+      {
+        options = card.options(cards.reference, "source-reference", "film", "Reference",
+          cards.highlight == "reference"),
+        render_body = function()
+          card.body(env, "source-reference", cards.reference, function()
+            if (values.synchronized or 0) > 0 then detach = draw_reference_names(env, surface) end
+          end)
+        end,
+      },
+      {
+        options = card.options(cards.delivery, "source-delivery", "upload", "Delivery",
+          cards.highlight == "delivery"),
+        render_body = function() card.body(env, "source-delivery", cards.delivery) end,
+      },
+    },
+  })
+  local action = detach or result.actions["source-reference"] or result.actions["source-delivery"]
   if action then handle(env, action) end
 end
 

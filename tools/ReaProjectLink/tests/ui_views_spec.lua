@@ -1,5 +1,7 @@
+local view_models = require("reaprojectlink.ui.view_models")
 local header = require("reaprojectlink.ui.views.header")
 local setup = require("reaprojectlink.ui.views.setup")
+local source_main = require("reaprojectlink.ui.views.source_main")
 
 local function equal(actual, expected, label)
   if actual ~= expected then
@@ -44,7 +46,10 @@ local function fake_view_env(script)
     end,
     begin_page = function() return true end,
     end_page = function() end,
+    small = function(text) table.insert(calls.order, "small:" .. text) end,
+    request_confirmation = function(options) calls.confirmation = options; return true end,
   }
+  local surface = script.surface or { tracks = {}, markers = {}, regions = {} }
   local env = {
     ImGui = {}, ctx = {}, c = c,
     design_system = { components = components, patterns = { review_shell = recorder("review_shell") } },
@@ -53,9 +58,15 @@ local function fake_view_env(script)
       project_service = {
         initialize_source = function() calls.initialized = "source"; return {} end,
         initialize_master = function() calls.initialized = "master"; return {} end,
+        delivery_tracks = function() return script.lanes or {} end,
+        selection_counts = function() return script.selection or {} end,
+      },
+      reference_subscription = {
+        local_surface = function() return surface end,
       },
     },
     app = {
+      checks = { reference = script.reference_check or { state = "done", latest = 2 } },
       seconds_since_check = function() return 5 end,
       request_check = function() calls.check_requested = true end,
       open_settings = function() calls.settings_opened = true end,
@@ -129,6 +140,71 @@ function tests.setup_uses_card_row()
   equal(master.footer.actions[1].variant, "secondary", "master action variant")
   equal(calls.initialized, "master", "master action initializes the Master Project")
   equal(calls.check_requested, true, "initialization requests a check")
+end
+
+local SOURCE_STATE = {
+  path = "C:/Session/Dialogue.rpp",
+  reference_manifest_path = "C:/Shared/reference.json",
+  synchronized_reference_revision = 2,
+  delivery_revision = 1,
+}
+
+local function named(count, prefix)
+  local entries = {}
+  for index = 1, count do entries[index] = { name = prefix .. " " .. index, ref = prefix .. index } end
+  return entries
+end
+
+local function card_options(calls, id)
+  for _, entry in ipairs(calls.card_row.cards) do
+    if entry.options.id == id then return entry.options end
+  end
+end
+
+function tests.source_cards_use_card_row()
+  local selection = { tracks = { selected = 2 } }
+  local env, calls = fake_view_env({ lanes = { { item_count = 3 } }, selection = selection })
+  source_main.draw(env, SOURCE_STATE)
+  equal(calls.card_row.cards[1].options.id, "source-reference", "first card")
+  equal(calls.card_row.cards[2].options.id, "source-delivery", "second card")
+  local reference, delivery = card_options(calls, "source-reference"), card_options(calls, "source-delivery")
+  equal(reference.variant, nil, "reference not emphasized")
+  equal(delivery.variant, "emphasized", "delivery emphasized")
+  equal(reference.status.text, "Up to Date", "reference status")
+  equal(reference.status.detail, "Reference r2", "reference status detail")
+  local actions = delivery.footer.actions
+  equal(#actions, 3, "three delivery actions")
+  equal(actions[1].label, "Register", "first action")
+  equal(actions[2].label, "Unregister", "second action")
+  equal(actions[3].label, "Review and Publish", "last action")
+  equal(actions[3].variant, "primary", "last action primary")
+  equal(delivery.footer.context, view_models.selection_text(selection), "selection context")
+end
+
+function tests.source_reference_names_list()
+  local surface = { tracks = named(6, "Track"), markers = named(2, "Marker"), regions = {} }
+  local env, calls = fake_view_env({ surface = surface, list = { events = {}, overflow_toggled = true } })
+  env.app.reference_names_expanded = false
+  source_main.draw(env, SOURCE_STATE)
+  equal(calls.list.variant, "compact", "compact list")
+  local rows = 0
+  for _, item in ipairs(calls.list.items) do if item.kind == "row" then rows = rows + 1 end end
+  equal(rows, 5, "five rows")
+  equal(calls.list.overflow.label, "+ 3 more", "overflow label")
+  equal(env.app.reference_names_expanded, true, "overflow toggle expands")
+
+  env, calls = fake_view_env({ surface = surface, list = { events = {}, action = { row = "track-1", id = "detach" } } })
+  source_main.draw(env, SOURCE_STATE)
+  equal(calls.confirmation.id, "detach-reference-track", "row action requests detach confirmation")
+end
+
+function tests.source_reference_without_sync_has_no_list()
+  local state = {}
+  for key, value in pairs(SOURCE_STATE) do state[key] = value end
+  state.synchronized_reference_revision = 0
+  local env, calls = fake_view_env({ surface = { tracks = named(2, "Track"), markers = {}, regions = {} } })
+  source_main.draw(env, state)
+  equal(calls.list, nil, "no list without synchronization")
 end
 
 local passed = 0

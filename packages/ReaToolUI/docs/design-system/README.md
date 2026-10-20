@@ -253,6 +253,8 @@ reviewable, and testable.
   dynamic data states, stale selection recovery, and semantic events.
 - `components/card.md` defines bounded content grouping, optional emphasis,
   parent-owned width, and safe content-slot rendering.
+- `components/card-row.md` defines side-by-side and stacked card layout and
+  equal card height.
 - `components/status.md` defines neutral, ready, warning, and blocked conditions
   with persistent readable role cues.
 - `components/notice.md` defines actionable condition messages and responsive

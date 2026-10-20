@@ -16,6 +16,7 @@ local MODULES = {
   "reaui.design_segmented_control",
   "reaui.design_single_selection_list",
   "reaui.design_card",
+  "reaui.design_card_row",
   "reaui.design_status",
   "reaui.design_action_bar",
   "reaui.design_notice",

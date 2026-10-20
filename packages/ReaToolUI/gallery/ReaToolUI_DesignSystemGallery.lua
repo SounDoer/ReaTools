@@ -38,6 +38,7 @@ local function create_shell(section, theme, preview)
     theme = theme,
     preview = preview,
     platform = platform,
+    scroll_y = tonumber(os.getenv("REATOOLUI_GALLERY_SCROLL_Y") or ""),
   })
 end
 

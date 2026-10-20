@@ -10,6 +10,7 @@ local design_dropdown = require("reaui.design_dropdown")
 local design_segmented_control = require("reaui.design_segmented_control")
 local design_single_selection_list = require("reaui.design_single_selection_list")
 local design_card = require("reaui.design_card")
+local design_card_row = require("reaui.design_card_row")
 local design_status = require("reaui.design_status")
 local design_action_bar = require("reaui.design_action_bar")
 local design_notice = require("reaui.design_notice")
@@ -49,6 +50,7 @@ function M.create(deps)
   local segmented = design_segmented_control.create(ImGui, ctx, adapter)
   local selection_list = design_single_selection_list.create(ImGui, ctx, adapter)
   local card = design_card.create(ImGui, ctx, adapter)
+  local card_row = design_card_row.create(ImGui, ctx, adapter, card)
   local status = design_status.create(ImGui, ctx, adapter)
   local action_bar = design_action_bar.create(ImGui, ctx, adapter)
   local notice = design_notice.create(ImGui, ctx, adapter)
@@ -68,6 +70,7 @@ function M.create(deps)
   local section = deps.section or "Foundations"
   local preview = deps.preview or "wide"
   local preview_width = 0
+  local scroll_frames = 0
   local last_event = "No events"
   local field_values = {
     naming_pattern = "$track_$marker",
@@ -243,6 +246,21 @@ function M.create(deps)
     card.draw({ id = "title-free-card" }, function()
       ImGui.TextWrapped(ctx, "A Card may group content without inventing a heading when its surrounding context already names the region.")
     end)
+
+    ImGui.Text(ctx, "Card Row")
+    for _, event in ipairs(card_row.draw({ id = "gallery-card-row", cards = {
+      { options = { id = "row-reference", icon = "film", title = "Reference",
+          status = { role = "ready", text = "Synchronized", detail = "r7 · 2 minutes ago" } },
+        render_body = function()
+          ImGui.TextWrapped(ctx, "Trailer_Main.rpp")
+          ImGui.TextWrapped(ctx, "4 tracks · 8 markers · 2 regions")
+        end },
+      { options = { id = "row-delivery", icon = "upload", title = "Delivery", variant = "emphasized",
+          status = { role = "warning", text = "2 references changed" },
+          footer = { actions = { { id = "publish", label = "Publish", variant = "primary" } } } } },
+    } }).events) do
+      last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
+    end
 
     ImGui.Text(ctx, "Status")
     status.draw({ role = "neutral", text = "No transfer has run in this session." })
@@ -1032,6 +1050,11 @@ function M.create(deps)
           diagnostics()
         else
           placeholder(section)
+        end
+        -- Review captures start scrolled; content height is known only after a frame.
+        if deps.scroll_y and scroll_frames < 30 then
+          ImGui.SetScrollY(ctx, deps.scroll_y)
+          scroll_frames = scroll_frames + 1
         end
       end
       ImGui.EndChild(ctx)

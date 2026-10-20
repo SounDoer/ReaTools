@@ -20,6 +20,7 @@ M.CATALOG = {
     { id = "segmented_control", name = "Segmented Control", module = "design_segmented_control", factory_key = "segmented_control", spec = "components/segmented-control.md", fixture = "Segmented Control" },
     { id = "single_selection_list", name = "Single Selection List", module = "design_single_selection_list", factory_key = "single_selection_list", spec = "components/single-selection-list.md", fixture = "Single Selection List" },
     { id = "card", name = "Card", module = "design_card", factory_key = "card", spec = "components/card.md", fixture = "Card" },
+    { id = "card_row", name = "Card Row", module = "design_card_row", factory_key = "card_row", spec = "components/card-row.md", fixture = "Card Row" },
     { id = "status", name = "Status", module = "design_status", factory_key = "status", spec = "components/status.md", fixture = "Status" },
     { id = "notice", name = "Notice", module = "design_notice", factory_key = "notice", spec = "components/notice.md", fixture = "Notice" },
     { id = "action_bar", name = "Action Bar", module = "design_action_bar", factory_key = "action_bar", spec = "components/action-bar.md", fixture = "Action Bar" },

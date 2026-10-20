@@ -43,6 +43,7 @@ function M.create(ImGui, ctx, adapter, deps)
       required_string(action.id, "page header action id")
       required_string(action.label, "page header action label")
       optional_string(action.icon, "page header action icon")
+      if action.icon_only and not action.icon then error("page header icon_only action needs an icon") end
     end
   end
 
@@ -83,7 +84,7 @@ function M.create(ImGui, ctx, adapter, deps)
     end
     if options.meta and not collapsed then add({ kind = "meta", width = text_width("label", options.meta) }) end
     for _, action in ipairs(options.actions or {}) do
-      local icon = collapsed and action.icon ~= nil
+      local icon = action.icon ~= nil and (collapsed or action.icon_only == true)
       add({ kind = icon and "icon" or "button", action = action,
         width = icon and layout.icon_button_width() or layout.button_width(action.label) })
     end

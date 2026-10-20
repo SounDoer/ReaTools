@@ -91,7 +91,8 @@ function M.create(deps)
   local dropdown_values = { conflict_policy = "merge" }
   local segmented_values = { theme_mode = "auto" }
   local scenario_values = {
-    view = "settings",
+    view = deps.scenario or "settings",
+    source_expanded = false,
     page = "connection",
     conflict_policy = "review",
   }
@@ -892,6 +893,150 @@ function M.create(deps)
     for _,event in ipairs(dialog_result.events)do last_event=event.type.." id="..event.id end
   end
 
+  -- Direction C review recipes: shared components and static data only.
+  local function record_events(result)
+    for _, event in ipairs(result.events) do
+      last_event = event.type .. " id=" .. event.id .. (event.action and (" action=" .. tostring(event.action)) or "")
+    end
+    if result.overflow_toggled then scenario_values.source_expanded = not scenario_values.source_expanded end
+  end
+  local row_menu = { accessible_label = "Delivery actions", items = {
+    { id = "open", label = "Open Project" }, { id = "remove", label = "Remove..." },
+  } }
+  local function main_header(id, title, badge, meta)
+    record_events(page_header.draw({ id = id, title = title, badge = badge, meta = meta, actions = {
+      { id = "check", label = "Check Now" },
+      { id = "settings", label = "Settings", icon = "gear", icon_only = true, variant = "quiet" },
+    } }))
+  end
+
+  local direction_c_recipes = {}
+
+  direction_c_recipes["master-main"] = function()
+    main_header("recipe-master-header", "Master_Mixing_Session", "Master", "Checked 2 min ago")
+    record_events(card_row.draw({ id = "recipe-master-cards", cards = {
+      { options = { id = "recipe-master-reference", icon = "film", title = "Reference",
+          status = { role = "ready", text = "Published r1" },
+          footer = { context = "Selected: 1 Track, 2 Regions", actions = {
+            { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
+            { id = "publish", label = "Review and Publish" },
+          } } },
+        render_body = function()
+          stat_group.draw({ id = "recipe-master-stats", stats = {
+            { label = "Tracks", value = 1 }, { label = "Markers", value = 1 }, { label = "Regions", value = 2 },
+          } })
+        end },
+      { options = { id = "recipe-master-deliveries", icon = "download", title = "Deliveries", variant = "emphasized",
+          trailing = { kind = "icon_button", id = "add", icon = "plus", accessible_label = "Add Delivery" },
+          status = { role = "warning", text = "2 Need Attention" } },
+        render_body = function()
+          record_events(list.draw({ id = "recipe-master-deliveries-list", items = {
+            { kind = "row", id = "foley", title = "Foley_Session", detail = "Last checked r5",
+              status = { role = "blocked", text = "Couldn't Reach" }, action = { id = "retry", label = "Retry" },
+              menu = row_menu },
+            { kind = "row", id = "stems", title = "Sub_Stems_Session", detail = "Have r2",
+              status = { role = "warning", text = "r3 Available" },
+              action = { id = "sync", label = "Sync", variant = "primary" }, menu = row_menu },
+            { kind = "row", id = "music", title = "Music_Session", detail = "r7 · 2 Lanes Not Imported",
+              status = { role = "neutral", text = "Lanes Not Imported" }, action = { id = "map", label = "Map Lanes" },
+              menu = row_menu },
+            { kind = "row", id = "ambience", title = "Ambience_Session", detail = "r4",
+              status = { role = "ready", text = "Up to Date" }, menu = row_menu },
+          } }))
+        end },
+    } }))
+  end
+
+  direction_c_recipes["source-main"] = function()
+    main_header("recipe-source-header", "Sub_Stems_Session", "Source", "Checked just now")
+    local contents = {
+      { kind = "group", label = "Tracks" },
+      { kind = "row", id = "dialogue", title = "Dialogue Guide", action = { id = "detach", label = "Detach...", variant = "quiet" } },
+      { kind = "row", id = "picture", title = "Picture Cut v12", action = { id = "detach", label = "Detach...", variant = "quiet" } },
+    }
+    if scenario_values.source_expanded then
+      for _, name in ipairs({ "Music Temp", "Foley Guide", "VO Scratch", "Ambience Bed" }) do
+        contents[#contents + 1] = { kind = "row", id = name, title = name,
+          action = { id = "detach", label = "Detach...", variant = "quiet" } }
+      end
+      contents[#contents + 1] = { kind = "group", label = "Markers and Regions" }
+      contents[#contents + 1] = { kind = "row", id = "intro", title = "Intro",
+        action = { id = "detach", label = "Detach...", variant = "quiet" } }
+    end
+    record_events(card_row.draw({ id = "recipe-source-cards", cards = {
+      { options = { id = "recipe-source-reference", icon = "film", title = "Reference", variant = "emphasized",
+          status = { role = "warning", text = "Reference r3 Available", detail = "Synchronized r2" },
+          footer = { actions = { { id = "review", label = "Review Update", variant = "primary" } } } },
+        render_body = function()
+          stat_group.draw({ id = "recipe-source-stats", stats = {
+            { label = "Tracks", value = 6 }, { label = "Markers", value = 4 }, { label = "Regions", value = 3 },
+          } })
+          record_events(list.draw({ id = "recipe-source-contents", variant = "compact", items = contents,
+            overflow = { expanded = scenario_values.source_expanded,
+              label = scenario_values.source_expanded and "Showing all Tracks, Markers, and Regions" or
+                "+ 4 more Tracks, 4 Markers, 3 Regions" } }))
+        end },
+      { options = { id = "recipe-source-delivery", icon = "upload", title = "Delivery",
+          status = { role = "ready", text = "Last Published r12" },
+          footer = { context = "Selected: 2 Tracks", actions = {
+            { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
+            { id = "publish", label = "Review and Publish" },
+          } } },
+        render_body = function()
+          stat_group.draw({ id = "recipe-source-delivery-stats", stats = {
+            { label = "Tracks", value = 4 }, { label = "Items", value = 12 },
+          } })
+          adapter.with_text("metadata", function()
+            ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), "Will record Reference r2")
+          end)
+        end },
+    } }))
+  end
+
+  direction_c_recipes["publish-review"] = function()
+    record_events(review_shell.draw({
+      id = "recipe-delivery-publish",
+      header = { title = "Publish Delivery r13", summary = "Sub_Stems_Session to Master_Mixing_Session" },
+      footer = { summary = "Publishes 12 Clips on 3 Lanes as Delivery r13.", complete_label = "Fix 1 Issue to Publish",
+        enabled = false },
+      render_body = function()
+        local events = {}
+        local function collect(result) for _, event in ipairs(result.events) do events[#events + 1] = event end end
+        stat_group.draw({ id = "recipe-review-scope", stats = {
+          { label = "Tracks", value = 4 }, { label = "Lanes", value = 3 }, { label = "Clips", value = 12 },
+        } })
+        review_shell.section({ id = "issues", title = "Issues" }, function()
+          collect(issue_item.draw({ id = "recipe-outside-media", role = "blocked",
+            message = "1 Item uses media outside the project folder", detail = "Foley · Footsteps_Take3.wav",
+            actions = { { id = "select", label = "Select Item" }, { id = "unprocessed", label = "Publish Unprocessed Media" } } }))
+          collect(issue_item.draw({ id = "recipe-reference-available", role = "warning",
+            message = "Reference r3 is available", detail = "This Delivery was checked against r2",
+            actions = { { id = "allow", label = "Allow Difference" } } }))
+        end)
+        review_shell.section({ id = "reference", title = "Checked Against Reference" }, function()
+          collect(segmented.draw({ id = "recipe-checked-reference", value = "r2", options = {
+            { id = "r2", label = "r2 (Synchronized)" }, { id = "r1", label = "r1 (Previous Delivery)" },
+          } }))
+        end)
+        review_shell.section({ id = "details", title = "Details" }, function()
+          disclosure.draw({ id = "recipe-dialogue", label = "Dialogue", variant = "inset", detail = "4 Clips" }, function()
+            collect(list.draw({ id = "recipe-dialogue-clips", variant = "compact", items = {
+              { kind = "row", id = "line1", title = "Line_014_Take2" }, { kind = "row", id = "line2", title = "Line_015_Take1" },
+            } }))
+          end)
+          disclosure.draw({ id = "recipe-foley", label = "Foley", variant = "inset", role = "blocked", detail = "5 Clips" }, function()
+            collect(list.draw({ id = "recipe-foley-clips", variant = "compact", items = {
+              { kind = "row", id = "steps", title = "Footsteps_Take3", status = { role = "blocked", text = "Outside project folder" } },
+              { kind = "row", id = "cloth", title = "Cloth_Rustle_01" },
+              { kind = "row", id = "door", title = "Door_Close_A" },
+            } }))
+          end)
+        end)
+        return { events = events }
+      end,
+    }))
+  end
+
   local function cross_product_scenarios()
     adapter.with_text("metadata", function()
       ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"),
@@ -911,6 +1056,9 @@ function M.create(deps)
       options = {
         { id = "settings", label = "Project setup" },
         { id = "publish", label = "Publish review" },
+        { id = "master-main", label = "Master main" },
+        { id = "source-main", label = "Source main" },
+        { id = "publish-review", label = "Delivery review" },
       },
     })
     scenario_values.view = view_result.value
@@ -919,7 +1067,10 @@ function M.create(deps)
     end
     ImGui.Dummy(ctx, 0, adapter.resolve("semantic.space.section.default"))
 
-    if scenario_values.view == "settings" then
+    local recipe = direction_c_recipes[scenario_values.view]
+    if recipe then
+      recipe()
+    elseif scenario_values.view == "settings" then
       local _, available_height = ImGui.GetContentRegionAvail(ctx)
       local workspace_height = math.max(380, available_height or 380)
       local rail_width = 156

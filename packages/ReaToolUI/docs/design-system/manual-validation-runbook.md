@@ -24,7 +24,9 @@ test does not use the current project.
 The same values can be changed inside the Gallery. Use the launcher parameters
 when a run must begin from a reproducible initial scene. To capture fixtures
 below the fold, set `REATOOLUI_GALLERY_SCROLL_Y` to a logical scroll offset
-before launching; the preview opens scrolled to that position.
+before launching; the preview opens scrolled to that position. To open a
+Cross-product Scenarios view directly, set `REATOOLUI_GALLERY_SCENARIO` to
+`settings`, `publish`, `master-main`, `source-main`, or `publish-review`.
 
 The automated launcher is intentionally different: it renders all 30 Section,
 Theme, and Preview combinations in one hidden Gallery instance. Only this

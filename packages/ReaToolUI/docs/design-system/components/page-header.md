@@ -33,6 +33,9 @@ page_header.draw({
   `label` role with the secondary text color. Review Header uses it.
 - Each action needs `id` and `label`; `icon` and `variant` are optional.
   Action button ids are `<header id>-<action id>`.
+- `icon_only = true` (requires `icon`) renders the action as an Icon Button
+  at every width, with `label` as its accessible label, for actions such as
+  Settings that never show text.
 - Disabled actions never emit events. Activation emits
   `{ type = "page_header.action_selected", id = <header id>, action = <action id> }`
   and returns the action id as `action`.

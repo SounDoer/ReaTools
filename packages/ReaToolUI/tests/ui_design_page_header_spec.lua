@@ -248,12 +248,28 @@ function tests.header_back_disabled_never_requests()
   equal(calls.icons[1].options.disabled, true, "back button disabled")
 end
 
+function tests.header_icon_only_action_is_an_icon_at_every_width()
+  for _, width in ipairs({ 400, 800 }) do
+    local header, calls = fake({ width = width })
+    header.draw({ id = "main", title = "Main", actions = {
+      { id = "check", label = "Check Now" },
+      { id = "settings", label = "Settings", icon = "gear", icon_only = true },
+    } })
+    equal(#calls.icons, 1, "icon only at " .. width)
+    equal(calls.icons[1].options.accessible_label, "Settings", "accessible label")
+    equal(calls.buttons[1].options.label, "Check Now", "text action stays text")
+  end
+end
+
 function tests.header_validates_options()
   local header = fake()
   assert(not pcall(function() header.draw({ id = "x" }) end), "title required")
   assert(not pcall(function() header.draw({ title = "x" }) end), "id required")
   assert(not pcall(function() header.draw({ id = "x", title = "x", actions = { { id = "a" } } }) end),
     "action label required")
+  assert(not pcall(function()
+    header.draw({ id = "x", title = "x", actions = { { id = "a", label = "A", icon_only = true } } })
+  end), "icon_only needs an icon")
 end
 
 local passed = 0

@@ -1,5 +1,6 @@
 local status_module = require("reaui.design_status")
 local action_bar_module = require("reaui.design_action_bar")
+local layout_module = require("reaui.design_layout")
 
 local M = {}
 
@@ -17,6 +18,7 @@ function M.create(ImGui, ctx, adapter, deps)
   deps = deps or {}
   local status = deps.status or status_module.create(ImGui, ctx, adapter)
   local action_bar = deps.action_bar or action_bar_module.create(ImGui, ctx, adapter)
+  local layout = deps.layout or layout_module.create(ImGui, ctx, adapter)
   local component = {}
 
   local function resolve(id) return adapter.resolve(id) end
@@ -62,6 +64,24 @@ function M.create(ImGui, ctx, adapter, deps)
     local ok, err = pcall(draw_contents, options, result)
     ImGui.EndChild(ctx)
     if not ok then error(err, 0) end
+    return result
+  end
+
+  function component.draw_list(options)
+    options = options or {}
+    required_string(options.id, "issue list id")
+    if type(options.items) ~= "table" or #options.items == 0 then error("issue list needs items") end
+    local result = { events = {}, action = nil }
+    local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
+    for index, item in ipairs(options.items) do
+      if index > 1 then
+        ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + resolve("semantic.space.list.gap"))
+      end
+      local item_result = component.draw(item)
+      if item_result.action then result.action = { item = item.id, id = item_result.action } end
+      for _, event in ipairs(item_result.events) do table.insert(result.events, event) end
+    end
+    layout.settle()
     return result
   end
 

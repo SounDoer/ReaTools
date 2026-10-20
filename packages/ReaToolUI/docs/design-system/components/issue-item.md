@@ -41,5 +41,13 @@ issue_item.draw({
 - Padding: `semantic.space.inset.padding_x` and `semantic.space.inset.padding_y`.
 - Actions sit `semantic.space.control.gap` below the message and are
   right-aligned by Action Bar.
-- Stacked Issue Items are separated by `semantic.space.list.gap`, which the
-  caller applies.
+- Several Issue Items are drawn with `draw_list`, which separates them by
+  `semantic.space.list.gap`:
+
+  ```lua
+  issue_item.draw_list({ id = "issues", items = { item_a, item_b } })
+  -- { events = { ... }, action = { item = <item id>, id = <action id> } | nil }
+  ```
+
+  `items` must not be empty. Each item follows the rules above, and its
+  events are forwarded unchanged.

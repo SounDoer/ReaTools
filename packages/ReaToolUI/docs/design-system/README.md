@@ -263,9 +263,12 @@ reviewable, and testable.
 - `components/notice.md` defines actionable condition messages and responsive
   action layout.
 - `components/action-bar.md` defines the context line, ordered actions,
-  single trailing primary action, and right-aligned wrapping rows.
+  single trailing primary action, and full-width stacking when the row does
+  not fit.
 - `components/issue-item.md` defines tinted warning and blocked items with an
-  inline status and optional actions.
+  inline status and optional actions, and stacked issue lists.
+- `components/section-heading.md` defines the heading that titles a group of
+  content and the section gap above it.
 - `components/page-header.md` defines the title row, badge, meta, trailing
   actions, and the collapsed layout below the breakpoint.
 - `components/menu.md` defines secondary action menus, disabled items, and

@@ -34,20 +34,6 @@ function M.create(ImGui, ctx, adapter, button, layout)
     end)
   end
 
-  local function pack_rows(widths, gap, available)
-    local rows, row, row_width = {}, {}, 0
-    for index, width in ipairs(widths) do
-      if #row > 0 and row_width + gap + width > available then
-        table.insert(rows, { indices = row, width = row_width })
-        row, row_width = {}, 0
-      end
-      row_width = #row > 0 and row_width + gap + width or width
-      table.insert(row, index)
-    end
-    if #row > 0 then table.insert(rows, { indices = row, width = row_width }) end
-    return rows
-  end
-
   function component.draw(options)
     options = options or {}
     validate(options)
@@ -61,11 +47,11 @@ function M.create(ImGui, ctx, adapter, button, layout)
     end
     local available = ImGui.GetContentRegionAvail(ctx)
 
-    local function draw_action(index)
+    local function draw_action(index, stretch)
       local action = actions[index]
       local event = button.draw({
         id = options.id .. "-" .. action.id, label = action.label,
-        variant = action.variant, disabled = action.disabled,
+        variant = action.variant, disabled = action.disabled, stretch = stretch,
       })
       if event and not action.disabled then
         result.action = action.id
@@ -96,9 +82,18 @@ function M.create(ImGui, ctx, adapter, button, layout)
       draw_context(function() ImGui.TextWrapped(ctx, options.context) end)
     end
 
-    for _, row in ipairs(pack_rows(widths, gap, available)) do
-      ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + math.max(0, available - row.width))
-      draw_row(row.indices)
+    if #actions == 0 then return result end
+    if total <= available then
+      ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + available - total)
+      local all = {}
+      for index in ipairs(actions) do all[index] = index end
+      draw_row(all)
+      return result
+    end
+    local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
+    for index in ipairs(actions) do
+      if index > 1 then ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + gap) end
+      draw_action(index, true)
     end
     return result
   end

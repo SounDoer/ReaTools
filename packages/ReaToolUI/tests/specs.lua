@@ -20,6 +20,7 @@ return {
   "ui_design_action_bar_spec.lua",
   "ui_design_issue_item_spec.lua",
   "ui_design_page_header_spec.lua",
+  "ui_design_section_heading_spec.lua",
   "ui_design_information_spec.lua",
   "ui_design_path_selection_spec.lua",
   "ui_design_token_insert_group_spec.lua",

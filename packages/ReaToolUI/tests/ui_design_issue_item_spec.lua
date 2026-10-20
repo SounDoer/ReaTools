@@ -18,13 +18,18 @@ local function fake(options)
   function ImGui.PopStyleVar(_, n) calls.popped_vars = calls.popped_vars + (n or 1) end
   function ImGui.GetStyleVar() return 8, 4 end
   function ImGui.GetCursorPosY() return 40 end
-  function ImGui.SetCursorPosY(_, y) calls.set_y = y end
+  function ImGui.SetCursorPosY(_, y)
+    calls.set_y = y; calls.all_set_y = calls.all_set_y or {}; table.insert(calls.all_set_y, y); calls.last = "set"
+  end
+  function ImGui.Dummy(_, w, h) calls.last = "dummy " .. w .. "x" .. h end
   function ImGui.BeginChild(_, id, w, h, child_flags)
     table.insert(calls.children, { id = id, w = w, h = h, flags = child_flags })
     return options.visible ~= false
   end
-  function ImGui.EndChild() calls.ended = calls.ended + 1 end
-  local adapter = { resolve = function(id) return id == "semantic.space.control.gap" and 8 or id end }
+  function ImGui.EndChild() calls.ended = calls.ended + 1; calls.last = "end" end
+  local adapter = { resolve = function(id)
+    return ({ ["semantic.space.control.gap"] = 8, ["semantic.space.list.gap"] = 6 })[id] or id
+  end }
   local deps = {
     status = { draw = function(o) table.insert(calls.statuses, o) end },
     action_bar = { draw = function(o)
@@ -94,6 +99,27 @@ function tests.issue_item_hidden_child_is_not_ended()
   equal(calls.ended, 0, "EndChild only when visible")
   equal(#calls.statuses, 0, "nothing drawn")
   equal(#result.events, 0, "no events")
+end
+
+function tests.issue_list_stacks_items_with_the_list_gap()
+  local item, calls = fake({ choose = "relink" })
+  local result = item.draw_list({ id = "issues", items = {
+    { id = "a", role = "blocked", message = "First" },
+    { id = "b", role = "warning", message = "Second", actions = { { id = "relink", label = "Relink..." } } },
+  } })
+  equal(#calls.children, 2, "two items")
+  equal(calls.all_set_y[1], 40 - 4 + 6, "list gap between items")
+  equal(result.action.item, "b", "action item")
+  equal(result.action.id, "relink", "action id")
+  equal(result.events[1].id, "b", "item event forwarded")
+  equal(calls.last, "dummy 0x0", "list ends with an item, not a cursor move")
+end
+
+function tests.issue_list_requires_items()
+  local item = fake()
+  assert(not pcall(function() item.draw_list({ id = "issues", items = {} }) end), "items required")
+  assert(not pcall(function() item.draw_list({ items = { { id = "a", role = "warning", message = "M" } } }) end),
+    "id required")
 end
 
 local passed = 0

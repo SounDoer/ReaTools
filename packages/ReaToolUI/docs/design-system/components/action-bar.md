@@ -34,11 +34,12 @@ action_bar.draw({
    `semantic.space.control.gap` between buttons.
 2. When the context and the whole group fit on one line, the context sits on
    the left and the group is right-aligned on the same line.
-3. Otherwise the context wraps on its own line. Actions then pack greedily, in
-   order, into rows no wider than the available width; each row is
-   right-aligned.
-4. An action wider than the available width occupies its own row at its
-   natural width, starting at the left edge.
+3. Otherwise the context wraps on its own line. If the whole group fits on one
+   row, it is right-aligned below the context at natural widths.
+4. If the group does not fit on one row, every action takes its own
+   full-width row, in order, separated by `semantic.space.control.gap`. The
+   primary action, being last, ends up at the bottom. The bar never leaves a
+   lone button on a partial row.
 
 Action Bar does not draw separators. A container that needs a footer divider
 (Card, Review footer) draws it above the bar.

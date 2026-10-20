@@ -36,14 +36,15 @@ of the visual language plan.
   Page Header adds the header gap below; there is no separator.
 - **Scope summary.** An optional Stat Group directly under the header
   summarizes the scope (for example tracks, markers, regions).
-- **Sections.** `review_shell.section({ id, title }, render)` draws the title
-  in the `heading` role and then the body, and returns `render()`'s result.
-  Inside one Review Shell body, consecutive sections are separated by
-  `semantic.space.section.loose`. The count resets on every
-  `review_shell.draw`, so sections are meant to be drawn from `render_body`.
-  Typical sections are Issues, Decisions, and Details.
+- **Sections.** `review_shell.section({ id, title }, render)` draws a Section
+  Heading and then the body, and returns `render()`'s result. A section gets
+  `semantic.space.section.loose` above it whenever content was drawn between
+  the header and the section, such as the Stat Group or an earlier section; a
+  section directly under the header relies on the header gap. Sections are
+  meant to be drawn from `render_body`. Typical sections are Issues,
+  Decisions, and Details.
 - **Issues.** Each problem is an Issue Item (warning or blocked) with its fix
-  actions.
+  actions; several are drawn with `issue_item.draw_list`.
 - **Details.** Detail groups use the inset Disclosure variant. A group whose
   `role` is `warning` or `blocked` opens by default.
 - **Footer.** Review Footer draws the only separator, then

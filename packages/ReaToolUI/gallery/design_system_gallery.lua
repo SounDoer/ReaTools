@@ -17,6 +17,7 @@ local design_status = require("reaui.design_status")
 local design_action_bar = require("reaui.design_action_bar")
 local design_issue_item = require("reaui.design_issue_item")
 local design_page_header = require("reaui.design_page_header")
+local design_section_heading = require("reaui.design_section_heading")
 local design_notice = require("reaui.design_notice")
 local design_menu = require("reaui.design_menu")
 local design_disclosure = require("reaui.design_disclosure")
@@ -61,6 +62,7 @@ function M.create(deps)
   local action_bar = design_action_bar.create(ImGui, ctx, adapter)
   local issue_item = design_issue_item.create(ImGui, ctx, adapter)
   local page_header = design_page_header.create(ImGui, ctx, adapter)
+  local section_heading = design_section_heading.create(ImGui, ctx, adapter)
   local notice = design_notice.create(ImGui, ctx, adapter)
   local menu = design_menu.create(ImGui, ctx, adapter)
   local disclosure = design_disclosure.create(ImGui, ctx, adapter)
@@ -353,7 +355,7 @@ function M.create(deps)
     end
 
     ImGui.Text(ctx, "Issue Item")
-    for _, fixture in ipairs({
+    local issue_result = issue_item.draw_list({ id = "issue-fixtures", items = {
       { id = "issue-changed", role = "warning", message = "Two references changed since revision 6" },
       { id = "issue-missing", role = "blocked", message = "Ambience reference is missing",
         detail = "Expected at Refs/Ambience_r6.rpp", actions = { { id = "relink", label = "Relink..." } } },
@@ -362,10 +364,9 @@ function M.create(deps)
           { id = "ignore", label = "Ignore" }, { id = "update", label = "Update Reference" },
         } },
       { id = "issue-offline", role = "blocked", message = "Destination is unavailable" },
-    }) do
-      for _, event in ipairs(issue_item.draw(fixture).events) do
-        last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
-      end
+    } })
+    for _, event in ipairs(issue_result.events) do
+      last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
     end
 
     ImGui.Text(ctx, "Page Header")
@@ -383,6 +384,14 @@ function M.create(deps)
         last_event = event.type .. " id=" .. event.id .. (event.action and (" action=" .. event.action) or "")
       end
     end
+
+    ImGui.Text(ctx, "Section Heading")
+    section_heading.draw({ id = "heading-tight", title = "Wwise Importer", gap_above = false }, function()
+      ImGui.TextWrapped(ctx, "First section: no gap above the heading.")
+    end)
+    section_heading.draw({ id = "heading-loose", title = "Details" }, function()
+      ImGui.TextWrapped(ctx, "Later sections get the loose section gap.")
+    end)
 
     ImGui.Text(ctx, "Menu and Disclosure")
     local menu_result=menu.draw({id="project-actions",accessible_label="Project actions",items={{id="rename",label="Rename"},{id="duplicate",label="Duplicate"},{separator=true},{id="delete",label="Delete snapshot",danger=true}}})
@@ -1006,12 +1015,14 @@ function M.create(deps)
           { label = "Tracks", value = 4 }, { label = "Lanes", value = 3 }, { label = "Clips", value = 12 },
         } })
         review_shell.section({ id = "issues", title = "Issues" }, function()
-          collect(issue_item.draw({ id = "recipe-outside-media", role = "blocked",
-            message = "1 Item uses media outside the project folder", detail = "Foley · Footsteps_Take3.wav",
-            actions = { { id = "select", label = "Select Item" }, { id = "unprocessed", label = "Publish Unprocessed Media" } } }))
-          collect(issue_item.draw({ id = "recipe-reference-available", role = "warning",
-            message = "Reference r3 is available", detail = "This Delivery was checked against r2",
-            actions = { { id = "allow", label = "Allow Difference" } } }))
+          collect(issue_item.draw_list({ id = "recipe-issues", items = {
+            { id = "recipe-outside-media", role = "blocked",
+              message = "1 Item uses media outside the project folder", detail = "Foley · Footsteps_Take3.wav",
+              actions = { { id = "select", label = "Select Item" }, { id = "unprocessed", label = "Publish Unprocessed Media" } } },
+            { id = "recipe-reference-available", role = "warning",
+              message = "Reference r3 is available", detail = "This Delivery was checked against r2",
+              actions = { { id = "allow", label = "Allow Difference" } } },
+          } }))
         end)
         review_shell.section({ id = "reference", title = "Checked Against Reference" }, function()
           collect(segmented.draw({ id = "recipe-checked-reference", value = "r2", options = {
@@ -1220,9 +1231,10 @@ function M.create(deps)
           local function record(result) for _,event in ipairs(result.events) do table.insert(events,event) end end
           stat_group.draw({id="review-scope",stats={{label="Tracks",value=4},{label="Markers",value=8},{label="Regions",value=2}}})
           review_shell.section({id="issues",title="Issues"},function()
-            record(issue_item.draw({id="review-save-as",role="blocked",message="Project was saved under a new name",
-              detail="Choose how its identity should continue.",actions={{id="continue",label="Continue Existing"},{id="new",label="Start New"}}}))
-            record(issue_item.draw({id="review-changed",role="warning",message="Two tracks changed since revision 6"}))
+            record(issue_item.draw_list({id="review-issues",items={
+              {id="review-save-as",role="blocked",message="Project was saved under a new name",
+                detail="Choose how its identity should continue.",actions={{id="continue",label="Continue Existing"},{id="new",label="Start New"}}},
+              {id="review-changed",role="warning",message="Two tracks changed since revision 6"}}}))
           end)
           review_shell.section({id="decisions",title="Decisions"},function()
             segmented.draw_field({id="review-reference",label="Checked against reference",value="r6",options={{id="r6",label="Reference r6"},{id="none",label="Not checked"}}})

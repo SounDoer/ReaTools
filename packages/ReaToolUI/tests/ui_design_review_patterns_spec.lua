@@ -250,11 +250,16 @@ function tests.review_sections_are_separated_by_section_loose()
   local header = { draw = function() return { events = {} } end }
   local footer = { draw = function() return { events = {} } end }
   local shell = shell_module.create(ImGui, "ctx", adapter, header, footer, {})
+  local lead = 0
   local function body()
+    calls.y = calls.y + lead
+    local start = #calls.set_y
     local first = shell.section({ id = "issues", title = "Issues" }, function() calls.y = calls.y + 40; return "issues" end)
+    local after_first = #calls.set_y
     local before = calls.y
     local second = shell.section({ id = "details", title = "Details" }, function() return "details" end)
-    return { events = {}, first = first, second = second, before = before, gaps = #calls.set_y }
+    return { events = {}, first = first, second = second, before = before,
+      first_moves = after_first - start, second_gap = calls.set_y[after_first + 1], first_gap = calls.set_y[start + 1] }
   end
   for frame = 1, 2 do
     calls.y, calls.texts, calls.set_y = 0, {}, {}
@@ -263,12 +268,17 @@ function tests.review_sections_are_separated_by_section_loose()
     local inner = result.body_result
     equal(inner.first, "issues", "section returns render result")
     equal(inner.second, "details", "second result")
-    equal(inner.gaps, 1, "only the second section adds a gap on frame " .. frame)
-    equal(calls.set_y[1], inner.before - 4 + 24, "section loose gap")
+    equal(inner.first_moves, 1, "the first section right under the header only settles on frame " .. frame)
+    equal(inner.second_gap, inner.before - 4 + 24, "section loose gap")
     equal(calls.texts[1].text, "Issues", "first title")
     equal(calls.texts[1].role, "heading", "heading font")
     equal(calls.texts[1].color, "semantic.color.text.primary", "title color")
   end
+  lead = 30
+  calls.y, calls.texts, calls.set_y = 0, {}, {}
+  local inner = shell.draw({ id = "review", header = { title = "Review" },
+    footer = { summary = "Ready", complete_label = "Apply" }, render_body = body }).body_result
+  equal(inner.first_gap, 30 - 4 + 24, "content above the first section gets the section gap")
   assert(not pcall(function() shell.section({ id = "x" }, function() end) end), "title required")
 end
 

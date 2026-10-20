@@ -2,6 +2,7 @@ local header_module = require("reaui.design_review_header")
 local footer_module = require("reaui.design_review_footer")
 local stale_module = require("reaui.design_stale_review")
 local layout_module = require("reaui.design_layout")
+local section_heading_module = require("reaui.design_section_heading")
 
 local M = {}
 local function required_string(value, name)
@@ -13,30 +14,21 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
   footer = footer or footer_module.create(ImGui, ctx, adapter)
   stale_review = stale_review or stale_module.create(ImGui, ctx, adapter)
   local layout = layout_module.create(ImGui, ctx, adapter)
+  local section_heading = section_heading_module.create(ImGui, ctx, adapter, layout)
   local pattern = {}
-  -- Sections drawn since the last shell draw; only later sections get a gap.
-  local section_count = 0
+  -- Body cursor right below the header of the current shell draw. Content
+  -- drawn below it gets a section gap; the header already supplies its own.
+  local content_top = 0
   local function append(target, result)
     for _, event in ipairs((result and result.events) or {}) do table.insert(target, event) end
   end
 
   function pattern.section(options, render)
     options = options or {}
-    required_string(options.id, "review section id")
-    required_string(options.title, "review section title")
     if type(render) ~= "function" then error("review section renderer must be a function") end
-    if section_count > 0 then
-      local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
-      ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + adapter.resolve("semantic.space.section.loose"))
-    end
-    section_count = section_count + 1
-    local function title()
-      ImGui.PushStyleColor(ctx, ImGui.Col_Text, adapter.resolve("semantic.color.text.primary"))
-      ImGui.TextWrapped(ctx, options.title)
-      ImGui.PopStyleColor(ctx)
-    end
-    if adapter.with_text then adapter.with_text("heading", title) else title() end
-    return render()
+    return section_heading.draw({
+      id = options.id, title = options.title, gap_above = ImGui.GetCursorPosY(ctx) > content_top,
+    }, render)
   end
 
   function pattern.draw(options)
@@ -58,7 +50,6 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
     local body_height = math.max(1, available_height - footer_height)
     local events = {}
     local body_result
-    section_count = 0
 
     ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + indent)
     local body_visible = ImGui.BeginChild(ctx, "##review-shell-" .. options.id .. "-body", width, body_height)
@@ -68,6 +59,7 @@ function M.create(ImGui, ctx, adapter, header, footer, stale_review)
       for key, value in pairs(options.header) do header_options[key] = value end
       header_options.id = options.id
       append(events, header.draw(header_options))
+      content_top = ImGui.GetCursorPosY(ctx)
       if options.stale then
         local stale_options = {}
         for key, value in pairs(options.stale) do stale_options[key] = value end

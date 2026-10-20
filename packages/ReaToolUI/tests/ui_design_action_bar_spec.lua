@@ -6,8 +6,11 @@ end
 
 local function fake(options)
   options = options or {}
-  local calls = { rows = {}, drawn = {}, text = {}, wrapped = {}, pushed = 0, popped = 0 }
-  local ImGui = { Col_Text = 1 }
+  local calls = { rows = {}, drawn = {}, text = {}, wrapped = {}, pushed = 0, popped = 0, set_y = {} }
+  local ImGui = { Col_Text = 1, StyleVar_ItemSpacing = 2 }
+  function ImGui.GetStyleVar() return 8, 4 end
+  function ImGui.GetCursorPosY() return 40 end
+  function ImGui.SetCursorPosY(_, y) table.insert(calls.set_y, y) end
   function ImGui.GetContentRegionAvail() return options.available or 400, 100 end
   function ImGui.GetCursorPosX() return 0 end
   function ImGui.SetCursorPosX(_, x) table.insert(calls.rows, { x = x, actions = {} }) end
@@ -73,23 +76,24 @@ function tests.context_moves_above_when_actions_do_not_fit()
   equal(calls.rows[1].x, 400 - 316, "actions right aligned below")
 end
 
-function tests.actions_wrap_greedily_with_each_row_right_aligned()
+function tests.actions_stack_full_width_when_the_row_does_not_fit()
   local bar, calls = fake({ available = 230 })
   bar.draw({ id = "footer", actions = ACTIONS })
-  equal(#calls.rows, 2, "two rows")
-  equal(table.concat(calls.rows[1].actions, ","), "One,Two", "first row")
-  equal(calls.rows[1].x, 230 - 208, "first row right aligned")
-  equal(table.concat(calls.rows[2].actions, ","), "Three", "second row")
-  equal(calls.rows[2].x, 130, "second row right aligned")
+  equal(#calls.drawn, 3, "each action drawn once")
+  for index, label in ipairs({ "One", "Two", "Three" }) do
+    equal(calls.drawn[index].label, label, "order " .. index)
+    equal(calls.drawn[index].stretch, true, label .. " full width")
+  end
+  equal(calls.spacing, nil, "no shared line")
+  equal(#calls.set_y, 2, "a gap before every action after the first")
+  equal(calls.set_y[1], 40 - 4 + 8, "control gap between stacked actions")
 end
 
-function tests.oversized_action_gets_its_own_row()
-  local bar, calls = fake({ available = 300, widths = { Two = 400 } })
+function tests.single_row_actions_keep_their_natural_width()
+  local bar, calls = fake({ available = 400 })
   bar.draw({ id = "footer", actions = ACTIONS })
-  equal(#calls.drawn, 3, "each action drawn once")
-  equal(#calls.rows, 3, "three rows")
-  equal(table.concat(calls.rows[2].actions, ","), "Two", "oversized alone")
-  equal(calls.rows[2].x, 0, "oversized starts at the left edge")
+  equal(calls.rows[1].x, 400 - 316, "row right aligned")
+  equal(calls.drawn[1].stretch, nil, "natural width")
 end
 
 function tests.disabled_action_never_emits()

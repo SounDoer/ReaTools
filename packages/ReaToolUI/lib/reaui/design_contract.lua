@@ -22,6 +22,7 @@ M.CATALOG = {
     { id = "card", name = "Card", module = "design_card", factory_key = "card", spec = "components/card.md", fixture = "Card" },
     { id = "card_row", name = "Card Row", module = "design_card_row", factory_key = "card_row", spec = "components/card-row.md", fixture = "Card Row" },
     { id = "stat_group", name = "Stat Group", module = "design_stat_group", factory_key = "stat_group", spec = "components/stat-group.md", fixture = "Stat Group" },
+    { id = "list", name = "List", module = "design_list", factory_key = "list", spec = "components/list.md", fixture = "List and List Row" },
     { id = "status", name = "Status", module = "design_status", factory_key = "status", spec = "components/status.md", fixture = "Status" },
     { id = "notice", name = "Notice", module = "design_notice", factory_key = "notice", spec = "components/notice.md", fixture = "Notice" },
     { id = "action_bar", name = "Action Bar", module = "design_action_bar", factory_key = "action_bar", spec = "components/action-bar.md", fixture = "Action Bar" },

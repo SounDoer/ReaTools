@@ -12,6 +12,7 @@ local design_single_selection_list = require("reaui.design_single_selection_list
 local design_card = require("reaui.design_card")
 local design_card_row = require("reaui.design_card_row")
 local design_stat_group = require("reaui.design_stat_group")
+local design_list = require("reaui.design_list")
 local design_status = require("reaui.design_status")
 local design_action_bar = require("reaui.design_action_bar")
 local design_notice = require("reaui.design_notice")
@@ -53,6 +54,7 @@ function M.create(deps)
   local card = design_card.create(ImGui, ctx, adapter)
   local card_row = design_card_row.create(ImGui, ctx, adapter, card)
   local stat_group = design_stat_group.create(ImGui, ctx, adapter)
+  local list = design_list.create(ImGui, ctx, adapter)
   local status = design_status.create(ImGui, ctx, adapter)
   local action_bar = design_action_bar.create(ImGui, ctx, adapter)
   local notice = design_notice.create(ImGui, ctx, adapter)
@@ -271,6 +273,43 @@ function M.create(deps)
     stat_group.draw({ id = "stats-three", stats = {
       { label = "Tracks", value = 4 }, { label = "Markers", value = 128 }, { label = "Regions", value = 2 },
     } })
+
+    ImGui.Text(ctx, "List and List Row")
+    local function record_list_result(result)
+      for _, event in ipairs(result.events) do
+        last_event = event.type .. " id=" .. event.id .. (event.action and (" action=" .. event.action) or "")
+      end
+      if result.overflow_toggled then list_values.expanded = not list_values.expanded end
+    end
+    local row_menu = { accessible_label = "Row actions", items = { { id = "rename", label = "Rename" } } }
+    card.draw({ id = "list-states-card", title = "Deliveries" }, function()
+      record_list_result(list.draw({ id = "list-states", items = {
+        { kind = "row", id = "music", title = "Music bed", detail = "Published r7 · 2 minutes ago",
+          status = { role = "ready", text = "Synchronized" }, menu = row_menu },
+        { kind = "row", id = "dialogue", title = "Dialogue", detail = "Not published yet",
+          status = { role = "neutral", text = "Draft" }, action = { id = "publish", label = "Publish" } },
+        { kind = "row", id = "ambience", title = "Ambience forest night layers with a long descriptive name",
+          status = { role = "warning", text = "2 changed" }, action = { id = "review", label = "Review" },
+          menu = row_menu },
+        { kind = "row", id = "sfx", title = "SFX", detail = "Destination unavailable",
+          status = { role = "blocked", text = "Offline" }, action = { id = "retry", label = "Retry", disabled = true } },
+      } }))
+    end)
+    local names = {
+      { kind = "group", label = "Project files" },
+      { kind = "row", id = "main", title = "Trailer_Main.rpp", action = { id = "remove", label = "Remove...", variant = "quiet" } },
+      { kind = "row", id = "alt", title = "Trailer_Alt.rpp", action = { id = "remove", label = "Remove...", variant = "quiet" } },
+      { kind = "group", label = "Media" },
+      { kind = "row", id = "music", title = "Music_Bed_v3.wav", action = { id = "remove", label = "Remove...", variant = "quiet" } },
+    }
+    if list_values.expanded then
+      names[#names + 1] = { kind = "row", id = "vo", title = "VO_Take_12.wav", action = { id = "remove", label = "Remove...", variant = "quiet" } }
+    end
+    card.draw({ id = "list-compact-card", title = "Source Reference" }, function()
+      record_list_result(list.draw({ id = "list-compact", variant = "compact", items = names,
+        overflow = { label = list_values.expanded and "Showing all 4 files" or "+ 1 more file",
+          expanded = list_values.expanded == true } }))
+    end)
 
     ImGui.Text(ctx, "Status")
     status.draw({ role = "neutral", text = "No transfer has run in this session." })

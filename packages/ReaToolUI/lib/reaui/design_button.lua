@@ -4,9 +4,16 @@ local M = {}
 
 local BUTTON_VARIANTS = { primary = true, secondary = true, quiet = true, danger = true }
 local ICON_VARIANTS = { secondary = true, quiet = true, danger = true }
+local SIZES = { medium = "semantic.size.control.medium", compact = "semantic.size.control.compact" }
 
 local function required_string(value, name)
   if type(value) ~= "string" or value == "" then error(name .. " is required") end
+end
+
+local function size_token(size)
+  local token = SIZES[size or "medium"]
+  if not token then error("unsupported button size " .. tostring(size)) end
+  return token
 end
 
 function M.create(ImGui, ctx, adapter, icon_renderer)
@@ -44,6 +51,7 @@ function M.create(ImGui, ctx, adapter, icon_renderer)
     if options.running and (type(options.running_label) ~= "string" or options.running_label == "") then
       error("running_label is required while a button is running")
     end
+    local height_token = size_token(options.size)
 
     return with_text("body", function()
       local visible_label = options.running and options.running_label or options.label
@@ -54,7 +62,7 @@ function M.create(ImGui, ctx, adapter, icon_renderer)
       end
       local width = label_width + resolve("semantic.space.control.padding_x") * 2
       if options.stretch then width = ImGui.GetContentRegionAvail(ctx) end
-      local height = resolve("semantic.size.control.medium")
+      local height = resolve(height_token)
       local blocked = options.disabled == true or options.running == true
 
       push_variant(variant)
@@ -77,7 +85,7 @@ function M.create(ImGui, ctx, adapter, icon_renderer)
       error("unsupported icon button variant " .. tostring(variant))
     end
 
-    local control_size = resolve("semantic.size.control.medium")
+    local control_size = resolve(size_token(options.size))
     local icon_size = resolve("semantic.size.icon.medium")
     local x, y = ImGui.GetCursorScreenPos(ctx)
     push_variant(variant)

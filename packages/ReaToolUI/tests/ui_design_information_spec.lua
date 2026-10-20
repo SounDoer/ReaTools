@@ -22,9 +22,10 @@ function tests.menu_handles_separator_disabled_and_danger_items()
   function I.OpenPopup(_,id)c.opened=id end;function I.BeginPopup()return c.popup end;function I.EndPopup()c.ended=true end;function I.Separator()c.separator=true end
   function I.BeginDisabled()c.disabled=true end;function I.EndDisabled()end;function I.PushStyleColor()c.danger=true end;function I.PopStyleColor()end
   function I.MenuItem(_,label)table.insert(c.menu,label);return label=="Delete snapshot" end
-  local button={draw_icon=function()return{}end};local adapter={resolve=function()return 1 end}
-  local result=menu_module.create(I,"ctx",adapter,button).draw({id="more",items={{id="rename",label="Rename"},{separator=true},{id="delete",label="Delete snapshot",danger=true}}})
+  local button={draw_icon=function(o)c.trigger=o;return{}end};local adapter={resolve=function()return 1 end}
+  local result=menu_module.create(I,"ctx",adapter,button).draw({id="more",size="compact",items={{id="rename",label="Rename"},{separator=true},{id="delete",label="Delete snapshot",danger=true}}})
   equal(result.action,"delete","menu action");equal(result.events[1].type,"menu.action_selected","menu event");assert(c.separator and c.danger and c.ended,"menu lifecycle")
+  equal(c.trigger.size,"compact","trigger size forwarded")
 end
 
 function tests.disclosure_closes_tree_on_success_and_failure()

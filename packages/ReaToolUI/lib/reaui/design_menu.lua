@@ -10,7 +10,7 @@ function M.create(ImGui,ctx,adapter,button)
       if type(item.id)~="string" or item.id=="" or type(item.label)~="string" or item.label=="" then error("menu actions require id and label")end
       if ids[item.id]then error("duplicate menu action "..item.id)end;ids[item.id]=true
     end end
-    local trigger=button.draw_icon({id=options.id.."-open",icon="more",accessible_label=options.accessible_label or "More actions",variant="quiet",disabled=options.disabled})
+    local trigger=button.draw_icon({id=options.id.."-open",icon="more",accessible_label=options.accessible_label or "More actions",variant="quiet",disabled=options.disabled,size=options.size})
     if trigger then ImGui.OpenPopup(ctx,"##menu-"..options.id)end
     local chosen
     if ImGui.BeginPopup(ctx,"##menu-"..options.id)then

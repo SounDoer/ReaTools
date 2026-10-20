@@ -39,6 +39,7 @@ local function fake_dependencies()
   function adapter.resolve(id)
     calls.last_token = id
     if id == "semantic.size.control.medium" then return 32 end
+    if id == "semantic.size.control.compact" then return 28 end
     if id:find("padding_x", 1, true) then return 12 end
     if id:find("icon.medium", 1, true) then return 16 end
     return 0x112233ff
@@ -127,6 +128,18 @@ function tests.draws_icon_buttons_with_labels_and_tooltips()
   equal(calls.icons[1].name, "gear", "icon name")
   equal(calls.icons[1].size, 16, "icon size")
   equal(calls.tooltips[1], "Open settings", "tooltip")
+end
+
+function tests.compact_size_uses_the_compact_control_height()
+  local ImGui, adapter, icons, calls = fake_dependencies()
+  local button = design_button.create(ImGui, "ctx", adapter, icons)
+  button.draw({ id = "detach", label = "Detach", size = "compact" })
+  button.draw_icon({ id = "more", icon = "more", accessible_label = "More", size = "compact" })
+  equal(calls.buttons[1].height, 28, "compact button height")
+  equal(calls.buttons[2].width, 28, "compact icon width")
+  equal(calls.buttons[2].height, 28, "compact icon height")
+  equal(calls.icons[1].x, 10 + 6, "compact icon centered")
+  assert(not pcall(function() button.draw({ id = "x", label = "X", size = "large" }) end), "size rejected")
 end
 
 function tests.validates_icon_button_inputs_and_variants()

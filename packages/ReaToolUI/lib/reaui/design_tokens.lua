@@ -835,6 +835,9 @@ M.registry = {
       background = { type = "color", ref = "semantic.color.surface.inset" },
       label = { type = "color", ref = "semantic.color.text.secondary" },
     },
+    list_row = {
+      background = { type = "color", ref = "semantic.color.surface.inset" },
+    },
     status = {
       neutral = { foreground = { type = "color", ref = "semantic.color.status.neutral" } },
       ready = { foreground = { type = "color", ref = "semantic.color.status.ready" } },

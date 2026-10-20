@@ -21,7 +21,6 @@ local function draw_reference(env, state)
   local patterns = env.design_system.patterns
   local connected = state.reference_manifest_path ~= nil and state.reference_manifest_path ~= ""
 
-  env.settings_compat.section("Reference")
   local path = patterns.path_selection.draw({
     id = "settings-reference-path",
     label = "reference.json",
@@ -47,6 +46,27 @@ local function draw_reference(env, state)
   end
 end
 
+local function project_rows(env, state, source)
+  local rows = {
+    { id = "project-name", title = "Name", detail = view_models.project_name(state.path) },
+    { id = "project-path", title = "Project File", detail = state.path ~= "" and state.path or "Not Saved" },
+    { id = "project-id", title = "Project ID", detail = state.project_id or "Not Assigned" },
+  }
+  if source then
+    table.insert(rows, { id = "delivery-id", title = "Delivery ID",
+      detail = env.adapter.get_project_value(constants.PROJECT_KEYS.delivery_id) or "Not Assigned" })
+  else
+    table.insert(rows, { id = "reference-id", title = "Reference ID", detail = state.reference_id or "Not Published" })
+  end
+  local values = {}
+  for _, row in ipairs(rows) do
+    row.kind = "row"
+    row.action = { id = "copy", label = "Copy" }
+    values[row.id] = row.detail
+  end
+  return rows, values
+end
+
 function M.create()
   local view = { reset_open = false }
 
@@ -55,61 +75,62 @@ function M.create()
   end
 
   function view:draw(env, state)
-    local ImGui = env.ImGui
+    local ImGui, ctx, c = env.ImGui, env.ctx, env.c
     local theme = env.theme
     local design_system = env.design_system
     local components, patterns = design_system.components, design_system.patterns
-    local compat = env.settings_compat
     local source = state.project_type == constants.PROJECT_TYPES.source
     local back = false
+    local function section(id, title, render, first)
+      components.section_heading.draw({ id = "settings-" .. id, title = title, gap_above = not first }, render)
+    end
 
     workflow.draw_notices(env)
-    if compat.begin_page("settings") then
-      local header = patterns.review_header.draw({ id = "settings", title = "Settings" })
-      back = header.back_requested
+    if c.begin_page("settings", false) then
+      back = components.page_header.draw({ id = "settings", title = "Settings", back_label = "Back" }).back_requested
 
-      compat.section("Project")
-      compat.copy_value("project-name", "Name", view_models.project_name(state.path))
-      compat.copy_value("project-path", "Project File", state.path ~= "" and state.path or "Not Saved")
-      compat.copy_value("project-id", "Project ID", state.project_id or "Not Assigned")
-      if source then
-        compat.copy_value("delivery-id", "Delivery ID",
-          env.adapter.get_project_value(constants.PROJECT_KEYS.delivery_id) or "Not Assigned")
-        draw_reference(env, state)
-      else
-        compat.copy_value("reference-id", "Reference ID", state.reference_id or "Not Published")
-      end
+      section("project", "Project", function()
+        local rows, values = project_rows(env, state, source)
+        local action = components.list.draw({ id = "settings-project", variant = "standard", items = rows }).action
+        if action and action.id == "copy" then ImGui.SetClipboardText(ctx, tostring(values[action.row])) end
+      end, true)
+      if source then section("reference", "Reference", function() draw_reference(env, state) end) end
 
-      compat.section("Appearance")
-      local appearance = components.segmented_control.draw_field({
-        id = "settings-theme",
-        label = "Theme",
-        value = theme.preference,
-        options = THEMES,
-        reserve_message = false,
-      })
-      if appearance.changed then
-        theme:set_preference(appearance.value)
-        design_system.adapter.set_theme(theme.mode)
-      end
+      section("appearance", "Appearance", function()
+        local appearance = components.segmented_control.draw_field({
+          id = "settings-theme",
+          label = "Theme",
+          value = theme.preference,
+          options = THEMES,
+          reserve_message = false,
+        })
+        if appearance.changed then
+          theme:set_preference(appearance.value)
+          design_system.adapter.set_theme(theme.mode)
+        end
+      end)
 
-      compat.section("About")
-      local _, _, reaimgui_version = ImGui.GetVersion()
-      compat.key_value("ReaProjectLink", env.version)
-      compat.key_value("REAPER", env.reaper.GetAppVersion())
-      compat.key_value("ReaImGui", tostring(reaimgui_version))
+      section("about", "About", function()
+        local _, _, reaimgui_version = ImGui.GetVersion()
+        components.list.draw({ id = "settings-about", variant = "standard", items = {
+          { kind = "row", id = "about-reaprojectlink", title = "ReaProjectLink", detail = env.version },
+          { kind = "row", id = "about-reaper", title = "REAPER", detail = env.reaper.GetAppVersion() },
+          { kind = "row", id = "about-reaimgui", title = "ReaImGui", detail = tostring(reaimgui_version) },
+        } })
+      end)
 
-      compat.section("Reset")
-      compat.explanation("Removes ReaProjectLink data from this project: its type, " ..
-        "subscriptions, revisions, the IDs on Tracks and Items, and this project's " ..
-        "published package. Audio and video Items in the project are kept.")
-      if components.button.draw({
-          id = "settings-reset", label = "Reset ReaProjectLink State...", variant = "danger",
-        }) then
-        self.reset_open = true
-      end
+      section("reset", "Reset", function()
+        c.small("Removes ReaProjectLink data from this project: its type, " ..
+          "subscriptions, revisions, the IDs on Tracks and Items, and this project's " ..
+          "published package. Audio and video Items in the project are kept.")
+        if components.button.draw({
+            id = "settings-reset", label = "Reset ReaProjectLink State...", variant = "danger",
+          }) then
+          self.reset_open = true
+        end
+      end)
     end
-    compat.end_page()
+    c.end_page()
 
     local confirmation = patterns.confirmation_dialog.draw({
       id = "settings-reset",

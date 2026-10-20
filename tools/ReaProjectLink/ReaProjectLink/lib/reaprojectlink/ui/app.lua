@@ -35,7 +35,6 @@ function M.create(deps)
     version = deps.version,
     theme = theme,
     design_system = design_system,
-    settings_compat = components.create_settings_compat(ImGui, ctx, design_system),
     c = components.create(ImGui, ctx, design_system),
     app = app_state.new(deps.reaper.time_precise),
   }

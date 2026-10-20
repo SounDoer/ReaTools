@@ -711,6 +711,10 @@ in the product. These compositions stay in the product:
 - Settings copy/value rows;
 - Toast placement.
 
+Amendment (2026-10-20): ReaProjectLink Settings copy/value rows now use the
+shared List, one row per value with `Copy` as the row action (ReaProjectLink
+D093). They no longer stay in the product.
+
 Product views must not hand-write layout. The repository layout scan (`tooling/check_ui_layout.ps1`) makes that
 checkable.
 

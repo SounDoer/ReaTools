@@ -35,8 +35,7 @@ Gallery, and product UI smoke checks remain in the Windows local command above.
   (`raw-layout`) and numeric layout literals other than 0 and 1 in `c.*` or
   `ImGui.*` calls (`layout-literal`) in the Lua files directly under `<dir>`.
   It exits 1 on any finding unless `-Report` is set. `run_all_tests.ps1`
-  reports the ReaProjectLink views without failing until their migration is
-  complete.
+  enforces it on the ReaProjectLink views.
 - `test_check_ui_layout.ps1` runs the scan against clean and dirty fixtures.
 
 On validated pushes to `main`, `.github/workflows/deploy-reapack.yml` publishes

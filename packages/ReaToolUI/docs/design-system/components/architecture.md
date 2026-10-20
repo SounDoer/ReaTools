@@ -131,10 +131,13 @@ promotes them:
 These helpers still follow foundation tokens and DS002 logical units. Calling a
 function reusable does not make its API part of the design-system contract.
 
-## Current helper classification
+## Helper classification (historical)
 
-The current `ui/components.lua` is migration input and may temporarily contain
-multiple layers. Its capabilities classify as follows:
+This table classified ReaProjectLink's `ui/components.lua` as migration input.
+The Direction C migration (ReaProjectLink D093) retired most of these helpers;
+the file now keeps only Toast, grouped Lane mapping rows, clipped lists, the
+page container, and confirmation plumbing. Its capabilities classified as
+follows:
 
 | Current capability | Target responsibility |
 | --- | --- |

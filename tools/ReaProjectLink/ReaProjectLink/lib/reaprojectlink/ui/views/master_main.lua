@@ -119,69 +119,72 @@ local function handle_delivery(env, action)
   end
 end
 
-local function draw_row(env, row, primary)
-  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
-  local chosen
-  ImGui.Separator(ctx)
-  ImGui.AlignTextToFramePadding(ctx)
-  ImGui.Text(ctx, row.name)
-  local width = c.status_width(row.status, row.level) + 8 + ImGui.GetFrameHeight(ctx)
-  if row.action then width = width + c.button_width(row.action.label) + 8 end
-  c.same_line_right(width)
-  c.inline_status(row.status, row.level)
-  if row.action then
-    ImGui.SameLine(ctx, 0, 8)
-    if c.button(row.action.label .. "##" .. row.id, primary and "primary" or nil) then
-      chosen = { id = row.action.id, row = row }
-    end
+-- Only the first row needing attention gets the primary button.
+local function list_items(cards, highlighted)
+  local items, by_id, primary_used = {}, {}, false
+  for _, row in ipairs(cards.rows) do
+    local primary = highlighted and row.attention and not primary_used
+    primary_used = primary_used or primary
+    by_id[row.id] = row
+    table.insert(items, {
+      kind = "row", id = row.id, title = row.name, detail = row.note,
+      status = { role = row.level, text = row.status },
+      action = row.action and { id = row.action.id, label = row.action.label,
+        variant = primary and "primary" or nil },
+      menu = { accessible_label = "Subscription actions", items = ROW_MENU },
+    })
   end
-  ImGui.SameLine(ctx, 0, 8)
-  local menu = c.menu("row-menu-" .. row.id, ROW_MENU, false)
-  if menu then chosen = { id = menu, row = row } end
-  if row.note then env.c.small(row.note) end
-  return chosen
+  return items, by_id
 end
 
-local function draw_deliveries(env, cards, width)
-  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
+local function deliveries_entry(env, cards, chosen)
   local highlighted = cards.highlight == "deliveries"
-  local chosen
-  if c.begin_card("master-deliveries", width, highlighted) then
-    c.card_header("download", "Deliveries")
-    c.same_line_right(ImGui.GetFrameHeight(ctx))
-    if c.icon_button("add-delivery", "plus", "Add Delivery") then chosen = { id = "add_delivery" } end
-    if #cards.rows == 0 then
-      local empty = cards.deliveries_empty
-      c.status(empty.status, empty.level)
-      c.small(empty.note)
-      if c.button(empty.action.label, highlighted and "primary" or nil) then
-        chosen = { id = empty.action.id }
-      end
-    end
-    local primary_used = false
-    for _, row in ipairs(cards.rows) do
-      local primary = highlighted and row.attention and not primary_used
-      primary_used = primary_used or primary
-      chosen = draw_row(env, row, primary) or chosen
-    end
+  local options = {
+    id = "master-deliveries", icon = "download", title = "Deliveries",
+    variant = highlighted and "emphasized" or nil,
+    trailing = { kind = "icon_button", id = "add", icon = "plus", accessible_label = "Add Delivery" },
+  }
+  if #cards.rows == 0 then
+    local empty = cards.deliveries_empty
+    options.status = { role = empty.level, text = empty.status }
+    options.footer = { actions = { { id = empty.action.id, label = empty.action.label,
+      variant = highlighted and "primary" or nil } } }
+    return { options = options, render_body = function() env.c.small(empty.note) end }
   end
-  c.end_card()
-  return chosen
+  options.status = view_models.deliveries_status(cards.rows)
+  local items, by_id = list_items(cards, highlighted)
+  return {
+    options = options,
+    render_body = function()
+      local result = env.design_system.components.list.draw({ id = "master-deliveries-list",
+        variant = "standard", items = items })
+      if result.action then chosen.row_action = { id = result.action.id, row = by_id[result.action.row] } end
+    end,
+  }
 end
 
 function M.draw(env, state)
-  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
   local values = input(env, state)
   local cards = view_models.master_cards(values)
   if cards.reference and values.marker_error then cards.reference.note = values.marker_error end
   header.draw(env, state, "Master", cards.all_current and "All Up to Date" or nil)
-  local width, side_by_side = c.card_width()
-  local reference_action = card.draw(env, "master-reference", "film", "Reference", cards.reference,
-    cards.highlight == "reference", width, nil)
-  if side_by_side then ImGui.SameLine(ctx, 0, 12) end
-  local delivery_action = draw_deliveries(env, cards, width)
+  local chosen = {}
+  local result = env.design_system.components.card_row.draw({
+    id = "master-cards",
+    cards = {
+      {
+        options = card.options(cards.reference, "master-reference", "film", "Reference",
+          cards.highlight == "reference"),
+        render_body = function() card.body(env, "master-reference", cards.reference) end,
+      },
+      deliveries_entry(env, cards, chosen),
+    },
+  })
+  local reference_action = result.actions["master-reference"]
+  local deliveries_action = result.actions["master-deliveries"]
   if reference_action then handle_reference(env, reference_action) end
-  if delivery_action then handle_delivery(env, delivery_action) end
+  if deliveries_action then handle_delivery(env, { id = "add_delivery" }) end
+  if chosen.row_action then handle_delivery(env, chosen.row_action) end
 end
 
 return M

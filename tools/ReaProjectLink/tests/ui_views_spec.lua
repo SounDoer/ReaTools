@@ -2,6 +2,7 @@ local view_models = require("reaprojectlink.ui.view_models")
 local header = require("reaprojectlink.ui.views.header")
 local setup = require("reaprojectlink.ui.views.setup")
 local source_main = require("reaprojectlink.ui.views.source_main")
+local master_main = require("reaprojectlink.ui.views.master_main")
 
 local function equal(actual, expected, label)
   if actual ~= expected then
@@ -53,7 +54,9 @@ local function fake_view_env(script)
   local env = {
     ImGui = {}, ctx = {}, c = c,
     design_system = { components = components, patterns = { review_shell = recorder("review_shell") } },
-    adapter = {},
+    adapter = {
+      get_project_value = function() return script.subscriptions end,
+    },
     services = {
       project_service = {
         initialize_source = function() calls.initialized = "source"; return {} end,
@@ -64,9 +67,23 @@ local function fake_view_env(script)
       reference_subscription = {
         local_surface = function() return surface end,
       },
+      reference_publish = {
+        reference_tracks = function() return script.reference_tracks or {} end,
+        timeline_entries = function() return {} end,
+        selection_counts = function() return {} end,
+      },
+      delivery_update = {
+        review = function(_, _, id) calls.update_opened = id; return nil, "fake" end,
+      },
+    },
+    reaper = {
+      GetUserFileNameForRead = function() calls.import_opened = true; return false end,
     },
     app = {
-      checks = { reference = script.reference_check or { state = "done", latest = 2 } },
+      checks = {
+        reference = script.reference_check or { state = "done", latest = 2 },
+        deliveries = script.delivery_checks or {},
+      },
       seconds_since_check = function() return 5 end,
       request_check = function() calls.check_requested = true end,
       open_settings = function() calls.settings_opened = true end,
@@ -205,6 +222,70 @@ function tests.source_reference_without_sync_has_no_list()
   local env, calls = fake_view_env({ surface = { tracks = named(2, "Track"), markers = {}, regions = {} } })
   source_main.draw(env, state)
   equal(calls.list, nil, "no list without synchronization")
+end
+
+local MASTER_STATE = { path = "C:/Session/Mix.rpp", reference_revision = 1 }
+local SUBSCRIPTIONS = '[' ..
+  '{"sourceProjectId":"a","sourceProjectName":"Dialogue","acceptedDeliveryRevision":1},' ..
+  '{"sourceProjectId":"b","sourceProjectName":"Music","acceptedDeliveryRevision":2},' ..
+  '{"sourceProjectId":"c","sourceProjectName":"Foley","acceptedDeliveryRevision":1,' ..
+  '"lanes":[{"unmapped":true}]}]'
+local DELIVERY_CHECKS = {
+  a = { state = "done", latest = 3 },
+  b = { state = "done", latest = 2 },
+  c = { state = "done", latest = 1 },
+}
+
+local function master_env(extra)
+  local script = { reference_tracks = { {} }, subscriptions = SUBSCRIPTIONS, delivery_checks = DELIVERY_CHECKS }
+  for key, value in pairs(extra or {}) do script[key] = value end
+  return fake_view_env(script)
+end
+
+function tests.master_deliveries_rows_use_list()
+  local env, calls = master_env()
+  master_main.draw(env, MASTER_STATE)
+  local deliveries = card_options(calls, "master-deliveries")
+  equal(deliveries.variant, "emphasized", "deliveries emphasized")
+  equal(deliveries.footer, nil, "no footer with rows")
+  equal(deliveries.status.text, "2 Need Attention", "aggregate status")
+  equal(deliveries.trailing.kind, "icon_button", "trailing kind")
+  equal(deliveries.trailing.icon, "plus", "trailing icon")
+  local rows = calls.list.items
+  equal(calls.list.variant, "standard", "standard list")
+  equal(#rows, 3, "three rows")
+  equal(rows[1].action.label, "Sync", "first row action")
+  equal(rows[1].action.variant, "primary", "first attention row is primary")
+  equal(rows[2].action, nil, "current row has no action")
+  equal(rows[3].action.label, "Map Lanes", "unmapped row action")
+  equal(rows[3].action.variant, nil, "second attention row is not primary")
+  equal(rows[1].menu.items[2].id, "remove", "row menu")
+  equal(card_options(calls, "master-reference").footer.actions[3].variant, nil,
+    "Reference footer has no primary when Deliveries is highlighted")
+end
+
+function tests.master_deliveries_actions_route()
+  local env, calls = master_env({ card_row = { events = {}, actions = { ["master-deliveries"] = "add" } } })
+  master_main.draw(env, MASTER_STATE)
+  equal(calls.import_opened, true, "add opens import")
+
+  env, calls = master_env({ list = { events = {}, action = { row = "a", id = "sync" } } })
+  master_main.draw(env, MASTER_STATE)
+  equal(calls.update_opened, "a", "sync opens update for the row")
+
+  env, calls = master_env({ list = { events = {}, action = { row = "b", id = "remove" } } })
+  master_main.draw(env, MASTER_STATE)
+  equal(calls.confirmation.id, "remove-subscription", "remove requests confirmation")
+end
+
+function tests.master_deliveries_empty_state()
+  local env, calls = master_env({ subscriptions = "" })
+  master_main.draw(env, MASTER_STATE)
+  equal(calls.list, nil, "no list without rows")
+  local deliveries = card_options(calls, "master-deliveries")
+  equal(deliveries.status.text, "No Deliveries Yet", "empty status")
+  equal(deliveries.footer.actions[1].label, "Add Delivery", "empty action")
+  equal(deliveries.footer.actions[1].variant, "primary", "empty action primary when highlighted")
 end
 
 local passed = 0

@@ -3,6 +3,9 @@ local header = require("reaprojectlink.ui.views.header")
 local setup = require("reaprojectlink.ui.views.setup")
 local source_main = require("reaprojectlink.ui.views.source_main")
 local master_main = require("reaprojectlink.ui.views.master_main")
+local reference_publish_review = require("reaprojectlink.ui.views.reference_publish_review")
+local delivery_publish_review = require("reaprojectlink.ui.views.delivery_publish_review")
+local reference_update_review = require("reaprojectlink.ui.views.reference_update_review")
 
 local function equal(actual, expected, label)
   if actual ~= expected then
@@ -32,8 +35,32 @@ local function fake_view_env(script)
     }
   end
   local components = {}
-  for _, key in ipairs({ "page_header", "card_row", "card", "list", "notice", "stat_group", "issue_item" }) do
+  for _, key in ipairs({ "page_header", "card_row", "card", "list", "notice", "stat_group", "issue_item",
+    "disclosure", "checkbox" }) do
     components[key] = recorder(key)
+  end
+  components.issue_item.draw_list = function(options)
+    calls.issue_list = options
+    return script.issue_list or { events = {} }
+  end
+  calls.sections = {}
+  local review_shell = {
+    draw = function(options)
+      calls.review_shell = options
+      if not options.stale then options.render_body() end
+      return script.review_shell or { events = {} }
+    end,
+    section = function(options, render)
+      table.insert(calls.sections, options.title)
+      calls.current_section = options.title
+      render()
+      calls.current_section = nil
+    end,
+  }
+  local checkbox_draw = components.checkbox.draw
+  components.checkbox.draw = function(options)
+    calls.checkbox_section = calls.current_section
+    return checkbox_draw(options) or {}
   end
   local c = {
     notice = function(id, level, text, actions)
@@ -48,14 +75,25 @@ local function fake_view_env(script)
     begin_page = function() return true end,
     end_page = function() end,
     small = function(text) table.insert(calls.order, "small:" .. text) end,
+    muted = function() end,
+    key_value = function() end,
+    value_row = function() end,
+    segmented = function(_, _, selected) return selected end,
+    clipped = function(count, draw_row) for index = 1, count do draw_row(index) end end,
     request_confirmation = function(options) calls.confirmation = options; return true end,
   }
   local surface = script.surface or { tracks = {}, markers = {}, regions = {} }
   local env = {
-    ImGui = {}, ctx = {}, c = c,
-    design_system = { components = components, patterns = { review_shell = recorder("review_shell") } },
+    ImGui = { TextColored = function() end }, ctx = {}, c = c,
+    design_system = {
+      components = components,
+      patterns = { review_shell = review_shell },
+      adapter = { resolve = function() return 0 end },
+    },
     adapter = {
       get_project_value = function() return script.subscriptions end,
+      project_change_count = function() return script.change_count or 0 end,
+      select_items = function(refs) calls.selected_items = refs end,
     },
     services = {
       project_service = {
@@ -71,6 +109,7 @@ local function fake_view_env(script)
         reference_tracks = function() return script.reference_tracks or {} end,
         timeline_entries = function() return {} end,
         selection_counts = function() return {} end,
+        review = function(_, _, options) calls.rebuilt = options; return script.rebuilt_review end,
       },
       delivery_update = {
         review = function(_, _, id) calls.update_opened = id; return nil, "fake" end,
@@ -84,6 +123,8 @@ local function fake_view_env(script)
         reference = script.reference_check or { state = "done", latest = 2 },
         deliveries = script.delivery_checks or {},
       },
+      review = script.review,
+      back = function() calls.back = true end,
       seconds_since_check = function() return 5 end,
       request_check = function() calls.check_requested = true end,
       open_settings = function() calls.settings_opened = true end,
@@ -286,6 +327,91 @@ function tests.master_deliveries_empty_state()
   equal(deliveries.status.text, "No Deliveries Yet", "empty status")
   equal(deliveries.footer.actions[1].label, "Add Delivery", "empty action")
   equal(deliveries.footer.actions[1].variant, "primary", "empty action primary when highlighted")
+end
+
+local function reference_publish_data(overrides)
+  local data = { reference_revision = 2, base_revision = 1, lanes = {}, markers = {}, regions = {},
+    blockers = {}, blocker_count = 0 }
+  for key, value in pairs(overrides or {}) do data[key] = value end
+  return data
+end
+
+local function delivery_publish_data(overrides)
+  local data = { delivery_revision = 3, lanes = {}, blocker_count = 0, synchronized_reference_revision = 0 }
+  for key, value in pairs(overrides or {}) do data[key] = value end
+  return data
+end
+
+local function has(list, value)
+  for _, entry in ipairs(list) do if entry == value then return true end end
+  return false
+end
+
+function tests.reference_publish_issues_route_by_id()
+  local data = reference_publish_data({ save_as_blocker = "moved", blockers = { "moved" }, blocker_count = 1 })
+  local env, calls = fake_view_env({
+    review = { data = data, options = {} },
+    issue_list = { events = {}, action = { item = "save-as", id = "new" } },
+    rebuilt_review = data,
+  })
+  reference_publish_review.draw(env)
+  equal(calls.issue_list.items[1].id, "save-as", "save-as issue")
+  equal(calls.issue_list.items[1].role, "blocked", "save-as role")
+  equal(#calls.issue_list.items, 1, "the save-as blocker is not repeated")
+  equal(calls.rebuilt.save_as_decision, "new", "decision rebuilds the review")
+  equal(has(calls.sections, "Issues"), true, "Issues section")
+
+  env, calls = fake_view_env({
+    review = { data = reference_publish_data({ unchanged = true, unchanged_blocker = true }), options = {} },
+    issue_list = { events = {}, action = { item = "unchanged", id = "publish-anyway" } },
+  })
+  reference_publish_review.draw(env)
+  equal(calls.confirmation.id, "publish-unchanged-reference", "publish anyway confirmation")
+end
+
+function tests.delivery_publish_running_footer()
+  local env, calls = fake_view_env({ review = { data = delivery_publish_data(), options = {}, publishing = true } })
+  delivery_publish_review.draw(env)
+  local footer = calls.review_shell.footer
+  equal(footer.complete_label, "Publishing...", "running label")
+  equal(footer.enabled, false, "footer disabled while publishing")
+  equal(footer.summary, "Publishing Delivery...", "running summary")
+  equal(env.app.review.publish_ready, true, "publish handshake continues")
+end
+
+function tests.delivery_publish_select_item()
+  local lane = { lane_id = "l1", display_name = "Dialogue", clips = {
+    { display_name = "Line 1", blockers = { "Offline media" }, clip = { item_ref = "item-1" } },
+  } }
+  local env, calls = fake_view_env({
+    review = { data = delivery_publish_data({ lanes = { lane }, blocker_count = 1 }), options = {} },
+    issue_list = { events = {}, action = { item = "clip-l1-1-1", id = "select-item" } },
+  })
+  delivery_publish_review.draw(env)
+  equal(calls.selected_items[1], "item-1", "select item")
+  equal(calls.disclosure.variant, "inset", "lane disclosure is inset")
+  equal(calls.disclosure.role, "blocked", "blocked lane disclosure")
+end
+
+function tests.reference_update_shift_decision()
+  local status = { latest_revision = 3, synchronized_revision = 2, available = true,
+    can_shift_entire_project = true, shift_seconds = 2, snapshot = {}, alignment_mode = "mirror" }
+  local env, calls = fake_view_env({ review = { status = status, shift_entire_project = false } })
+  reference_update_review.draw(env)
+  equal(calls.checkbox_section, "Decision", "checkbox inside Decision section")
+  equal(calls.review_shell.footer.complete_label, "Synchronize", "footer label")
+  equal(calls.review_shell.footer.enabled, true, "footer enabled")
+end
+
+function tests.stale_review_passes_stale()
+  local data = reference_publish_data({ project_change_count = 5 })
+  local env, calls = fake_view_env({
+    review = { data = data, options = {} }, change_count = 6, rebuilt_review = data,
+    review_shell = { events = { { type = "review.refresh_requested" } } },
+  })
+  reference_publish_review.draw(env)
+  equal(calls.review_shell.stale.refresh_label, "Refresh Review", "stale state")
+  equal(calls.rebuilt ~= nil, true, "refresh rebuilds the review")
 end
 
 local passed = 0

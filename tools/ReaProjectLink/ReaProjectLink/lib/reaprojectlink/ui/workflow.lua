@@ -82,6 +82,28 @@ function M.choose_reference(env)
   end
 end
 
+local REVIEW_FLAGS = {
+  ["review.back_requested"] = "back",
+  ["review.complete_requested"] = "complete",
+  ["review.refresh_requested"] = "refresh",
+}
+
+-- Reads Review Shell events into { back, complete, refresh } booleans.
+function M.review_flags(result)
+  local flags = { back = false, complete = false, refresh = false }
+  for _, event in ipairs(result.events or {}) do
+    local flag = REVIEW_FLAGS[event.type]
+    if flag then flags[flag] = true end
+  end
+  return flags
+end
+
+M.STALE_REVIEW = {
+  title = "Review Out of Date",
+  message = "The project was edited after this review was made.",
+  refresh_label = "Refresh Review",
+}
+
 -- Unsaved-project and lock banners. Views call this directly under their
 -- header; the toast floats over the window and is drawn by the shell.
 function M.draw_notices(env, state)

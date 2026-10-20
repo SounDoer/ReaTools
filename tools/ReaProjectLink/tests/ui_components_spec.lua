@@ -48,6 +48,34 @@ function tests.clipped_lists_reuse_one_attached_clipper()
   assert(table.concat(drawn, ",") == "1,2,1", "both lists are drawn")
 end
 
+function tests.toast_rises_above_review_footer()
+  local ImGui = {}
+  local y
+  function ImGui.CreateListClipper() return {} end
+  function ImGui.Attach() end
+  function ImGui.GetWindowPos() return 0, 0 end
+  function ImGui.GetWindowSize() return 1000, 700 end
+  function ImGui.SetCursorScreenPos(_, _, cursor_y) y = cursor_y end
+  function ImGui.GetItemRectSize() return 400, 50 end
+  local tokens = {
+    ["semantic.space.section.default"] = 20,
+    ["semantic.layout.toast.max_width"] = 520,
+    ["component.review_shell.footer.height"] = 60,
+  }
+  local c = components.create(ImGui, "context", {
+    adapter = { resolve = function(id) return (assert(tokens[id], id)) end },
+    components = { notice = { draw = function() return {} end } },
+    patterns = {},
+  })
+  local toast = { text = "Done", is_error = false }
+
+  c.toast_overlay(toast)
+  c.toast_overlay(toast)
+  assert(y == 630, "toast sits at the window bottom: " .. tostring(y))
+  c.toast_overlay(toast, true)
+  assert(y == 570, "toast clears the Review footer: " .. tostring(y))
+end
+
 local passed = 0
 for name, test in pairs(tests) do
   local ok, err = pcall(test)

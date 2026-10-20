@@ -61,6 +61,7 @@ function M.create(deps)
       settings_view:draw(env, state)
     elseif app.review and REVIEWS[app.review.kind] then
       REVIEWS[app.review.kind].draw(env, state)
+      return true
     elseif state.project_type == constants.PROJECT_TYPES.source then
       source_main.draw(env, state)
     elseif state.project_type == constants.PROJECT_TYPES.master then
@@ -94,10 +95,10 @@ function M.create(deps)
       if state.project_type == constants.PROJECT_TYPES.master then
         master_main.confirm_moved_items(env)
       end
-      draw_body(state)
+      local review_drawn = draw_body(state)
       -- Drawn last so it floats over the view instead of moving it.
       local toast = env.app:visible_toast()
-      if toast and env.c.toast_overlay(toast) then env.app:dismiss_toast() end
+      if toast and env.c.toast_overlay(toast, review_drawn) then env.app:dismiss_toast() end
       env.c.draw_confirmation()
       -- ReaImGui only accepts End() when Begin() returned true, unlike Dear ImGui.
       ImGui.End(ctx)

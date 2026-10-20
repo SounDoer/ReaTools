@@ -98,13 +98,15 @@ function M.create(ImGui, ctx, design_system)
       actions = action_options })
     return result.action and tonumber(result.action) or nil
   end
-  function c.toast_overlay(toast)
+  -- above_review_footer keeps the toast off the Review Shell footer actions.
+  function c.toast_overlay(toast, above_review_footer)
     local window_x, window_y = ImGui.GetWindowPos(ctx)
     local window_width, window_height = ImGui.GetWindowSize(ctx)
     local margin = resolve("semantic.space.section.default")
+    local inset = above_review_footer and resolve("component.review_shell.footer.height") or 0
     local width = math.min(window_width - margin * 2, resolve("semantic.layout.toast.max_width"))
     ImGui.SetCursorScreenPos(ctx, window_x + window_width - margin - width,
-      math.max(window_y + margin, window_y + window_height - margin - toast_height))
+      math.max(window_y + margin, window_y + window_height - margin - inset - toast_height))
     local chosen = c.notice("toast", toast.is_error and "blocked" or "ready", toast.text,
       toast.is_error and { "Dismiss" } or nil)
     local _, height = ImGui.GetItemRectSize(ctx)

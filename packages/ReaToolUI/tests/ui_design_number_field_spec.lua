@@ -11,11 +11,13 @@ local function dependencies()
   local ImGui = {}
   function ImGui.GetContentRegionAvail() return calls.available or 500 end
   function ImGui.SameLine() calls.same_line = calls.same_line + 1 end
+  function ImGui.CalcTextSize() return 30 end
   local adapter = {}
   function adapter.resolve(id)
     local values = {
       ["semantic.size.control.medium"] = 32,
       ["semantic.space.control.gap"] = 8,
+      ["semantic.space.control.padding_x"] = 12,
       ["component.number_field.layout.inline_min_width"] = 220,
       ["component.number_field.layout.minimum_input_width"] = 96,
     }
@@ -39,6 +41,11 @@ local function dependencies()
     if options.id == calls.clicked and not options.disabled then
       return { type = "button.activated", id = options.id }
     end
+    return nil
+  end
+  function button.draw(options)
+    table.insert(calls.buttons, options)
+    if options.id == calls.clicked then return { type = "button.activated", id = options.id } end
     return nil
   end
   return ImGui, adapter, shell, input, button, calls
@@ -119,6 +126,35 @@ function tests.narrow_layout_stacks_step_actions()
   equal(calls.same_line, 1, "only step actions share a line")
 end
 
+function tests.action_sits_inline_and_reports_activation()
+  local ImGui, adapter, shell, input, button, calls = dependencies()
+  calls.clicked = "revision-load"
+  local field = number_field_module.create(ImGui, "ctx", adapter, shell, input, button)
+  local result = field.draw({
+    id = "revision", label = "Target revision", buffer = "2",
+    action = { id = "load", label = "Load" },
+  })
+  equal(calls.input_options.width, 438, "input leaves room for the action")
+  equal(calls.same_line, 1, "action shares the input line")
+  equal(calls.buttons[1].label, "Load", "action label")
+  equal(calls.buttons[1].stretch, false, "inline action keeps its width")
+  equal(result.action, "load", "activated action")
+end
+
+function tests.narrow_layout_stacks_action()
+  local ImGui, adapter, shell, input, button, calls = dependencies()
+  calls.available = 180
+  local field = number_field_module.create(ImGui, "ctx", adapter, shell, input, button)
+  local result = field.draw({
+    id = "revision", label = "Target revision", buffer = "2",
+    action = { id = "load", label = "Load" },
+  })
+  equal(calls.input_options.width, -1, "full-width input")
+  equal(calls.same_line, 0, "action moves below the input")
+  equal(calls.buttons[1].stretch, true, "stacked action stretches")
+  equal(result.action, nil, "no activation")
+end
+
 function tests.rejects_invalid_option_combinations()
   local ImGui, adapter, shell, input, button = dependencies()
   local field = number_field_module.create(ImGui, "ctx", adapter, shell, input, button)
@@ -134,6 +170,9 @@ function tests.rejects_invalid_option_combinations()
   assert(not pcall(function()
     field.draw({ id = "x", label = "X", step = 0 })
   end), "zero step rejected")
+  assert(not pcall(function()
+    field.draw({ id = "x", label = "X", step = 1, action = { id = "load", label = "Load" } })
+  end), "step with action rejected")
 end
 
 local passed = 0

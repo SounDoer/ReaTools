@@ -63,6 +63,13 @@ function M.create(ImGui, ctx, adapter, field_shell, input_control, button)
     if options.disabled and options.read_only then
       error("number field cannot be both disabled and read_only")
     end
+    if options.action ~= nil then
+      if type(options.action) ~= "table" or type(options.action.id) ~= "string" or
+          type(options.action.label) ~= "string" or options.action.label == "" then
+        error("number field action needs an id and label")
+      end
+      if options.step ~= nil then error("number field accepts step or action, not both") end
+    end
   end
 
   local function parse_validation(options, state)
@@ -114,6 +121,14 @@ function M.create(ImGui, ctx, adapter, field_shell, input_control, button)
       if inline then
         width = math.max(resolve("component.number_field.layout.minimum_input_width"),
           available - control_size * 2 - gap * 2)
+      end
+      local action_width
+      if options.action then
+        action_width = ImGui.CalcTextSize(ctx, options.action.label) +
+          resolve("semantic.space.control.padding_x") * 2
+        inline = available >= resolve("component.number_field.layout.inline_min_width") and
+          available - action_width - gap >= resolve("component.number_field.layout.minimum_input_width")
+        width = inline and (available - action_width - gap) or -1
       end
       local input = input_control.draw({
         id = control_id,
@@ -169,7 +184,22 @@ function M.create(ImGui, ctx, adapter, field_shell, input_control, button)
         end
       end
 
+      local action
+      if options.action then
+        if inline then ImGui.SameLine(ctx, 0, gap) end
+        if button.draw({
+          id = options.id .. "-" .. options.action.id,
+          label = options.action.label,
+          variant = "secondary",
+          disabled = options.disabled == true,
+          stretch = not inline,
+        }) then
+          action = options.action.id
+        end
+      end
+
       return {
+        action = action,
         buffer = input.value,
         value = value,
         parse_state = state,

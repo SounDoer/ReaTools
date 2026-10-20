@@ -386,6 +386,33 @@ function tests.reference_publish_issues_route_by_id()
   equal(calls.confirmation.id, "publish-unchanged-reference", "publish anyway confirmation")
 end
 
+function tests.publish_issue_actions_request_confirmations()
+  local data = reference_publish_data({ save_as_blocker = "moved", blockers = { "moved" }, blocker_count = 1 })
+  local env, calls = fake_view_env({
+    review = { data = data, options = {} },
+    issue_list = { events = {}, action = { item = "save-as", id = "continue" } },
+    rebuilt_review = data,
+  })
+  reference_publish_review.draw(env)
+  equal(calls.rebuilt.save_as_decision, "continue", "continue rebuilds the review")
+
+  for _, case in ipairs({
+    { view = reference_publish_review, data = reference_publish_data({ removed_blocker = "Removed" }),
+      item = "removed", action = "publish-without", confirmation = "publish-reference-without-removed" },
+    { view = delivery_publish_review, data = delivery_publish_data({ removed_blocker = "Removed" }),
+      item = "removed", action = "publish-without", confirmation = "publish-delivery-without-removed" },
+    { view = delivery_publish_review, data = delivery_publish_data({ has_unprocessed_fx = true }),
+      item = "unprocessed-fx", action = "publish-unprocessed", confirmation = "publish-unprocessed-media" },
+  }) do
+    env, calls = fake_view_env({
+      review = { data = case.data, options = {} },
+      issue_list = { events = {}, action = { item = case.item, id = case.action } },
+    })
+    case.view.draw(env)
+    equal(calls.confirmation.id, case.confirmation, case.item .. " confirmation")
+  end
+end
+
 function tests.delivery_publish_running_footer()
   local env, calls = fake_view_env({ review = { data = delivery_publish_data(), options = {}, publishing = true } })
   delivery_publish_review.draw(env)

@@ -61,7 +61,7 @@ function M.create(deps)
       settings_view:draw(env, state)
     elseif app.review and REVIEWS[app.review.kind] then
       REVIEWS[app.review.kind].draw(env, state)
-      return true
+      return app.review ~= nil
     elseif state.project_type == constants.PROJECT_TYPES.source then
       source_main.draw(env, state)
     elseif state.project_type == constants.PROJECT_TYPES.master then

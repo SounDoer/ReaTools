@@ -1,5 +1,7 @@
 -- Spec files run by every test runner, in order.
 return {
+  "dev_launcher_spec.lua",
+  "runtime_identity_spec.lua",
   "project_service_spec.lua",
   "runtime_requirements_spec.lua",
   "reaper_adapter_spec.lua",
@@ -23,6 +25,7 @@ return {
   "ui_view_models_spec.lua",
   "ui_settings_spec.lua",
   "ui_app_state_spec.lua",
+  "ui_app_spec.lua",
   "pointer_peek_spec.lua",
   "ui_modules_spec.lua",
 }

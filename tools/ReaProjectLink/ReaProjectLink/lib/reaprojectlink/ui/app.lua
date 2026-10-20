@@ -18,9 +18,10 @@ local REVIEWS = {
 
 local M = {}
 
--- deps: ImGui, ctx, reaper, adapter, fs, services, version.
+-- deps: ImGui, ctx, reaper, adapter, fs, services, version, display_name.
 function M.create(deps)
   local ImGui, ctx, adapter = deps.ImGui, deps.ctx, deps.adapter
+  local display_name = assert(deps.display_name, "display_name is required")
   local theme = theme_module.create(ImGui, ctx, deps.reaper)
   local design_system = assert(deps.design_system, "ReaToolUI design system is required")
   local settings_view = settings.create()
@@ -87,7 +88,7 @@ function M.create(deps)
     design_system.adapter.set_theme(theme.mode)
     design_system.adapter.push_base()
     local visible
-    visible, shell.open = ImGui.Begin(ctx, "ReaProjectLink", shell.open)
+    visible, shell.open = ImGui.Begin(ctx, display_name, shell.open)
     if visible then
       local state = deps.services.project_service.project_state(adapter)
       run_due_check(state)

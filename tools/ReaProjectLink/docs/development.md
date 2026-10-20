@@ -40,7 +40,8 @@ copy or a network lookup.
 
 Load these files from REAPER's Action List:
 
-- `ReaProjectLink/ReaProjectLink.lua` opens the current development UI;
+- `ReaProjectLink_Dev.lua` is the distinct development Action and opens a
+  window labeled `ReaProjectLink [Dev]`;
 - `tests/ReaProjectLink_RunTests.lua` runs the Lua unit tests and reports the
   result in both the REAPER console and a message box;
 - `../../packages/ReaToolUI/gallery/ReaToolUI_DesignSystemGallery.lua` opens the
@@ -50,11 +51,15 @@ Load these files from REAPER's Action List:
 The test action creates and closes an isolated temporary Project Tab. It does not
 run adapter mutation tests against the user's active project.
 
-The entry point resolves modules relative to its own directory, so the checkout
-does not need to be copied into REAPER's resource directory during development,
-and the same layout works after a ReaPack install. Do not load the checkout and
-a ReaPack-installed copy at the same time; both register a `ReaProjectLink`
-action.
+Register `ReaProjectLink_Dev.lua` once with **Actions > Show action list >
+New action > Load ReaScript**. The launcher resolves and runs the product entry
+from this checkout, so code changes are available the next time the development
+Action starts without copying or synchronizing files. It is outside the release
+inventory and cannot be installed or overwritten by ReaPack.
+
+The ReaPack-installed Action remains `ReaProjectLink`; its files and vendored
+ReaToolUI runtime remain under REAPER's resource path. Keep both Actions
+registered, but do not leave both UI instances running at the same time.
 
 ## Release
 

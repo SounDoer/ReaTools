@@ -257,6 +257,8 @@ reviewable, and testable.
   with persistent readable role cues.
 - `components/notice.md` defines actionable condition messages and responsive
   action layout.
+- `components/action-bar.md` defines the context line, ordered actions,
+  single trailing primary action, and right-aligned wrapping rows.
 - `components/menu.md` defines secondary action menus, disabled items, and
   independent danger intent.
 - `components/disclosure.md` defines native expandable detail with safe content

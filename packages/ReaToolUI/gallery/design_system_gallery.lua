@@ -11,6 +11,7 @@ local design_segmented_control = require("reaui.design_segmented_control")
 local design_single_selection_list = require("reaui.design_single_selection_list")
 local design_card = require("reaui.design_card")
 local design_status = require("reaui.design_status")
+local design_action_bar = require("reaui.design_action_bar")
 local design_notice = require("reaui.design_notice")
 local design_menu = require("reaui.design_menu")
 local design_disclosure = require("reaui.design_disclosure")
@@ -49,6 +50,7 @@ function M.create(deps)
   local selection_list = design_single_selection_list.create(ImGui, ctx, adapter)
   local card = design_card.create(ImGui, ctx, adapter)
   local status = design_status.create(ImGui, ctx, adapter)
+  local action_bar = design_action_bar.create(ImGui, ctx, adapter)
   local notice = design_notice.create(ImGui, ctx, adapter)
   local menu = design_menu.create(ImGui, ctx, adapter)
   local disclosure = design_disclosure.create(ImGui, ctx, adapter)
@@ -241,6 +243,22 @@ function M.create(deps)
       {id="blocked",role="blocked",text="The Wwise project cannot be reached.",actions={{id="retry",label="Retry"},{id="change",label="Change project..."}}},
     }) do
       local result=notice.draw(fixture);for _,event in ipairs(result.events)do last_event=event.type.." id="..event.id.." action="..event.action end
+    end
+
+    ImGui.Text(ctx, "Action Bar")
+    for _, fixture in ipairs({
+      { id = "bar-publish", context = "2 references changed", actions = {
+        { id = "diff", label = "View Changes" }, { id = "check", label = "Check Now" },
+        { id = "publish", label = "Publish Reference", variant = "primary" },
+      } },
+      { id = "bar-blocked", context = "Fix 1 issue to publish", actions = {
+        { id = "cancel", label = "Cancel" },
+        { id = "publish", label = "Publish", variant = "primary", disabled = true },
+      } },
+    }) do
+      for _, event in ipairs(action_bar.draw(fixture).events) do
+        last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
+      end
     end
 
     ImGui.Text(ctx, "Menu and Disclosure")

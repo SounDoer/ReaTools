@@ -21,6 +21,8 @@ local MODULES = {
   "reaui.design_list",
   "reaui.design_status",
   "reaui.design_action_bar",
+  "reaui.design_issue_item",
+  "reaui.design_page_header",
   "reaui.design_notice",
   "reaui.design_menu",
   "reaui.design_disclosure",

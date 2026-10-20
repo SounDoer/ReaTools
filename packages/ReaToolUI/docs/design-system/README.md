@@ -264,6 +264,10 @@ reviewable, and testable.
   action layout.
 - `components/action-bar.md` defines the context line, ordered actions,
   single trailing primary action, and right-aligned wrapping rows.
+- `components/issue-item.md` defines tinted warning and blocked items with an
+  inline status and optional actions.
+- `components/page-header.md` defines the title row, badge, meta, trailing
+  actions, and the collapsed layout below the breakpoint.
 - `components/menu.md` defines secondary action menus, disabled items, and
   independent danger intent.
 - `components/disclosure.md` defines native expandable detail with safe content

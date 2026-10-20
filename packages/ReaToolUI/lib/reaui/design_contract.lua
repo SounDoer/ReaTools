@@ -26,6 +26,8 @@ M.CATALOG = {
     { id = "status", name = "Status", module = "design_status", factory_key = "status", spec = "components/status.md", fixture = "Status" },
     { id = "notice", name = "Notice", module = "design_notice", factory_key = "notice", spec = "components/notice.md", fixture = "Notice" },
     { id = "action_bar", name = "Action Bar", module = "design_action_bar", factory_key = "action_bar", spec = "components/action-bar.md", fixture = "Action Bar" },
+    { id = "issue_item", name = "Issue Item", module = "design_issue_item", factory_key = "issue_item", spec = "components/issue-item.md", fixture = "Issue Item" },
+    { id = "page_header", name = "Page Header", module = "design_page_header", factory_key = "page_header", spec = "components/page-header.md", fixture = "Page Header" },
     { id = "menu", name = "Menu", module = "design_menu", factory_key = "menu", spec = "components/menu.md", fixture = "Menu and Disclosure" },
     { id = "disclosure", name = "Disclosure", module = "design_disclosure", factory_key = "disclosure", spec = "components/disclosure.md", fixture = "Menu and Disclosure" },
   },

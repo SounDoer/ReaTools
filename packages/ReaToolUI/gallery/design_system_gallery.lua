@@ -15,6 +15,8 @@ local design_stat_group = require("reaui.design_stat_group")
 local design_list = require("reaui.design_list")
 local design_status = require("reaui.design_status")
 local design_action_bar = require("reaui.design_action_bar")
+local design_issue_item = require("reaui.design_issue_item")
+local design_page_header = require("reaui.design_page_header")
 local design_notice = require("reaui.design_notice")
 local design_menu = require("reaui.design_menu")
 local design_disclosure = require("reaui.design_disclosure")
@@ -57,6 +59,8 @@ function M.create(deps)
   local list = design_list.create(ImGui, ctx, adapter)
   local status = design_status.create(ImGui, ctx, adapter)
   local action_bar = design_action_bar.create(ImGui, ctx, adapter)
+  local issue_item = design_issue_item.create(ImGui, ctx, adapter)
+  local page_header = design_page_header.create(ImGui, ctx, adapter)
   local notice = design_notice.create(ImGui, ctx, adapter)
   local menu = design_menu.create(ImGui, ctx, adapter)
   local disclosure = design_disclosure.create(ImGui, ctx, adapter)
@@ -344,6 +348,38 @@ function M.create(deps)
     }) do
       for _, event in ipairs(action_bar.draw(fixture).events) do
         last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
+      end
+    end
+
+    ImGui.Text(ctx, "Issue Item")
+    for _, fixture in ipairs({
+      { id = "issue-changed", role = "warning", message = "Two references changed since revision 6" },
+      { id = "issue-missing", role = "blocked", message = "Ambience reference is missing",
+        detail = "Expected at Refs/Ambience_r6.rpp", actions = { { id = "relink", label = "Relink..." } } },
+      { id = "issue-renamed", role = "warning", message = "Dialogue track was renamed",
+        detail = "Previously registered as VO_Main", actions = {
+          { id = "ignore", label = "Ignore" }, { id = "update", label = "Update Reference" },
+        } },
+      { id = "issue-offline", role = "blocked", message = "Destination is unavailable" },
+    }) do
+      for _, event in ipairs(issue_item.draw(fixture).events) do
+        last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
+      end
+    end
+
+    ImGui.Text(ctx, "Page Header")
+    for _, fixture in ipairs({
+      { id = "header-main", title = "Trailer Main", badge = "Master", meta = "Last published 2 min ago",
+        actions = {
+          { id = "check", label = "Check Now", icon = "download" },
+          { id = "publish", label = "Publish", icon = "upload", variant = "primary" },
+        } },
+      { id = "header-review", title = "Publish Reference", badge = "r7", back_label = "Back to Main",
+        actions = { { id = "cancel", label = "Cancel" } } },
+    }) do
+      local result = page_header.draw(fixture)
+      for _, event in ipairs(result.events) do
+        last_event = event.type .. " id=" .. event.id .. (event.action and (" action=" .. event.action) or "")
       end
     end
 

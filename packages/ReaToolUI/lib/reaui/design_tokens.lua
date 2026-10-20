@@ -838,6 +838,16 @@ M.registry = {
     list_row = {
       background = { type = "color", ref = "semantic.color.surface.inset" },
     },
+    issue_item = {
+      warning = {
+        background = { type = "color", ref = "semantic.color.tint.warning.background" },
+        border = { type = "color", ref = "semantic.color.tint.warning.border" },
+      },
+      blocked = {
+        background = { type = "color", ref = "semantic.color.tint.blocked.background" },
+        border = { type = "color", ref = "semantic.color.tint.blocked.border" },
+      },
+    },
     status = {
       neutral = { foreground = { type = "color", ref = "semantic.color.status.neutral" } },
       ready = { foreground = { type = "color", ref = "semantic.color.status.ready" } },

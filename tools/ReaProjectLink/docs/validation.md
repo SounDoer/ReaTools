@@ -26,11 +26,11 @@ the projects and test media on the team's normal shared-storage arrangement.
 ## Reference flow
 
 1. Initialize the Master Project, select one or more Tracks in REAPER, and use
-   the Reference card's `Register Selected` button to register them as
+   the Reference card's `Register` button to register them as
    Reference Tracks.
-2. Select Markers and Regions in REAPER and use `Register Selected` again to
+2. Select Markers and Regions in REAPER and use `Register` again to
    register them. Select registered Tracks, Markers, or Regions and use
-   `Unregister Selected`. Confirm it unregisters immediately, without a
+   `Unregister`. Confirm it unregisters immediately, without a
    confirmation dialog.
 3. Open Reference Publish Review and choose `Publish`.
 4. Confirm that `_ReaProjectLink/<master-project-name>/reference.json` and
@@ -130,7 +130,7 @@ the projects and test media on the team's normal shared-storage arrangement.
 ## Removed-content confirmation
 
 1. Publish a Reference from the Master Project, then unregister a previously
-   published Track, Marker, or Region and select `Register Selected`/`···`
+   published Track, Marker, or Region and select `Register`/`Unregister`
    elsewhere as needed to leave it unregistered. Open Reference Publish
    Review and confirm the removed-content blocker names the counts and the
    last published revision, and that `Publish Without Them...` unlocks

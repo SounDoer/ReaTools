@@ -115,3 +115,7 @@ release skill requires a local passing run before each release.
 `tests/ui_smoke_scenarios.lua` (each view and Review, both themes, 320 px and
 1040 px wide) and writes the result to the file named by
 `REAPROJECTLINK_UI_SMOKE_RESULT`.
+
+`tests/run_validation.ps1` runs the core suite, the UI smoke, and
+`tooling/check_ui_layout.ps1` over `ui/views`; any raw ImGui layout call or
+numeric layout literal in a view fails validation.

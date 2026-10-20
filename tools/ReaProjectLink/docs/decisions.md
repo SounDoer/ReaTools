@@ -957,3 +957,27 @@ Synchronization inserts each Track it creates at the front of the Source
 project, in the published Lane order. Tracks that already carry a Reference
 Lane stay where they are, including when a later revision adds another Track
 above them.
+
+### D093 — Direction C product copy and layout changes
+
+The ReaToolUI Direction C migration changes five product details:
+
+1. Card selection actions are labeled `Register` and `Unregister`. The muted
+   `Selected: ...` footer context shows their scope.
+2. The Review issue action that accepts a Reference revision mismatch is
+   labeled `Allow Difference` (previously `Import Anyway` / `Sync Anyway`). The
+   issue message keeps the full explanation.
+3. The Source Reference card lists the first 5 Reference names in total, in
+   the order Tracks, Markers, Regions, with a group label per kind. The rest
+   collapse behind a `+ N more` row with `Show All`, which expands in place and
+   offers `Show Less`. Each name keeps its `Detach...`. The list shows at every
+   window width and collapses again when the project changes or the app
+   resets.
+4. The Master Deliveries card shows an aggregate status, for example
+   `2 Need Attention` or `All Up to Date`, above the subscription rows. The
+   header keeps `All Up to Date` in its metadata as well.
+5. In a narrow window, the header's `Check Now` collapses to a refresh icon
+   button with a tooltip.
+
+Settings lists Project and About values as shared List rows, with `Copy` as
+the row action on Project rows.

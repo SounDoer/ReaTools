@@ -20,12 +20,17 @@ Master cards: **Reference**, **Deliveries**.
 
 ### 1.1 Header
 
+The header is a ReaToolUI Page Header.
+
 Left: project name, `Source` / `Master` badge.
-Right: `Checked N min ago` text, `Check Now` text button, gear icon button.
+Right: `Checked N min ago` metadata, `Check Now` button with a refresh icon,
+gear icon button. On a Master with nothing to do, the metadata reads
+`All Up to Date  ·  Checked N min ago`. In a narrow window the metadata hides
+and `Check Now` collapses to a refresh icon button with a tooltip (D093).
 
 Blocking global conditions (project not saved, Publishing Is Locked) appear as a
-banner directly under the header. The banner carries its own action (for
-example `Unlock Publishing…`).
+banner directly under the header, followed by one block gap. The banner
+carries its own action (for example `Unlock Publishing…`).
 
 ### 1.2 Next-step highlight
 
@@ -51,10 +56,11 @@ Master priority:
 
 ### 1.3 Responsive layout
 
-- Content width < 560 px: cards stack vertically.
-- ≥ 560 px: cards sit side by side with equal width.
-- Review and Settings content is capped at a readable maximum width (~720 px)
-  and centered in wide windows.
+- Cards sit side by side with equal width in a ReaToolUI Card Row and stack
+  below its breakpoint (`semantic.layout.card_row.stack_below`).
+- Review content is capped at `component.review_shell.content.max_width` and
+  centered in wide windows; Settings and setup are capped at
+  `semantic.layout.content.max_width`.
 - Long paths wrap; nothing forces horizontal scrolling.
 
 ### 1.4 First run
@@ -73,12 +79,14 @@ remaining setup.
 
 ## 2. Cards
 
-Every card has the same anatomy: icon + title + optional `···` menu; one status
-line (colored dot + text); up to two key/value rows; at most one card-level
-button. On a card with registerable content, the rows are followed by one
-small muted selection line (`Selected: 2 Tracks, 1 Region` or `Nothing
-selected in REAPER`) and two secondary buttons, `Register Selected` and
-`Unregister Selected`, that act on whatever is selected in REAPER.
+Every card is a ReaToolUI Card with the same anatomy: icon + title + optional
+trailing icon button; one status line (status glyph + text) with an optional
+secondary detail such as the revision; stat tiles for the counts; an optional
+note; and a footer Action Bar. On a card with registerable content, the footer
+shows the muted selection context (`Selected: 2 Tracks, 1 Region` or `Nothing
+selected in REAPER`) and two secondary buttons, `Register` and `Unregister`,
+that act on whatever is selected in REAPER (D093). The card-level button comes
+last in the footer and is primary only on the highlighted card.
 
 ### 2.1 Source · Reference
 
@@ -89,46 +97,44 @@ selected in REAPER`) and two secondary buttons, `Register Selected` and
 | Unreachable | `Couldn't Reach Shared Storage` (blocked) | Last known revision | `Retry` |
 | Invalid (pointer unreadable or identity changed) | `Couldn't Read the Reference` (blocked) | Error detail | `Retry` |
 | Blocked (e.g. media missing) | Condition text per D080 (blocked) | Last known revision | `Review Update` |
-| Newer available | `Reference rN Available` (warning) | `Synchronized rM`, then Tracks, Markers, and Regions currently in the project | `Review Update` |
-| Up to date | `Up to Date` (ready) | `Reference rN`, then Tracks, Markers, and Regions currently in the project | — |
+| Newer available | `Reference rN Available` (warning), detail `Synchronized rM` | Tracks, Markers, and Regions currently in the project | `Review Update` |
+| Up to date | `Up to Date` (ready), detail `Reference rN` | Tracks, Markers, and Regions currently in the project | — |
 
 Before the first synchronization those three counts are omitted. They describe the revision already in the project, including while a newer revision is available.
 
 The "synchronized but not reviewed" state no longer exists (D086).
 
-When a Reference revision is already in the project, each Track, Marker, and Region name is listed directly under its count row, with its own `Detach...`. There is no separate Contents section. Detach leaves the object in the project and stops later synchronizations from changing it. The next synchronization adds a new managed copy. Detaching a Track also detaches the Reference Items on it; those Items are not listed separately. There is no `···` menu on this card.
+When a Reference revision is already in the project, a compact List below the counts names the Tracks, Markers, and Regions, each with its own `Detach...`. It shows the first 5 names in total, in the order Tracks, Markers, Regions, with a group label per kind; the rest collapse behind a `+ N more` row with `Show All`, which expands in place and offers `Show Less` (D093). The list shows at every window width and collapses again when the project changes. There is no separate Contents section. Detach leaves the object in the project and stops later synchronizations from changing it. The next synchronization adds a new managed copy. Detaching a Track also detaches the Reference Items on it; those Items are not listed separately. There is no `···` menu on this card.
 
 ### 2.2 Source · Delivery
 
-Below the `Tracks` and `Items` rows, the selection line and the `Register
-Selected` / `Unregister Selected` buttons act on whatever Tracks are selected
-in REAPER. There is no `···` menu on this card.
+The footer's selection context and `Register` / `Unregister` buttons act on
+whatever Tracks are selected in REAPER. There is no `···` menu on this card.
 
 | State | Status line | Info | Button |
 |---|---|---|---|
-| No tracks | `No Delivery Tracks` (warning) | "Select tracks in REAPER first."; rows show `Tracks 0`, `Items 0` | — |
-| Never published | `Not Published Yet` (neutral) | `N tracks · M items` | `Review and Publish` |
-| Published | `Last Published rN` (ready) | `N tracks · M items` | `Review and Publish` |
+| No tracks | `No Delivery Tracks` (warning) | "Select tracks in REAPER first."; stats show `Tracks 0`, `Items 0` | — |
+| Never published | `Not Published Yet` (neutral) | `Tracks` and `Items` stats | `Review and Publish` |
+| Published | `Last Published rN` (ready) | `Tracks` and `Items` stats | `Review and Publish` |
 
 When the Delivery card is not highlighted because a newer Reference is pending,
 the button stays enabled and a hint reads `Will record Reference rN`.
 
 ### 2.3 Master · Reference
 
-Below the `Tracks`, `Markers`, and `Regions` rows, the selection line and the
-`Register Selected` / `Unregister Selected` buttons register or unregister
-whatever Tracks, Markers, or Regions are selected in REAPER.
+The footer's selection context and `Register` / `Unregister` buttons register
+or unregister whatever Tracks, Markers, or Regions are selected in REAPER.
 
 | State | Status line | Info | Button |
 |---|---|---|---|
 | Nothing registered | `Nothing Registered` (warning) | "Select Tracks, Markers, or Regions in REAPER, then register them." | — |
-| Never published | `Not Published Yet` (warning) | `N tracks · M markers · P regions` | `Review and Publish` |
-| Published | `Published rN` (neutral) | `N tracks · M markers · P regions` | `Review and Publish` |
-| Package Missing | `Package Missing` (blocked) | `N tracks · M markers · P regions`; note explains published files weren't found | `Review and Publish` |
+| Never published | `Not Published Yet` (warning) | `Tracks`, `Markers`, and `Regions` stats | `Review and Publish` |
+| Published | `Published rN` (neutral) | `Tracks`, `Markers`, and `Regions` stats | `Review and Publish` |
+| Package Missing | `Package Missing` (blocked) | Stats; note explains published files weren't found | `Review and Publish` |
 
 There is no `···` menu on this card.
 
-`Unregister Selected` acts immediately, without a confirmation dialog; the
+`Unregister` acts immediately, without a confirmation dialog; the
 consequence only becomes real at Publish, where Publish Review blocks on
 content removed since the last published revision (D089).
 
@@ -136,10 +142,15 @@ content removed since the last published revision (D089).
 
 Title bar has a `+` icon button: `Add Delivery` (file dialog for
 `delivery.json`, then the Delivery Import Review). With no subscriptions the card
-shows an empty state with a primary `Add Delivery` button.
+shows `No Deliveries Yet` (warning), a note, and an `Add Delivery` footer
+button, primary when the card is highlighted.
 
-One row per subscription: name, status text, an action button when the row
-needs attention, and a `···` menu.
+With subscriptions, the status line aggregates the rows (D093): `N Need
+Attention` (blocked if any of those rows is blocked, otherwise warning),
+`Checking...`, or `All Up to Date`. Below it, a standard List has one row per
+subscription: name, status, an action button when the row needs attention, and
+a `···` menu. Only the first row needing attention on the highlighted card gets
+the primary button.
 
 | Row state | Status text | Row action |
 |---|---|---|
@@ -173,20 +184,24 @@ Row `···` menu: `Sync to Another Revision…`, `Remove Subscription…`.
 
 ## 4. Review pattern
 
-All Reviews share one skeleton. Empty sections are omitted.
+All Reviews use the ReaToolUI Review Shell and share one skeleton. Sections
+are headed (`Issues`, `Decision`, `Checked Against Reference`, `Lanes`,
+`Revision`, `Contents`, `Items`, ...); empty sections are omitted.
 
 1. **Header** — Back arrow, verb-first title with the target revision
-   (for example `Publish Delivery r13`), one summary line.
-2. **Issues** — blockers (red) and warnings (amber). Each item carries an inline
-   fix or acknowledgment action (for example `Select Item` selects the offending
-   Item in REAPER; `Publish Unprocessed Media`; `Allow Reference revision
-   difference`; `Publish Without Them...` for Tracks, Markers, Regions, or
-   Lanes removed since the last published revision (D089); Save As identity
-   as two buttons `Continue Existing` / `Start New`).
+   (for example `Publish Delivery r13`), one summary line. Publish Reviews add
+   a Stat Group with the scope counts.
+2. **Issues** — Issue Items for blockers and warnings. Each item carries an
+   inline fix or acknowledgment action (for example `Select Item` selects the
+   offending Item in REAPER; `Publish Unprocessed Media...`; `Allow Difference`
+   (D093); `Publish Without Them...` for Tracks, Markers, Regions, or Lanes
+   removed since the last published revision (D089); Save As identity as two
+   buttons `Continue Existing` / `Start New`).
 3. **Decisions** — choices the operation needs (Reference declaration, Lane
    Mapping table, target revision, parent for new tracks).
-4. **Details** — collapsible groups per Lane or Track, collapsed by default,
-   auto-expanded when the group contains an issue. Long lists use clipping.
+4. **Details** — inset Disclosures per Lane or kind, collapsed by default,
+   auto-expanded when the group contains an issue. Long Item lists use
+   clipping.
 5. **Footer** — fixed at the bottom: one-sentence effect summary and the only
    primary button. With blockers the button is disabled and the text reads
    `Fix N issues to publish` (or the matching verb).
@@ -214,7 +229,8 @@ Reference-review confirmation step is removed (D086).
 
 Replaces the per-Lane button rows.
 
-- One row per Lane: Lane name, Clip count, one dropdown.
+- One inset row per Lane: Lane name, Item count, one dropdown. In a narrow
+  window the dropdown moves under the text at full width.
 - Dropdown groups: suggested Tracks (name match) first; then `New Track`,
   `Selected Track`; then `Don't Import`.
 - Default is `New Track` in both the Delivery Import and Delivery Update
@@ -236,6 +252,10 @@ Replaces the per-Lane button rows.
 | Appearance | Theme: Auto / Light / Dark | Same |
 | About | ReaProjectLink, REAPER, ReaImGui versions | Same |
 | Reset | `Reset ReaProjectLink State…` button. It removes this project's published package as well as its ReaProjectLink state. Audio and video Items in the project are kept | Same |
+
+Settings has a Page Header with a back control. Each group is a heading
+section. Project and About values are standard List rows (label as the title,
+value as the detail); Project rows have a `Copy` action (D093).
 
 `Unlock Publishing…` lives in the lock banner, not in Settings.
 
@@ -259,68 +279,18 @@ Replaces the per-Lane button rows.
 
 ## 7. Visual system
 
-### 7.1 Color tokens
+Colors, typography, spacing, shape, icons, and components come from ReaToolUI
+(`packages/ReaToolUI/docs/design-system/`). Views compose those components and
+resolve every layout value through the design-system adapter;
+`tooling/check_ui_layout.ps1` enforces this for `ui/views/` in validation.
 
-Both themes define the same semantic names. Components reference only names.
+Product rules on top of ReaToolUI:
 
-| Token | Light | Dark |
-|---|---|---|
-| bg | `#f3f4f6` | `#16181c` |
-| surface | `#ffffff` | `#1f2227` |
-| surface_hover | `#eef0f3` | `#272b31` |
-| border | `#dadde2` | `#30343c` |
-| text | `#1d2025` | `#e6e8eb` |
-| muted | `#5f6670` | `#9aa0a8` |
-| accent | `#2f6fe0` | `#4c8dff` |
-| on_accent | `#ffffff` | `#0b1220` |
-| accent_bg | `#e4edfc` | `#1c2a44` |
-| ready | `#1f8a63` | `#3fbf8f` |
-| warning | `#a86a0c` | `#e0a84a` |
-| warning_bg | `#fdf1dc` | `#3a2f1c` |
-| blocked | `#c93c46` | `#eb5f68` |
-| blocked_bg | `#fbe5e6` | `#3b2224` |
-
-Hover/active shades are derived in `theme.lua`. Status colors are used only for
-text, dots, borders, and the tinted issue backgrounds, never large fills. Every
-status also has a text label.
-
-Theme preference `Auto | Light | Dark` is stored globally in ExtState (not per
-project), default `Auto`. `Auto` reads REAPER's main background theme color and
-picks Light or Dark by luminance.
-
-### 7.2 Typography
-
-System sans-serif through ReaImGui; bold through the font flags. No bundled
-fonts.
-
-| Use | Size / weight |
-|---|---|
-| Project name, Review title | 16 bold |
-| Card title, group name | 14 bold |
-| Body, buttons | 13 regular |
-| Metadata (timestamps, counts) | 12 regular |
-
-UI text uses ASCII `...` instead of the `…` character, which the default
-font's glyph range does not include.
-
-### 7.3 Spacing and shape
-
-4 px base unit. Card padding 12; gap between cards 12; gap between sections 16;
-list row height 28; corner radius 6; 1 px borders.
-
-### 7.4 Icons
-
-Drawn with the ImGui DrawList in the current text/token color and scaled with
-the font size: more (`···`), gear, back arrow, plus, check, cross,
-warning triangle, dot, film, upload, download. Tree and dropdown arrows are
-ImGui's own. No icon font.
-
-### 7.5 Component inventory
-
-All in the UI layer; none contains domain or REAPER mutation logic.
-
-- Shell: Header, Banner, Toast
-- Cards: Card (normal / highlighted), StatusLine, KeyValue, EmptyState
-- Buttons: Button (primary / secondary / danger), IconButton
-- Selection: Menu (with separators), Dropdown, Segmented
-- Review: IssueItem, GroupRow (collapsible), ListRow, FooterBar, StaleState
+- Theme preference `Auto | Light | Dark` is stored globally in ExtState (not
+  per project), default `Auto`. `Auto` reads REAPER's main background theme
+  color and picks Light or Dark by luminance.
+- UI text uses ASCII `...` instead of the `…` character, which the default
+  font's glyph range does not include.
+- `ui/components.lua` keeps only the product-local parts: Toast, the Lane
+  mapping row with its grouped dropdown, virtualized Item lists, banner and
+  confirmation plumbing, and two gap helpers.

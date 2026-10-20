@@ -139,12 +139,48 @@ function M.create(ImGui, ctx, design_system)
     if available < width then ImGui.NewLine(ctx); available = ImGui.GetContentRegionAvail(ctx) end
     ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + math.max(0, available - width))
   end
-  -- The next item starts one block gap below the previous one. Ends on an
-  -- item so a container may close right after it.
-  function c.block_gap()
+  -- The next item starts `token` below the previous one. Ends on an item so a
+  -- container may close right after it.
+  local function gap(token)
     local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
-    ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y * 2 + resolve("semantic.space.block.gap"))
+    ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y * 2 + resolve(token))
     ImGui.Dummy(ctx, 0, 0)
+  end
+  function c.block_gap() gap("semantic.space.block.gap") end
+  function c.list_gap() gap("semantic.space.list.gap") end
+
+  -- Inset row with title and detail on the left and `draw_control()` on the
+  -- right; the control moves under the text when the row is narrow. Returns
+  -- `draw_control()`'s result.
+  function c.mapping_row(id, title, detail, draw_control)
+    ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, resolve("component.list_row.background"))
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_ChildRounding, resolve("semantic.radius.control"))
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding,
+      resolve("semantic.space.inset.padding_x"), resolve("semantic.space.inset.padding_y"))
+    local visible = ImGui.BeginChild(ctx, "##mapping-" .. id, 0, 0,
+      CHILD_ALWAYS_USE_PADDING | CHILD_AUTO_RESIZE_Y, ImGui.WindowFlags_NoScrollbar)
+    ImGui.PopStyleVar(ctx, 2)
+    ImGui.PopStyleColor(ctx)
+    if not visible then return nil end
+    local available = ImGui.GetContentRegionAvail(ctx)
+    local control_width = resolve("semantic.size.field.inline_compact")
+    local control_gap = resolve("semantic.space.control.gap")
+    local beside = available >= resolve("semantic.size.field.inline_wide")
+    local left, top = ImGui.GetCursorPosX(ctx), ImGui.GetCursorPosY(ctx)
+    ImGui.PushTextWrapPos(ctx, beside and left + available - control_width - control_gap or 0)
+    ImGui.BeginGroup(ctx)
+    ImGui.TextWrapped(ctx, title)
+    if detail then c.small(detail) end
+    ImGui.EndGroup(ctx)
+    ImGui.PopTextWrapPos(ctx)
+    if beside then
+      local _, text_height = ImGui.GetItemRectSize(ctx)
+      ImGui.SameLine(ctx, left + available - control_width)
+      ImGui.SetCursorPosY(ctx, top + math.max(0, (text_height - ImGui.GetFrameHeight(ctx)) / 2))
+    end
+    local result = draw_control()
+    ImGui.EndChild(ctx)
+    return result
   end
   function c.card_width()
     local available = ImGui.GetContentRegionAvail(ctx)

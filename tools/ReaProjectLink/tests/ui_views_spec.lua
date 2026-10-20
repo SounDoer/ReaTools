@@ -6,6 +6,7 @@ local master_main = require("reaprojectlink.ui.views.master_main")
 local reference_publish_review = require("reaprojectlink.ui.views.reference_publish_review")
 local delivery_publish_review = require("reaprojectlink.ui.views.delivery_publish_review")
 local reference_update_review = require("reaprojectlink.ui.views.reference_update_review")
+local delivery_sync_review = require("reaprojectlink.ui.views.delivery_sync_review")
 
 local function equal(actual, expected, label)
   if actual ~= expected then
@@ -36,9 +37,15 @@ local function fake_view_env(script)
   end
   local components = {}
   for _, key in ipairs({ "page_header", "card_row", "card", "list", "notice", "stat_group", "issue_item",
-    "disclosure", "checkbox" }) do
+    "disclosure", "checkbox", "number_field", "action_bar" }) do
     components[key] = recorder(key)
   end
+  components.segmented_control = {
+    draw_field = function(options)
+      calls.segmented_field = options
+      return script.segmented or { changed = false, value = options.value }
+    end,
+  }
   components.issue_item.draw_list = function(options)
     calls.issue_list = options
     return script.issue_list or { events = {} }
@@ -80,6 +87,15 @@ local function fake_view_env(script)
     value_row = function() end,
     segmented = function(_, _, selected) return selected end,
     clipped = function(count, draw_row) for index = 1, count do draw_row(index) end end,
+    colored = function() end,
+    list_gap = function() end,
+    button = function() return false end,
+    dropdown = function(id) return script.dropdown and script.dropdown[id] end,
+    mapping_row = function(id, title, detail, draw_control)
+      calls.mapping_rows = calls.mapping_rows or {}
+      table.insert(calls.mapping_rows, { id = id, title = title, detail = detail })
+      return draw_control()
+    end,
     request_confirmation = function(options) calls.confirmation = options; return true end,
   }
   local surface = script.surface or { tracks = {}, markers = {}, regions = {} }
@@ -94,6 +110,7 @@ local function fake_view_env(script)
       get_project_value = function() return script.subscriptions end,
       project_change_count = function() return script.change_count or 0 end,
       select_items = function(refs) calls.selected_items = refs end,
+      selected_tracks = function() return {} end,
     },
     services = {
       project_service = {
@@ -112,7 +129,10 @@ local function fake_view_env(script)
         review = function(_, _, options) calls.rebuilt = options; return script.rebuilt_review end,
       },
       delivery_update = {
-        review = function(_, _, id) calls.update_opened = id; return nil, "fake" end,
+        review = function(_, _, id, target)
+          calls.update_opened, calls.update_target = id, target
+          return nil, "fake"
+        end,
       },
     },
     reaper = {
@@ -412,6 +432,57 @@ function tests.stale_review_passes_stale()
   reference_publish_review.draw(env)
   equal(calls.review_shell.stale.refresh_label, "Refresh Review", "stale state")
   equal(calls.rebuilt ~= nil, true, "refresh rebuilds the review")
+end
+
+local function import_review(overrides)
+  local data = {
+    snapshot = { sourceProjectName = "Dialogue", reference = { reviewedRevision = 1 } },
+    pointer = { latestDeliveryRevision = 2 },
+    lanes = {}, blocker_count = 0,
+  }
+  for key, value in pairs(overrides or {}) do data[key] = value end
+  return { kind = "delivery_import", data = data, mappings = {}, row_errors = {}, allow_reference = false }
+end
+
+function tests.import_reference_warning_allows_difference()
+  local review = import_review({ reference_warning = true })
+  local env, calls = fake_view_env({
+    review = review,
+    issue_list = { events = {}, action = { item = "reference-warning", id = "allow" } },
+  })
+  delivery_sync_review.draw(env)
+  local item = calls.issue_list.items[1]
+  equal(item.id, "reference-warning", "reference warning issue")
+  equal(item.actions[1].id, "allow", "allow action id")
+  equal(item.actions[1].label, "Allow Difference", "allow action label")
+  equal(review.allow_reference, true, "allow sets the review flag")
+end
+
+function tests.mapping_row_routes_dropdown_choice()
+  local review = import_review({ lanes = { { lane_id = "l1", display_name = "Dialogue", clips = { {}, {} } } } })
+  local env, calls = fake_view_env({ review = review, dropdown = { ["lane-l1"] = { id = "unmapped" } } })
+  delivery_sync_review.draw(env)
+  equal(calls.mapping_rows[1].id, "lane-l1", "mapping row id")
+  equal(calls.mapping_rows[1].title, "Dialogue", "mapping row title")
+  equal(review.mappings.l1.kind, "unmapped", "dropdown choice maps the lane")
+  equal(calls.segmented_field.label, "New tracks go under", "parent choice field")
+end
+
+function tests.update_load_reopens_review()
+  local review = {
+    kind = "delivery_update", mappings = {}, rebindings = {}, row_errors = {}, allow_reference = false,
+    target_input = 2,
+    data = {
+      target_snapshot = { sourceProjectName = "Dialogue" }, target_revision = 3, latest_revision = 4,
+      replacement_count = 1, source_item_count = 1, additions = {}, unmapped_lanes = {}, bound_lanes = {},
+      blocker_count = 0, pending_count = 1, source_project_id = "a",
+    },
+  }
+  local env, calls = fake_view_env({ review = review, action_bar = { events = {}, action = "load" } })
+  delivery_sync_review.draw(env)
+  equal(calls.action_bar.context, "Latest is r4", "load context")
+  equal(calls.update_opened, "a", "load reopens the update review")
+  equal(calls.update_target, 2, "load uses the typed target")
 end
 
 local passed = 0

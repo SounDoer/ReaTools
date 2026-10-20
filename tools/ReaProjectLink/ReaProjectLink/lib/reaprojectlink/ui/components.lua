@@ -166,8 +166,10 @@ function M.create(ImGui, ctx, design_system)
     end
   end
 
-  function c.begin_page(id)
-    local width = math.min(ImGui.GetContentRegionAvail(ctx), resolve("semantic.layout.content.max_width"))
+  function c.begin_page(id, centered)
+    local available = ImGui.GetContentRegionAvail(ctx)
+    local width = math.min(available, resolve("semantic.layout.content.max_width"))
+    if centered then ImGui.SetCursorPosX(ctx, ImGui.GetCursorPosX(ctx) + (available - width) / 2) end
     ImGui.PushStyleColor(ctx, ImGui.Col_ChildBg, resolve("semantic.color.surface.canvas"))
     local visible = ImGui.BeginChild(ctx, "##page-" .. id, width, 0)
     ImGui.PopStyleColor(ctx)

@@ -59,8 +59,9 @@ Master priority:
 - Cards sit side by side with equal width in a ReaToolUI Card Row and stack
   below its breakpoint (`semantic.layout.card_row.stack_below`).
 - Review content is capped at `component.review_shell.content.max_width` and
-  centered in wide windows; Settings and setup are capped at
-  `semantic.layout.content.max_width`.
+  centered in wide windows. Settings is capped at
+  `semantic.layout.content.max_width` and centered the same way; setup uses the
+  same cap but stays left-aligned with the banners above it.
 - Long paths wrap; nothing forces horizontal scrolling.
 
 ### 1.4 First run

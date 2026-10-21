@@ -146,7 +146,9 @@ function M.create(ImGui, ctx, adapter, deps)
     ImGui.PopStyleVar(ctx, 2)
     ImGui.PopStyleColor(ctx)
     if not visible then return end
-    local top = padding_y + (previous and math.max(0, (height - padding_y * 2 - previous) / 2) or 0)
+    -- Whole pixels: ImGui truncates line advances, so a fractional top would
+    -- change the measured height and make the rows oscillate frame to frame.
+    local top = math.floor(padding_y + (previous and math.max(0, (height - padding_y * 2 - previous) / 2) or 0) + 0.5)
     local ok, err = pcall(draw_row_contents, key, row, compact, muted, top, choose)
     ImGui.EndChild(ctx)
     if not ok then error(err, 0) end

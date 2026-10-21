@@ -36,6 +36,7 @@ local function fake(options)
   local groups = {}
   local wrap_pos
   local role = "body"
+  local LINE = options.line or LINE
   local function item(w, h)
     last = { x = cursor.x, y = cursor.y, w = w, h = h }
     for _, group in ipairs(groups) do
@@ -43,6 +44,8 @@ local function fake(options)
     end
     cursor.x = x0
     cursor.y = last.y + h + 8
+    -- Dear ImGui truncates the next line's cursor (IM_TRUNC).
+    if options.truncate then cursor.y = math.floor(cursor.y) end
   end
   local ImGui = {
     Col_ChildBg = 1, Col_Text = 2, StyleVar_ChildRounding = 3, StyleVar_WindowPadding = 4,
@@ -81,7 +84,7 @@ local function fake(options)
     local limit = (wrap_pos or (x0 + width)) - cursor.x
     local natural = #text * CHAR
     local lines = math.max(1, math.ceil(natural / limit))
-    table.insert(calls.texts, { text = text, role = role, lines = lines })
+    table.insert(calls.texts, { text = text, role = role, lines = lines, y = cursor.y })
     item(math.min(natural, limit), lines * LINE)
   end
   function ImGui.BeginGroup() table.insert(groups, { x = cursor.x, y = cursor.y, right = cursor.x }) end
@@ -154,6 +157,21 @@ function tests.rows_have_no_separator_and_use_list_gap()
   equal(calls.colors, calls.popped_colors, "color stack")
   equal(calls.vars, calls.popped_vars, "var stack")
   equal(calls.ended, 2, "children closed")
+end
+
+function tests.detail_stays_still_with_fractional_line_height()
+  local list, calls = fake({ line = 13.3, truncate = true })
+  local row = { kind = "row", id = "name", title = "Name", detail = "Master",
+    action = { id = "copy", label = "Copy" } }
+  local detail_y = {}
+  for frame = 1, 6 do
+    calls.texts = {}
+    list.draw({ id = "settings", items = { row } })
+    detail_y[frame] = calls.texts[2].y
+  end
+  for frame = 3, 6 do
+    equal(detail_y[frame], detail_y[2], "detail y on frame " .. frame)
+  end
 end
 
 function tests.double_height_when_detail_present()

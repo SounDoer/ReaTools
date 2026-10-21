@@ -87,8 +87,14 @@ function M.create(deps)
     end
     design_system.adapter.set_theme(theme.mode)
     design_system.adapter.push_base()
+    -- Settings and Reviews scroll inside their own centered child; an outer
+    -- scrollbar would shift that centering by half its width every time it
+    -- appears (for example while a toast is shown).
+    local app = env.app
+    local own_scrolling = app.view == "settings" or (app.review and REVIEWS[app.review.kind])
+    local flags = own_scrolling and (ImGui.WindowFlags_NoScrollbar | ImGui.WindowFlags_NoScrollWithMouse) or 0
     local visible
-    visible, shell.open = ImGui.Begin(ctx, display_name, shell.open)
+    visible, shell.open = ImGui.Begin(ctx, display_name, shell.open, flags)
     if visible then
       local state = deps.services.project_service.project_state(adapter)
       run_due_check(state)

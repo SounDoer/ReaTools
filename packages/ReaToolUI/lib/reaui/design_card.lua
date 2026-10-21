@@ -146,7 +146,9 @@ function M.create(ImGui, ctx, adapter, deps)
     if options.footer then
       local top = next_y or content_bottom
       local previous = footer_heights[options.id]
-      if previous and height > 0 then top = math.max(top, height - padding - previous) end
+      -- Whole pixels: ImGui truncates line advances, so a fractional top would
+      -- change the measured footer height and make the footer oscillate.
+      if previous and height > 0 then top = math.max(top, math.floor(height - padding - previous + 0.5)) end
       ImGui.SetCursorPosY(ctx, top)
       ImGui.Separator(ctx)
       ImGui.SetCursorPosY(ctx, top + resolve("semantic.space.footer.padding_y"))

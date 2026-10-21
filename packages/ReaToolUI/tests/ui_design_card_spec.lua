@@ -22,7 +22,11 @@ local function dependencies(options)
     wrapped = {}, set_y = {}, statuses = {}, icons = {},
   }
   local cursor = { x = 16, y = 16 }
-  local function advance(height) cursor.y = cursor.y + height + 8 end
+  local function advance(height)
+    cursor.y = cursor.y + height + 8
+    -- Dear ImGui truncates the next line's cursor (IM_TRUNC).
+    if options.truncate then cursor.y = math.floor(cursor.y) end
+  end
   local ImGui = {
     Col_ChildBg = 1, Col_Border = 2, Col_Text = 3, StyleVar_ChildBorderSize = 4,
     StyleVar_WindowPadding = 5, StyleVar_ItemSpacing = 6, WindowFlags_NoScrollbar = 8,
@@ -75,7 +79,7 @@ local function dependencies(options)
       return { events = {} }
     end },
     action_bar = { draw = function(bar_options)
-      calls.footer = bar_options; calls.footer_y = cursor.y; advance(28)
+      calls.footer = bar_options; calls.footer_y = cursor.y; advance(options.footer_height or 28)
       if options.click == "footer" then return { events = {}, action = "publish" } end
       return { events = {} }
     end },
@@ -158,6 +162,20 @@ function tests.footer_is_pinned_to_bottom_when_min_height_exceeds_content()
   -- footer height = 12 padding + 28 action bar
   equal(calls.child.height, 300, "stretched")
   equal(calls.separator_y, 300 - 16 - 40, "separator pinned to the bottom")
+end
+
+function tests.pinned_footer_stays_still_with_fractional_sizes()
+  local ImGui, adapter, deps, calls = dependencies({ truncate = true, footer_height = 27.3 })
+  local card = card_module.create(ImGui, "ctx", adapter, deps)
+  card.draw({ id = "f", title = "Reference", footer = FOOTER }, body_lines(ImGui, 1))
+  local separator_y = {}
+  for frame = 1, 6 do
+    card.draw({ id = "f", title = "Reference", footer = FOOTER, min_height = 300.5 }, body_lines(ImGui, 1))
+    separator_y[frame] = calls.separator_y
+  end
+  for frame = 3, 6 do
+    equal(separator_y[frame], separator_y[2], "separator y on frame " .. frame)
+  end
 end
 
 function tests.height_shrinks_when_content_shrinks()

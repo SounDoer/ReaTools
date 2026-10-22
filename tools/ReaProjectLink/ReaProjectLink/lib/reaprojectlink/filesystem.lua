@@ -233,7 +233,9 @@ function M.create(reaper_api)
         "[IO.File]::Move(" .. powershell_literal(temporary_path) .. ", " .. powershell_literal(result_path) .. ")",
         "}",
       }, " ")
-      command = 'powershell.exe -NoProfile -NonInteractive -Command "' .. script .. '"'
+      -- ExecProcess(-1) gives a console program a visible console (a Windows
+      -- Terminal window on Windows 11); a headless conhost hosts it without one.
+      command = 'conhost.exe --headless powershell.exe -NoProfile -NonInteractive -Command "' .. script .. '"'
     else
       local inner = "out=$(" .. posix_command .. " 2>&1); code=$?; printf '%s %s' \"$code\" \"$out\" > " ..
         posix_literal(temporary_path) .. " && mv " .. posix_literal(temporary_path) .. " " ..

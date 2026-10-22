@@ -993,8 +993,11 @@ responding. The design is
    Delivery Publish and Reference Publish. Apply steps (Synchronize, Import,
    Sync), saves, manifest and lock files, pointer checks, and Settings reset
    stay synchronous.
-2. **Mechanism.** `reaper.ExecProcess(command, -1)` starts PowerShell
-   (`/bin/sh` elsewhere) without waiting or showing a window. The child writes
+2. **Mechanism.** `reaper.ExecProcess(command, -1)` starts the child without
+   waiting. On Windows it runs `conhost.exe --headless powershell.exe ...`,
+   because a console program started this way otherwise gets a visible console
+   (a Windows Terminal window on Windows 11); this needs Windows 10 1809 or
+   later. Elsewhere it runs `/bin/sh` in the background. The child writes
    `<id>.tmp` and renames it to `<id>.result` under
    `<REAPER resource path>/ReaProjectLink/jobs`; the tool polls once per frame
    and deletes each result it reads. A child that writes nothing within 30

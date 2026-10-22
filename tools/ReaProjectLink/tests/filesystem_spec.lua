@@ -132,6 +132,25 @@ local copied, copy_error = failed_command_fs.copy_file("source.wav", "destinatio
 assert(copied == nil and copy_error:find("native copy failed", 1, true),
   "native copy errors are returned")
 
+if package.config:sub(1, 1) == "\\" then
+  local background_commands = {}
+  local recording_fs = filesystem.create(setmetatable({
+    ExecProcess = function(command, timeout)
+      table.insert(background_commands, { command = command, timeout = timeout })
+      return "259"
+    end,
+    GetResourcePath = function() return root end,
+  }, { __index = reaper }))
+  recording_fs.start_hash(fs.join(root, "plain.wav"))
+  recording_fs.start_copy(fs.join(root, "plain.wav"), fs.join(root, "copy.wav"))
+  for _, started in ipairs(background_commands) do
+    assert(started.timeout == -1, "background processes are not waited for")
+    assert(started.command:find("^conhost%.exe %-%-headless powershell%.exe "),
+      "background PowerShell runs in a headless console so no window opens")
+  end
+  assert(#background_commands == 2, "hash and copy each start one process")
+end
+
 local function wait_for(handle)
   local deadline = reaper.time_precise() + 30
   while reaper.time_precise() < deadline do

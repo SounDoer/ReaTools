@@ -23,8 +23,9 @@ function M.create(reaper_api)
     end
   end
 
+  -- PowerShell also treats U+2018..U+201B as single quotes.
   local function powershell_literal(value)
-    return "'" .. value:gsub("'", "''") .. "'"
+    return "'" .. value:gsub("'", "''"):gsub("\226\128[\152-\155]", "%0%0") .. "'"
   end
 
   local function posix_literal(value)
@@ -284,13 +285,6 @@ function M.create(reaper_api)
       return "done", digest:lower()
     end
     return "done", true
-  end
-
-  function fs.clear_background()
-    local root = job_root()
-    background_root = nil
-    if fs.exists(root) then return fs.remove_tree(root) end
-    return true
   end
 
   function fs.move_file(source, destination)

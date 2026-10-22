@@ -134,7 +134,6 @@ function M.create(deps)
   end
 
   function shell.draw()
-    env.jobs:step()
     local token = adapter.project_token()
     if token ~= project_token then
       project_token = token
@@ -142,6 +141,8 @@ function M.create(deps)
       settings_view:reset()
       env.app:request_check()
     end
+    -- After the reset, so a toast reported by a job that ends this frame survives it.
+    env.jobs:step()
     theme:refresh()
     if fixed_width then
       ImGui.SetNextWindowSize(ctx, fixed_width, 720, ImGui.Cond_Always)

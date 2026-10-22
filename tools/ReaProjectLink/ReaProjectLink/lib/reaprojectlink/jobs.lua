@@ -124,8 +124,8 @@ function M.create(deps)
     job.phase = "cancelling"
   end
 
-  -- Drops a job without reporting it; its background processes finish on
-  -- their own and their result files are cleared at the next startup.
+  -- Drops a job without reporting it; its background process finishes on its
+  -- own and leaves one small, unread result file.
   function runner:discard()
     self.current = nil
   end

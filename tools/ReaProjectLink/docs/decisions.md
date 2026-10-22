@@ -1004,8 +1004,9 @@ responding. The design is
    block (`Checking media`, measured progress, `Cancel`) and a disabled
    footer. Missing hashes are collected, hashed in the background, and the
    Review is built again; the final build runs in one frame from one project
-   state, so an edit made while checking still makes the Publish Reviews Out
-   of Date. Cancel, Back, a project tab switch, or closing the window discards
+   state. An edit made while checking is either part of that build or, if it
+   comes after it, makes the Publish Reviews Out of Date; it is never silently
+   missing. Cancel, Back, a project tab switch, or closing the window discards
    a check. A failed or cancelled check closes the Review unless it already
    shows data (Delivery Update `Load`, Publish `Retry`), which stays.
 4. **Publish.** The project guard check, identity assignment, first save, and
@@ -1037,4 +1038,7 @@ responding. The design is
    discarded and the window closes at once.
 9. **Leftover staging.** After acquiring the lock, a publish removes the
    package's whole `.staging` directory; holding the lock means anything there
-   is from an abandoned publish.
+   is from an abandoned publish. If someone uses `Unlock Publishing...` while
+   another publish is still running, the new publish removes that publish's
+   staging and it fails, which is the existing risk of unlocking a live
+   publish.

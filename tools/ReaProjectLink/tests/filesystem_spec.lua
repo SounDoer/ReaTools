@@ -142,7 +142,7 @@ local function wait_for(handle)
 end
 
 assert(fs.make_directory(fs.join(root, "background")))
-for _, name in ipairs({ "plain.wav", "it's here.wav", "中文 音效.wav" }) do
+for _, name in ipairs({ "plain.wav", "it's here.wav", "Director’s Cut.wav", "中文 音效.wav" }) do
   local path = fs.join(root, name)
   assert(fs.write_file(path, binary_bytes .. name))
   local status, digest = wait_for(fs.start_hash(path))
@@ -157,13 +157,13 @@ local missing_status, missing_error = wait_for(fs.start_copy(fs.join(root, "miss
   fs.join(root, "background", "missing.wav")))
 assert(missing_status == "failed" and missing_error ~= "", "background copy of a missing file fails")
 
-local lost = fs.start_hash(fs.join(root, "plain.wav"))
-lost.id = "never-written"
-lost.started_at = reaper.time_precise() - filesystem.BACKGROUND_TIMEOUT_SECONDS - 1
+local lost = {
+  id = "never-written", kind = "hash", path = fs.join(root, "plain.wav"),
+  started_at = reaper.time_precise() - filesystem.BACKGROUND_TIMEOUT_SECONDS - 1,
+}
 local lost_status, lost_error = fs.poll(lost)
 assert(lost_status == "failed" and lost_error:find("timed out", 1, true) and
   lost_error:find(lost.path, 1, true), "background job without a result times out")
-fs.clear_background()
 
 assert(fs.remove_tree(root))
 assert(not fs.exists(root), "fixture directory is removed")

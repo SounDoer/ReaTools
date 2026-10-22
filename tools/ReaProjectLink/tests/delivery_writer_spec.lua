@@ -69,7 +69,10 @@ end
 
 local wav = "wave bytes"
 local digest = sha256.digest(wav)
-local fs = memory_filesystem({ ["source.wav"] = wav })
+local fs = memory_filesystem({
+  ["source.wav"] = wav,
+  ["package/.staging/tx-abandoned/media/partial.wav"] = "partial",
+})
 local snapshot = {
   schemaVersion = 1,
   sourceProjectId = "source-1",
@@ -105,6 +108,10 @@ local result, err = delivery_writer.publish({
 
 assert(result, err)
 assert(not fs.is_locked(), "Publish lock must be released")
+assert(
+  fs.read_file("package/.staging/tx-abandoned/media/partial.wav") == nil,
+  "abandoned staging must be removed"
+)
 assert(
   fs.read_file("package/media/clip-1/clip_r0001.wav") == wav,
   "managed WAV must be visible"

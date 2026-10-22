@@ -49,6 +49,7 @@ local pointer = {
   latestReferenceRevision = 1,
   manifest = "history/reference-0001.json",
 }
+files["package/.staging/tx-abandoned/history/reference-0001.json"] = "partial"
 local result, err = reference_writer.publish({
   package_root = "package",
   expected_revision = 0,
@@ -59,6 +60,7 @@ local result, err = reference_writer.publish({
 
 assert(result, err)
 assert(not locked, "lock released")
+assert(files["package/.staging/tx-abandoned/history/reference-0001.json"] == nil, "abandoned staging removed")
 assert(json.decode(files["package/reference.json"]).latestReferenceRevision == 1, "pointer visible")
 assert(json.decode(files["package/history/reference-0001.json"]).referenceRevision == 1, "history visible")
 

@@ -137,6 +137,8 @@ function M.publish(input, fs)
   if not lock_token then
     return nil, lock_error or "Publish is locked by another user."
   end
+  -- Holding the lock means anything left in .staging is from an abandoned Publish.
+  fs.remove_tree(fs.join(input.package_root, ".staging"))
 
   local ok, result = xpcall(function()
     return perform_publish(input, fs)

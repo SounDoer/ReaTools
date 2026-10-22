@@ -54,6 +54,16 @@ function M.publish_message(noun, revision, result)
   return message, result.project_save_error ~= nil or result.lock_release_error ~= nil
 end
 
+local PUBLISH_PHASES = {
+  working = "Copying and verifying media",
+  cancelling = "Cancelling after the current file",
+  finishing = "Finishing",
+}
+
+function M.job_message(job)
+  return PUBLISH_PHASES[job.phase] or PUBLISH_PHASES.working
+end
+
 function M.inspect_lock(env, package_root)
   local info = env.fs.read_lock(package_root)
   env.app.lock = info and { info = info, package_root = package_root } or nil

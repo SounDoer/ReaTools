@@ -3,6 +3,7 @@ local M = {}
 
 M.NAMES = {
   "more", "gear", "dot", "back", "minus", "plus", "check", "cross", "warning", "film", "upload", "download",
+  "refresh",
 }
 
 -- Line segments in unit coordinates: { x1, y1, x2, y2 }.
@@ -57,6 +58,14 @@ function M.draw(ImGui, draw_list, name, x, y, size, color)
         cx + math.cos(angle) * size * 0.42, cy + math.sin(angle) * size * 0.42,
         color, thickness * 1.5)
     end
+  elseif name == "refresh" then
+    -- A clockwise 270 degree arc ending at the top, with the arrowhead pointing along it.
+    local radius = size * 0.32
+    ImGui.DrawList_PathArcTo(draw_list, cx, cy, radius, 0, math.pi * 1.5, 0)
+    ImGui.DrawList_PathStroke(draw_list, color, 0, thickness)
+    local tip_x, tip_y, head = cx, cy - radius, size * 0.15
+    ImGui.DrawList_AddLine(draw_list, tip_x, tip_y, tip_x - head, tip_y - head, color, thickness)
+    ImGui.DrawList_AddLine(draw_list, tip_x, tip_y, tip_x - head, tip_y + head, color, thickness)
   else
     return false
   end

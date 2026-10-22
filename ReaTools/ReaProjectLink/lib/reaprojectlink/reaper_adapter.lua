@@ -3,17 +3,53 @@ local json = require("reaprojectlink.json")
 
 local M = {}
 
+-- nil means the active project; `with_project` binds a specific project so a
+-- background job keeps writing to the project it started in.
+local bound = nil
+
 local function project()
-  return 0
+  return bound or 0
+end
+
+local function described_project()
+  if not bound then return reaper.EnumProjects(-1, "") end
+  local index = 0
+  while true do
+    local candidate, path = reaper.EnumProjects(index, "")
+    if not candidate then return nil, "" end
+    if candidate == bound then return candidate, path end
+    index = index + 1
+  end
+end
+
+function M.current_project()
+  return (reaper.EnumProjects(-1, ""))
+end
+
+function M.project_is_open(target)
+  return target ~= nil and reaper.ValidatePtr(target, "ReaProject*")
+end
+
+function M.project_is_active(target)
+  return target ~= nil and M.current_project() == target
+end
+
+function M.with_project(target, fn, ...)
+  local previous = bound
+  bound = target
+  local results = table.pack(pcall(fn, ...))
+  bound = previous
+  if not results[1] then error(results[2], 0) end
+  return table.unpack(results, 2, results.n)
 end
 
 function M.project_path()
-  local _, path = reaper.EnumProjects(-1, "")
+  local _, path = described_project()
   return path or ""
 end
 
 function M.project_token()
-  local current, path = reaper.EnumProjects(-1, "")
+  local current, path = described_project()
   return tostring(current) .. "\31" .. tostring(path or "")
 end
 
@@ -870,7 +906,12 @@ function M.mark_project_dirty()
 end
 
 function M.save_project()
+  local active = M.current_project()
   reaper.Main_SaveProject(project(), false)
+  -- Saving a background tab makes it active; give the user's tab back.
+  if bound and bound ~= active and reaper.ValidatePtr(active, "ReaProject*") then
+    reaper.SelectProjectInstance(active)
+  end
   if reaper.IsProjectDirty and reaper.IsProjectDirty(project()) ~= 0 then
     return nil, "REAPER project is still dirty after Save."
   end

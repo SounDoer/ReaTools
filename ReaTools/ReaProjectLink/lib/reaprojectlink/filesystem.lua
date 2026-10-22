@@ -3,6 +3,8 @@ local sha256 = require("reaprojectlink.sha256")
 
 local M = {}
 
+M.BACKGROUND_TIMEOUT_SECONDS = 1800
+
 function M.create(reaper_api)
   local fs = {}
   local separator = package.config:sub(1, 1)
@@ -21,20 +23,35 @@ function M.create(reaper_api)
     end
   end
 
+  -- PowerShell also treats U+2018..U+201B as single quotes.
   local function powershell_literal(value)
-    return "'" .. value:gsub("'", "''") .. "'"
+    return "'" .. value:gsub("'", "''"):gsub("\226\128[\152-\155]", "%0%0") .. "'"
   end
 
   local function posix_literal(value)
     return "'" .. value:gsub("'", "'\\''") .. "'"
   end
 
+  local function native_path(path)
+    if separator == "\\" then return path:gsub("/", "\\") end
+    return path:gsub("\\", "/")
+  end
+
+  local function windows_extended_path(path)
+    if path:sub(1, 4) == "\\\\?\\" then return path end
+    if path:sub(1, 2) == "\\\\" then return "\\\\?\\UNC\\" .. path:sub(3) end
+    if path:match("^%a:\\") then return "\\\\?\\" .. path end
+    return path
+  end
+
   -- The pure Lua digest runs at a few MB/s, which stalls the UI thread on
   -- reference and media files. Prefer the platform hashing tool and keep the
   -- Lua implementation as a fallback.
   local function native_hash_file(path)
+    path = native_path(path)
     local command
     if separator == "\\" then
+      path = windows_extended_path(path)
       command = 'certutil -hashfile "' .. path .. '" SHA256'
     else
       command = "shasum -a 256 " .. posix_literal(path)
@@ -49,6 +66,31 @@ function M.create(reaper_api)
       if token and #token == 64 then return token:lower() end
     end
     return nil
+  end
+
+  local function native_copy_file(source, destination)
+    source, destination = native_path(source), native_path(destination)
+    local command
+    if separator == "\\" then
+      source, destination = windows_extended_path(source), windows_extended_path(destination)
+      local script = table.concat({
+        "& {",
+        "$ErrorActionPreference = 'Stop';",
+        "try { [IO.File]::Copy(" .. powershell_literal(source) .. ", " ..
+          powershell_literal(destination) .. ", $false) }",
+        "catch { [Console]::Error.WriteLine($_); exit 1 }",
+        "}",
+      }, " ")
+      command = 'powershell.exe -NoProfile -NonInteractive -Command "' .. script .. '"'
+    else
+      command = "/bin/cp " .. posix_literal(source) .. " " .. posix_literal(destination)
+    end
+    local output = reaper_api.ExecProcess(command, 0)
+    local exit_code = output and tonumber(tostring(output):match("^%s*(-?%d+)"))
+    if exit_code ~= 0 then
+      return nil, output or "native file copy failed"
+    end
+    return true
   end
 
   local function windows_atomic_replace(source, destination)
@@ -104,7 +146,7 @@ function M.create(reaper_api)
     local parts = { ... }
     local result = tostring(parts[1] or "")
     for index = 2, #parts do
-      local part = tostring(parts[index])
+      local part = native_path(tostring(parts[index]))
       result = result:gsub("[/\\]+$", "") .. separator ..
         part:gsub("^[/\\]+", "")
     end
@@ -150,33 +192,7 @@ function M.create(reaper_api)
   end
 
   function fs.copy_file(source, destination)
-    local input, input_error = io.open(source, "rb")
-    if not input then
-      return nil, input_error
-    end
-    local output, output_error = io.open(destination, "wb")
-    if not output then
-      input:close()
-      return nil, output_error
-    end
-
-    while true do
-      local bytes = input:read(1024 * 1024)
-      if not bytes then break end
-      local ok, write_error = output:write(bytes)
-      if not ok then
-        input:close()
-        output:close()
-        return nil, write_error
-      end
-    end
-
-    input:close()
-    local close_ok, close_error = output:close()
-    if not close_ok then
-      return nil, close_error
-    end
-    return true
+    return native_copy_file(source, destination)
   end
 
   function fs.file_size(path)
@@ -189,6 +205,88 @@ function M.create(reaper_api)
 
   function fs.hash_file(path)
     return native_hash_file(path) or sha256.file(path)
+  end
+
+  -- Background jobs run in a child process that is not waited for; the child
+  -- writes "<exit code> <value or message>" to `<id>.tmp` and renames it to
+  -- `<id>.result`, so a result file is always complete.
+  local background_root
+  local function job_root()
+    if not background_root then
+      background_root = fs.join(reaper_api.GetResourcePath(), "ReaProjectLink", "jobs")
+      assert(fs.make_directory(background_root))
+    end
+    return background_root
+  end
+
+  local function start_background(kind, path, windows_body, posix_command)
+    local id = reaper_api.genGuid(""):gsub("[{}]", ""):lower()
+    local result_path = fs.join(job_root(), id .. ".result")
+    local temporary_path = fs.join(job_root(), id .. ".tmp")
+    local command
+    if separator == "\\" then
+      local script = table.concat({
+        "& {",
+        "try { $value = & { " .. windows_body .. " }; $text = '0 ' + $value }",
+        "catch { $text = '1 ' + $_.Exception.Message }",
+        "[IO.File]::WriteAllText(" .. powershell_literal(temporary_path) .. ", $text);",
+        "[IO.File]::Move(" .. powershell_literal(temporary_path) .. ", " .. powershell_literal(result_path) .. ")",
+        "}",
+      }, " ")
+      -- ExecProcess(-1) gives a console program a visible console (a Windows
+      -- Terminal window on Windows 11); a headless conhost hosts it without one.
+      command = 'conhost.exe --headless powershell.exe -NoProfile -NonInteractive -Command "' .. script .. '"'
+    else
+      local inner = "out=$(" .. posix_command .. " 2>&1); code=$?; printf '%s %s' \"$code\" \"$out\" > " ..
+        posix_literal(temporary_path) .. " && mv " .. posix_literal(temporary_path) .. " " ..
+        posix_literal(result_path)
+      command = "/bin/sh -c " .. posix_literal("(" .. inner .. ") >/dev/null 2>&1 &")
+    end
+    reaper_api.ExecProcess(command, -1)
+    return { id = id, kind = kind, path = path, started_at = reaper_api.time_precise() }
+  end
+
+  function fs.start_hash(path)
+    local native = native_path(path)
+    return start_background("hash", path,
+      "$stream = [IO.File]::OpenRead(" .. powershell_literal(windows_extended_path(native)) .. "); " ..
+        "try { ([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($stream)) " ..
+        "-replace '-', '').ToLower() } finally { $stream.Dispose() }",
+      "shasum -a 256 " .. posix_literal(native))
+  end
+
+  function fs.start_copy(source, destination)
+    local native_source, native_destination = native_path(source), native_path(destination)
+    return start_background("copy", source,
+      "[IO.File]::Copy(" .. powershell_literal(windows_extended_path(native_source)) .. ", " ..
+        powershell_literal(windows_extended_path(native_destination)) .. ", $false); 'copied'",
+      "/bin/cp " .. posix_literal(native_source) .. " " .. posix_literal(native_destination))
+  end
+
+  function fs.poll(handle)
+    local result_path = fs.join(job_root(), handle.id .. ".result")
+    local file = io.open(result_path, "rb")
+    if not file then
+      if reaper_api.time_precise() - handle.started_at > M.BACKGROUND_TIMEOUT_SECONDS then
+        return "failed", string.format("Background %s timed out: %s", handle.kind, handle.path)
+      end
+      return "running"
+    end
+    local text = file:read("*a")
+    file:close()
+    os.remove(result_path)
+    local code, value = text:match("^%s*(-?%d+)%s?(.*)$")
+    if code ~= "0" then
+      local message = value and value:match("^%s*(.-)%s*$") or ""
+      if message == "" then message = "Background " .. handle.kind .. " failed" end
+      return "failed", message .. ": " .. handle.path
+    end
+    if handle.kind == "hash" then
+      local digest = value:match("^%s*(%x+)")
+      if not digest or #digest ~= 64 then return "failed", "Unexpected hash output: " .. handle.path end
+      return "done", digest:lower()
+    end
+    return "done", true
   end
 
   function fs.move_file(source, destination)

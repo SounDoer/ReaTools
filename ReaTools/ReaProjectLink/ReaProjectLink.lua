@@ -8,11 +8,13 @@
 --
 --   Requires REAPER 7.74 or newer and ReaImGui 0.9 or newer (install ReaImGui
 --   through ReaPack).
--- @link GitHub https://github.com/SounDoer/ReaProjectLink
+-- @link GitHub https://github.com/SounDoer/ReaTools
 -- @provides
 --   [nomain] lib/reaprojectlink/*.lua
 --   [nomain] lib/reaprojectlink/ui/*.lua
 --   [nomain] lib/reaprojectlink/ui/views/*.lua
+--   [nomain] vendor/ReaToolUI/lib/reaui.lua
+--   [nomain] vendor/ReaToolUI/lib/reaui/*.lua
 
 local source = debug.getinfo(1, "S").source:sub(2)
 local script_dir = source:match("^(.*)[/\\]")
@@ -21,17 +23,25 @@ if not script_dir then
   return
 end
 package.path = script_dir .. "/lib/?.lua;" .. package.path
+-- Releases vendor the validated ReaToolUI implementation beside the product.
+-- The repository-relative fallback keeps the development action on that same
+-- canonical source without requiring a copied package tree in the checkout.
+package.path = script_dir .. "/vendor/ReaToolUI/lib/?.lua;" ..
+  script_dir .. "/../../../packages/ReaToolUI/lib/?.lua;" .. package.path
+local display_name = require("reaprojectlink.runtime_identity").display_name(
+  REAPROJECTLINK_DEV == true
+)
 local runtime_requirements = require("reaprojectlink.runtime_requirements")
 local runtime_ok, runtime_error = runtime_requirements.check_reaper(reaper)
 if not runtime_ok then
-  reaper.ShowMessageBox(runtime_error, "ReaProjectLink", 0)
+  reaper.ShowMessageBox(runtime_error, display_name, 0)
   return
 end
 if not reaper.ImGui_GetBuiltinPath then
   reaper.ShowMessageBox(
     "Install ReaImGui " .. runtime_requirements.minimum_reaimgui_api ..
       " or newer through ReaPack and restart REAPER.",
-    "ReaProjectLink",
+    display_name,
     0
   )
   return
@@ -42,7 +52,16 @@ if not ok_imgui then
   reaper.ShowMessageBox(
     "Could not load the ReaImGui " .. runtime_requirements.minimum_reaimgui_api ..
       " compatibility API:\n" .. tostring(ImGui),
-    "ReaProjectLink",
+    display_name,
+    0
+  )
+  return
+end
+local ok_reaui, reaui = pcall(require, "reaui")
+if not ok_reaui then
+  reaper.ShowMessageBox(
+    "Could not load the bundled ReaToolUI runtime:\n" .. tostring(reaui),
+    display_name,
     0
   )
   return
@@ -56,7 +75,7 @@ local function script_version()
   return header:match("@version%s+(%S+)") or "unknown"
 end
 
-local ctx = ImGui.CreateContext("ReaProjectLink")
+local ctx = ImGui.CreateContext(display_name)
 local shell = require("reaprojectlink.ui.app").create({
   ImGui = ImGui,
   ctx = ctx,
@@ -64,6 +83,8 @@ local shell = require("reaprojectlink.ui.app").create({
   adapter = require("reaprojectlink.reaper_adapter"),
   fs = require("reaprojectlink.filesystem").create(reaper),
   version = script_version(),
+  display_name = display_name,
+  design_system = reaui.create(ImGui, ctx, "dark"),
   services = {
     project_service = require("reaprojectlink.project_service"),
     reference_subscription = require("reaprojectlink.reference_subscription"),
@@ -115,8 +136,8 @@ local function loop()
       return
     end
   elseif not ok then
-    reaper.ShowConsoleMsg("ReaProjectLink error:\n" .. tostring(err) .. "\n")
-    reaper.ShowMessageBox(tostring(err), "ReaProjectLink error", 0)
+    reaper.ShowConsoleMsg(display_name .. " error:\n" .. tostring(err) .. "\n")
+    reaper.ShowMessageBox(tostring(err), display_name .. " error", 0)
     return
   end
   if shell.open then reaper.defer(loop) end

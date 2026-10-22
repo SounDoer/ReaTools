@@ -11,29 +11,20 @@ local PARENTS = {
 function M.open_import(env)
   local path = workflow.choose_json(env.reaper, "Select Source delivery.json")
   if not path then return end
-  local review, err = env.services.delivery_import.review(env.adapter, env.fs, path)
-  if not review then
-    env.app:notify(err, true)
-    return
-  end
-  env.app:open_review("delivery_import", {
-    data = review, mappings = {}, row_errors = {}, allow_reference = false,
-  })
+  workflow.start_check(env, "delivery_import", { mappings = {}, row_errors = {}, allow_reference = false },
+    function(fs) return env.services.delivery_import.review(env.adapter, fs, path) end,
+    function(review, data) review.data = data end)
 end
 
--- On failure the current Review, if any, stays open.
+-- Load reuses the open Review: its current data stays visible while the new
+-- revision is checked, and stays open if that check fails.
 function M.open_update(env, source_project_id, target_revision)
-  local review, err = env.services.delivery_update.review(
-    env.adapter, env.fs, source_project_id, target_revision
-  )
-  if not review then
-    env.app:notify(err, true)
-    return
-  end
-  env.app:open_review("delivery_update", {
-    data = review, mappings = {}, rebindings = {}, row_errors = {},
-    allow_reference = false, target_input = review.target_revision,
-  })
+  workflow.start_check(env, "delivery_update", {}, function(fs)
+    return env.services.delivery_update.review(env.adapter, fs, source_project_id, target_revision)
+  end, function(review, data)
+    review.data, review.target_input = data, data.target_revision
+    review.mappings, review.rebindings, review.row_errors, review.allow_reference = {}, {}, {}, false
+  end)
 end
 
 -- Returns "Missing track" instead of crashing/misleading when a mapped or
@@ -46,12 +37,11 @@ local function track_name(env, track_ref)
 end
 
 local function draw_parent_choice(env, review)
-  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
-  ImGui.AlignTextToFramePadding(ctx)
-  c.inline_muted("New tracks go under")
-  ImGui.SameLine(ctx)
+  local c = env.c
   local current = review.parent and "selected" or "top"
-  local chosen = c.segmented("parent", PARENTS, current)
+  local chosen = env.design_system.components.segmented_control.draw_field({
+    id = "parent", label = "New tracks go under", options = PARENTS, value = current,
+  }).value
   if chosen ~= current then
     if chosen == "selected" then
       local selected = env.adapter.selected_tracks()
@@ -65,9 +55,7 @@ local function draw_parent_choice(env, review)
     end
   end
   if review.parent then
-    ImGui.AlignTextToFramePadding(ctx)
-    c.inline_muted("Under " .. track_name(env, review.parent))
-    ImGui.SameLine(ctx)
+    c.small("Under " .. track_name(env, review.parent))
     if c.button("Use Current Selection##parent-repick") then
       local selected = env.adapter.selected_tracks()
       if #selected == 1 then
@@ -87,22 +75,18 @@ local function lane_default(lane, default_kind)
 end
 
 local function draw_mapping_table(env, lanes, review, default_kind)
-  local ImGui, ctx, c, colors = env.ImGui, env.ctx, env.c, env.theme.colors
-  c.section("Lanes")
+  local c = env.c
   draw_parent_choice(env, review)
-  local column = ImGui.GetContentRegionAvail(ctx) * 0.45
-  for _, lane in ipairs(lanes) do
-    ImGui.Separator(ctx)
-    ImGui.AlignTextToFramePadding(ctx)
-    ImGui.Text(ctx, lane.display_name)
-    ImGui.SameLine(ctx, 0, 6)
-    c.inline_muted(tostring(#lane.clips))
-    ImGui.SameLine(ctx, column)
+  for index, lane in ipairs(lanes) do
+    if index > 1 then c.list_gap() end
     local mapping = review.mappings[lane.lane_id]
-    local chosen = c.dropdown("lane-" .. lane.lane_id,
-      view_models.lane_mapping_label(mapping, lane_default(lane, default_kind),
-        function(ref) return track_name(env, ref) end),
-      view_models.lane_mapping_options(lane))
+    local id = "lane-" .. lane.lane_id
+    local chosen = c.mapping_row(id, lane.display_name, view_models.count(#lane.clips, "item"), function()
+      return c.dropdown(id,
+        view_models.lane_mapping_label(mapping, lane_default(lane, default_kind),
+          function(ref) return track_name(env, ref) end),
+        view_models.lane_mapping_options(lane))
+    end)
     if chosen then
       local next_mapping, err = view_models.mapping_from_option(chosen, env.adapter.selected_tracks())
       if next_mapping then
@@ -113,7 +97,10 @@ local function draw_mapping_table(env, lanes, review, default_kind)
       end
     end
     if lane.orphaned then c.small("Its target track was deleted. Map it again to restore its items.") end
-    if review.row_errors[lane.lane_id] then c.colored(review.row_errors[lane.lane_id], colors.warning) end
+    if review.row_errors[lane.lane_id] then
+      c.colored(review.row_errors[lane.lane_id],
+        env.design_system.adapter.resolve("component.status.warning.foreground"))
+    end
   end
 end
 
@@ -125,54 +112,76 @@ local function collect_mappings(lanes, review, default_kind)
   return view_models.with_parent(mappings, review.parent)
 end
 
-local function draw_reference_issue(env, data, review, verb)
-  local c = env.c
-  if data.reference_error then c.notice("reference-error", "blocked", data.reference_error) end
+local function reference_issues(items, data, review)
+  if data.reference_error then
+    table.insert(items, { id = "reference-error", role = "blocked", message = data.reference_error })
+  end
   if not data.reference_warning then return end
   if review.allow_reference then
-    c.notice("reference-warning", "warning",
-      "Made against a different Reference revision. Continuing anyway.")
-  elseif c.notice("reference-warning", "warning",
-      "This delivery was made against a different Reference revision.", { verb .. " Anyway" }) == 1 then
-    review.allow_reference = true
+    table.insert(items, { id = "reference-warning", role = "warning",
+      message = "Made against a different Reference revision. Continuing anyway." })
+  else
+    table.insert(items, { id = "reference-warning", role = "warning",
+      message = "This delivery was made against a different Reference revision.",
+      actions = { { id = "allow", label = "Allow Difference" } } })
   end
 end
 
-local function draw_clip_issue(env, id, lane_name, clip)
+local function clip_issue(items, id, lane_name, clip)
   if clip.blocked then
-    env.c.notice(id, "blocked", string.format("%s: %s", lane_name, clip.error))
+    table.insert(items, { id = id, role = "blocked", message = string.format("%s: %s", lane_name, clip.error) })
   end
+end
+
+-- Draws the Issues section when there are issues and applies its action.
+local function draw_issues(env, id, items, review)
+  if #items == 0 then return end
+  local shell, issue_item = env.design_system.patterns.review_shell, env.design_system.components.issue_item
+  local action
+  shell.section({ id = id .. "-issues", title = "Issues" }, function()
+    action = issue_item.draw_list({ id = id .. "-issues", items = items }).action
+  end)
+  if action and action.item == "reference-warning" and action.id == "allow" then review.allow_reference = true end
 end
 
 local function draw_import(env, review)
-  local c, app = env.c, env.app
+  local app = env.app
+  local shell = env.design_system.patterns.review_shell
   local data = review.data
-  local back = false
-  workflow.draw_notices(env)
-  if c.begin_page("delivery-import", true) then
-    back = c.review_header("Add " .. data.snapshot.sourceProjectName,
-      string.format("Delivery r%d · made against Reference r%d",
-        data.pointer.latestDeliveryRevision, data.snapshot.reference.reviewedRevision))
-    draw_reference_issue(env, data, review, "Import")
-    for lane_index, lane in ipairs(data.lanes) do
-      for clip_index, clip in ipairs(lane.clips) do
-        draw_clip_issue(env, "clip-" .. lane_index .. "-" .. clip_index, lane.display_name, clip)
-      end
-    end
-    draw_mapping_table(env, data.lanes, review, "create")
-  end
-  local page = c.end_page()
 
   local ready = data.blocker_count == 0 and (not data.reference_warning or review.allow_reference)
   local summary, level = view_models.mapping_summary(data.lanes, review.mappings, "create"), "neutral"
   if data.blocker_count > 0 then
     summary, level = view_models.blocked_summary(data.blocker_count, "import"), "blocked"
   end
-  local import = c.footer(page, summary, level, "Import", ready)
 
-  if back then
+  workflow.draw_notices(env)
+  local flags = workflow.review_flags(shell.draw({
+    id = "delivery-import",
+    header = {
+      title = "Add " .. data.snapshot.sourceProjectName,
+      summary = string.format("Delivery r%d · made against Reference r%d",
+        data.pointer.latestDeliveryRevision, data.snapshot.reference.reviewedRevision),
+    },
+    footer = { summary = summary, role = level, complete_label = "Import", enabled = ready },
+    render_body = function()
+      local items = {}
+      reference_issues(items, data, review)
+      for lane_index, lane in ipairs(data.lanes) do
+        for clip_index, clip in ipairs(lane.clips) do
+          clip_issue(items, "clip-" .. lane_index .. "-" .. clip_index, lane.display_name, clip)
+        end
+      end
+      draw_issues(env, "delivery-import", items, review)
+      shell.section({ id = "delivery-import-lanes", title = "Lanes" }, function()
+        draw_mapping_table(env, data.lanes, review, "create")
+      end)
+    end,
+  }))
+
+  if flags.back then
     app:back()
-  elseif import then
+  elseif flags.complete then
     local result, err = env.services.delivery_import.apply(data, env.adapter, {
       mappings = collect_mappings(data.lanes, review, "create"),
       allow_reference_revision_mismatch = review.allow_reference,
@@ -190,34 +199,33 @@ local function draw_import(env, review)
 end
 
 local function draw_target(env, review)
-  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
-  c.section("Revision")
-  ImGui.SetNextItemWidth(ctx, 120)
-  local changed, value = ImGui.InputInt(ctx, "##target-revision", review.target_input)
-  if changed then review.target_input = value end
-  ImGui.SameLine(ctx)
-  local load = c.button("Load")
-  c.small(string.format("Latest is r%d", review.data.latest_revision))
-  return load
+  local components = env.design_system.components
+  local result = components.number_field.draw({
+    id = "target-revision",
+    label = "Target revision",
+    description = string.format("Latest is r%d", review.data.latest_revision),
+    value = review.target_input,
+    minimum = 1,
+    action = { id = "load", label = "Load" },
+  })
+  if result.changed and result.parse_state == "valid" then review.target_input = result.value end
+  return result.action == "load"
 end
 
 local function draw_bound_lanes(env, review)
-  local ImGui, ctx, c = env.ImGui, env.ctx, env.c
+  local c = env.c
   local lanes = review.data.bound_lanes
-  if #lanes == 0 then return end
-  c.section("Mapped Lanes")
-  local column = ImGui.GetContentRegionAvail(ctx) * 0.45
-  for _, lane in ipairs(lanes) do
-    ImGui.Separator(ctx)
-    ImGui.AlignTextToFramePadding(ctx)
-    ImGui.Text(ctx, lane.display_name)
-    ImGui.SameLine(ctx, column)
+  for index, lane in ipairs(lanes) do
+    if index > 1 then c.list_gap() end
     local rebound = review.rebindings[lane.lane_id]
     local preview = rebound and track_name(env, rebound) or lane.track_name
-    local chosen = c.dropdown("bound-" .. lane.lane_id, preview, {
-      { id = "current", label = "Keep " .. lane.track_name },
-      { id = "selected", label = "Selected Track" },
-    })
+    local id = "bound-" .. lane.lane_id
+    local chosen = c.mapping_row(id, lane.display_name, nil, function()
+      return c.dropdown(id, preview, {
+        { id = "current", label = "Keep " .. lane.track_name },
+        { id = "selected", label = "Selected Track" },
+      })
+    end)
     if chosen and chosen.id == "current" then
       review.rebindings[lane.lane_id] = nil
       review.row_errors[lane.lane_id] = nil
@@ -227,38 +235,19 @@ local function draw_bound_lanes(env, review)
       review.row_errors[lane.lane_id] = err
     end
     if review.row_errors[lane.lane_id] then
-      c.colored(review.row_errors[lane.lane_id], env.theme.colors.warning)
+      c.colored(review.row_errors[lane.lane_id],
+        env.design_system.adapter.resolve("component.status.warning.foreground"))
     end
   end
 end
 
 local function draw_update(env, review)
-  local c, app = env.c, env.app
+  local app = env.app
+  local shell = env.design_system.patterns.review_shell
   local data = review.data
-  local back, load = false, false
-  workflow.draw_notices(env)
-  if c.begin_page("delivery-update", true) then
-    back = c.review_header(string.format("Sync %s to r%d",
-      data.target_snapshot.sourceProjectName, data.target_revision),
-      string.format("Replaces %s with %s",
-        view_models.count(data.replacement_count, "item"),
-        view_models.count(data.source_item_count, "item")))
-    draw_reference_issue(env, data, review, "Sync")
-    for index, clip in ipairs(data.additions) do
-      draw_clip_issue(env, "addition-" .. index, clip.lane_display_name, clip)
-    end
-    for lane_index, lane in ipairs(data.unmapped_lanes) do
-      for clip_index, clip in ipairs(lane.clips) do
-        draw_clip_issue(env, "unmapped-" .. lane_index .. "-" .. clip_index, lane.display_name, clip)
-      end
-    end
-    load = draw_target(env, review)
-    if #data.unmapped_lanes > 0 then draw_mapping_table(env, data.unmapped_lanes, review, "create") end
-    draw_bound_lanes(env, review)
-  end
-  local page = c.end_page()
 
-  local ready = data.blocker_count == 0 and (not data.reference_warning or review.allow_reference) and
+  local ready = not review.checking and data.blocker_count == 0 and
+    (not data.reference_warning or review.allow_reference) and
     (data.pending_count > 0 or next(review.rebindings) ~= nil)
   local summary, level = string.format("Syncs Delivery r%d", data.target_revision), "neutral"
   if data.blocker_count > 0 then
@@ -266,13 +255,53 @@ local function draw_update(env, review)
   elseif data.pending_count == 0 and next(review.rebindings) == nil then
     summary = "Nothing to sync"
   end
-  local sync = c.footer(page, summary, level, "Sync", ready)
+  local load = false
+  workflow.draw_notices(env)
+  local flags = workflow.review_flags(shell.draw({
+    id = "delivery-update",
+    header = {
+      title = string.format("Sync %s to r%d", data.target_snapshot.sourceProjectName, data.target_revision),
+      summary = string.format("Replaces %s with %s",
+        view_models.count(data.replacement_count, "item"),
+        view_models.count(data.source_item_count, "item")),
+    },
+    footer = { summary = summary, role = level, complete_label = "Sync", enabled = ready },
+    render_body = function()
+      workflow.draw_job_status(env, "delivery-update", review)
+      if review.checking then env.ImGui.BeginDisabled(env.ctx, true) end
+      local items = {}
+      reference_issues(items, data, review)
+      for index, clip in ipairs(data.additions) do
+        clip_issue(items, "addition-" .. index, clip.lane_display_name, clip)
+      end
+      for lane_index, lane in ipairs(data.unmapped_lanes) do
+        for clip_index, clip in ipairs(lane.clips) do
+          clip_issue(items, "unmapped-" .. lane_index .. "-" .. clip_index, lane.display_name, clip)
+        end
+      end
+      draw_issues(env, "delivery-update", items, review)
+      shell.section({ id = "delivery-update-revision", title = "Revision" }, function()
+        load = draw_target(env, review)
+      end)
+      if #data.unmapped_lanes > 0 then
+        shell.section({ id = "delivery-update-lanes", title = "Lanes" }, function()
+          draw_mapping_table(env, data.unmapped_lanes, review, "create")
+        end)
+      end
+      if #data.bound_lanes > 0 then
+        shell.section({ id = "delivery-update-mapped", title = "Mapped Lanes" }, function()
+          draw_bound_lanes(env, review)
+        end)
+      end
+      if review.checking then env.ImGui.EndDisabled(env.ctx) end
+    end,
+  }))
 
-  if back then
+  if flags.back then
     app:back()
   elseif load then
     M.open_update(env, data.source_project_id, review.target_input)
-  elseif sync then
+  elseif flags.complete then
     local result, err = env.services.delivery_update.apply(data, env.adapter, {
       lane_mappings = collect_mappings(data.unmapped_lanes, review, "create"),
       lane_rebindings = review.rebindings,
@@ -291,7 +320,17 @@ end
 
 function M.draw(env)
   local review = env.app.review
-  if review.kind == "delivery_import" then draw_import(env, review) else draw_update(env, review) end
+  if review.kind == "delivery_import" then
+    if review.checking then
+      workflow.draw_checking(env, "delivery-import", "Add Delivery", "Import")
+    else
+      draw_import(env, review)
+    end
+  elseif review.checking and not review.data then
+    workflow.draw_checking(env, "delivery-update", "Sync Delivery", "Sync")
+  else
+    draw_update(env, review)
+  end
 end
 
 return M

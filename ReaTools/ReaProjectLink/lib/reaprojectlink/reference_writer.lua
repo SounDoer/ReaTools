@@ -82,6 +82,8 @@ end
 function M.publish(input, fs)
   local token, lock_error = fs.acquire_lock(input.package_root, input.lock_metadata or {})
   if not token then return nil, lock_error or "Reference Publish is locked." end
+  -- Holding the lock means anything left in .staging is from an abandoned Publish.
+  fs.remove_tree(fs.join(input.package_root, ".staging"))
   local ok, result = xpcall(function() return perform_publish(input, fs) end, debug.traceback)
   fs.remove_tree(fs.join(input.package_root, ".staging", input.transaction_id))
   local released, release_error = fs.release_lock(input.package_root, token)

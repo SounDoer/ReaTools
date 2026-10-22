@@ -23,22 +23,23 @@ Install [ReaPack](https://reapack.com/) and ReaImGui, then in REAPER choose
 Extensions > ReaPack > Import repositories and add:
 
 ```text
-https://github.com/SounDoer/ReaProjectLink/raw/master/index.xml
+https://raw.githubusercontent.com/SounDoer/ReaTools/reapack/index.xml
 ```
 
-Install ReaProjectLink from Extensions > ReaPack > Browse packages. It appears
-in the Action List as `Script: ReaProjectLink.lua`.
+Install ReaProjectLink from the ReaTools category in Extensions > ReaPack >
+Browse packages. It appears in the Action List as
+`Script: ReaProjectLink.lua`.
 
 ## Documentation
 
-- [Product concept](docs/product-concept.md)
-- [Architecture](docs/architecture.md)
-- [Manifest schema](docs/manifest-schema.md)
-- [Decision log](docs/decisions.md)
-- [UI specification](docs/ui-spec.md)
-- [UI implementation plan](docs/ui-implementation-plan.md)
-- [Development](docs/development.md)
-- [Manual validation](docs/validation.md)
+- [Product concept](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/product-concept.md)
+- [Architecture](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/architecture.md)
+- [Manifest schema](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/manifest-schema.md)
+- [Decision log](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/decisions.md)
+- [UI specification](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/ui-spec.md)
+- [UI implementation plan](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/ui-implementation-plan.md)
+- [Development](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/development.md)
+- [Manual validation](https://github.com/SounDoer/ReaTools/blob/main/tools/ReaProjectLink/docs/validation.md)
 
 ## Status
 

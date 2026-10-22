@@ -98,6 +98,25 @@ the projects and test media on the team's normal shared-storage arrangement.
 - Choose `Unlock Publishing...` only after confirming that no other user or
   computer is publishing; then refresh the Review before retrying.
 
+## Background operations
+
+1. Publish a Delivery with several large WAVs to the NAS package. While it
+   runs, play, scroll, and edit in REAPER and confirm REAPER stays responsive
+   and the progress advances. Open the next Publish Review and confirm the
+   edits appear there, not in the revision just published.
+2. Open a Publish Review and edit the project while it shows `Checking media`.
+   Confirm the Review comes back Out of Date.
+3. Press `Cancel` during the copy. Confirm the status reads
+   `Cancelling after the current file`, then `Cancelled` with `Retry`, that the
+   package has no `.staging` content or `.publish.lock` left, and that
+   `Retry`, then `Publish`, publishes the next revision.
+4. Start a Publish and switch to another project tab. Confirm the banner shows
+   `Publishing <project>` over a disabled view, the publish finishes, and the
+   revision and save land in the original project, not the active one.
+5. Close the window during a Publish. Confirm `Cancel Publish and Close`
+   appears; choose it and confirm the window closes after cleanup with no
+   partial upload left.
+
 ## Pointer checks
 
 1. Open the window and confirm each card briefly shows `Checking...` before

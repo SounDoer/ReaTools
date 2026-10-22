@@ -981,3 +981,60 @@ The ReaToolUI Direction C migration changes five product details:
 
 Settings lists Project and About values as shared List rows, with `Copy` as
 the row action on Project rows.
+
+### D094 — Long operations run in the background
+
+Media hashing and copying run in background child processes so REAPER keeps
+responding. The design is
+`docs/superpowers/specs/2026-10-22-nonblocking-operations-design.md`.
+
+1. **Scope.** Opening or refreshing the Delivery Publish, Reference Publish,
+   Reference Update, Delivery Import, and Delivery Update Reviews, plus
+   Delivery Publish and Reference Publish. Apply steps (Synchronize, Import,
+   Sync), saves, manifest and lock files, pointer checks, and Settings reset
+   stay synchronous.
+2. **Mechanism.** `reaper.ExecProcess(command, -1)` starts PowerShell
+   (`/bin/sh` elsewhere) without waiting or showing a window. The child writes
+   `<id>.tmp` and renames it to `<id>.result` under
+   `<REAPER resource path>/ReaProjectLink/jobs`; the tool polls once per frame
+   and deletes each result it reads. A child that writes nothing within 30
+   minutes fails the operation with the file name. One operation runs at a
+   time.
+3. **Checking.** A Review opens immediately in a checking state with a status
+   block (`Checking media`, measured progress, `Cancel`) and a disabled
+   footer. Missing hashes are collected, hashed in the background, and the
+   Review is built again; the final build runs in one frame from one project
+   state, so an edit made while checking still makes the Publish Reviews Out
+   of Date. Cancel, Back, a project tab switch, or closing the window discards
+   a check. A failed or cancelled check closes the Review unless it already
+   shows data (Delivery Update `Load`, Publish `Retry`), which stays.
+4. **Publish.** The project guard check, identity assignment, first save, and
+   lock run in the first frame; copies and hashes then run in the background.
+   Progress is completed bytes over the Delivery's media size and advances per
+   verified file; Reference Publish has no media and shows no percentage. The
+   revision is the reviewed state; the status says
+   `Edits made now will be in the next revision.` While publishing, Back, the
+   footer, and the Review body are disabled. From the pointer replacement on
+   (`Finishing`) Cancel is gone. Success closes the Review and shows the usual
+   toast; failure or cancellation stays on the Review with the reason and
+   `Retry`, which refreshes the Review and never publishes by itself.
+5. **Cancel.** Cancel takes effect at the next file operation; the writer then
+   removes its staging directory and releases the lock. Clip identities saved
+   before a cancelled Delivery Publish are harmless: the next Review has no
+   blockers and publishes the next revision. Reference Publish runs to
+   completion in its first frame, so it has no cancel window.
+6. **Project binding.** The adapter can be bound to the project a job started
+   in; every project read, write, and save of the job goes to that project
+   even when another tab is active. Saving a background project activates it
+   and restores the user's tab. Closing the bound project cancels the job.
+7. **Tab switch.** A publish keeps running. The new tab's views show a banner
+   (`Publishing <project>`, progress, `Cancel`) and are disabled until it ends,
+   including read-only actions; a failure or cancellation stays in the banner
+   with `Dismiss`, success shows the toast.
+8. **Closing the window.** While publishing, closing asks
+   `Cancel Publish and Close`; confirming cancels and the window closes after
+   cleanup. During `Finishing` the window closes when the job ends. A check is
+   discarded and the window closes at once.
+9. **Leftover staging.** After acquiring the lock, a publish removes the
+   package's whole `.staging` directory; holding the lock means anything there
+   is from an abandoned publish.

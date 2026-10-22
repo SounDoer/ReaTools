@@ -1,7 +1,9 @@
 # Non-blocking long operations - design
 
 Date: 2026-10-22
-Status: Draft for review
+Status: Implemented. Where the implementation differs (`ExecProcess(..., -1)`,
+.NET SHA-256 instead of `certutil`, the tab-switch banner disabling the whole
+view), `docs/decisions.md` D094 is authoritative.
 
 ## 1. Why
 

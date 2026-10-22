@@ -213,6 +213,23 @@ decisions are never actionable (existing D067 behavior). This applies to the
 Delivery Publish and Reference Publish Reviews; the Delivery Import, Delivery
 Update, and Reference Update Reviews are not tracked for project changes.
 
+**Checking state (D094):** a Review that hashes media opens at once with a
+plain title (`Publish Delivery`, `Publish Reference`, `Update Reference`,
+`Add Delivery`, `Sync Delivery`), an External Operation Status block
+`Checking media: Hashing media files` with measured progress and `Cancel`,
+and a disabled footer reading `Checking media...`. Delivery Update `Load`
+keeps the current revision visible but disabled, with the status block above
+it.
+
+**Publishing state (D094):** the status block reads `Publishing:` plus the
+phase (`Copying and verifying media`, `Cancelling after the current file`,
+`Finishing`), progress for Delivery Publish, and
+`Edits made now will be in the next revision. Cancel or wait for Publish to
+finish.` `Cancel` is offered until `Finishing`. Back, the body, and the footer
+(`Publishing...`) are disabled, and edits in REAPER don't switch the Review to
+Out of Date while it runs. A failed or cancelled Publish shows the reason with
+`Retry`, which refreshes the Review.
+
 ### 4.1 Review inventory
 
 | Review | Title | Decisions | Details | Primary |
@@ -277,6 +294,14 @@ value as the detail); Project rows have a `Copy` action (D093).
   subscribing to a Reference, removing a
   subscription, the alignment toggle, unlocking, and resetting the project.
 - Errors always show a toast, for every operation.
+- A Publish that keeps running after a project tab switch shows a banner at
+  the top of the new tab's view: `Publishing <project>`, the phase, progress,
+  and `Cancel`. The view below is disabled until it ends. Success shows the
+  usual toast; a failure or cancellation stays in the banner with `Dismiss`
+  (D094).
+- Closing the window during a Publish asks `Cancel Publish and Close`
+  (`Publishing is still running. Closing cancels it and removes the partial
+  upload.`). During `Finishing` the window closes by itself when Publish ends.
 
 ## 7. Visual system
 

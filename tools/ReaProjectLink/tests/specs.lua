@@ -12,6 +12,7 @@ return {
   "delivery_writer_spec.lua",
   "filesystem_spec.lua",
   "jobs_spec.lua",
+  "hash_prefetch_spec.lua",
   "delivery_publish_plan_spec.lua",
   "delivery_review_spec.lua",
   "delivery_publish_spec.lua",

@@ -29,7 +29,7 @@ $config = [System.Collections.Generic.List[string]]::new()
 $config.Add('--name ReaTools')
 $config.Add('--about README.md')
 foreach ($productDir in Get-ChildItem -LiteralPath (Join-Path $outputRoot 'ReaTools') -Directory) {
-  foreach ($relative in @('lib', 'scripts', 'requirements.txt')) {
+  foreach ($relative in @('lib', 'scripts', 'vendor', 'requirements.txt')) {
     $candidate = Join-Path $productDir.FullName $relative
     if (Test-Path -LiteralPath $candidate) {
       $config.Add("--ignore ReaTools/$($productDir.Name)/$relative")

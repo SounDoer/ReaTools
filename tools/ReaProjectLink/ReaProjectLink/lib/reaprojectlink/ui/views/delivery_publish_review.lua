@@ -172,14 +172,7 @@ function M.draw(env)
   local data = review.data
   local components, shell = env.design_system.components, env.design_system.patterns.review_shell
   if review.checking then
-    workflow.draw_notices(env)
-    local result = shell.draw({
-      id = "delivery-publish",
-      header = { title = "Publish Delivery" },
-      footer = { summary = "Checking media...", role = "neutral", complete_label = "Publish", enabled = false },
-      render_body = function() workflow.draw_job_status(env, "delivery-publish", review) end,
-    })
-    if workflow.review_flags(result).back then app:back() end
+    workflow.draw_checking(env, "delivery-publish", "Publish Delivery", "Publish")
     return
   end
   local options = {}

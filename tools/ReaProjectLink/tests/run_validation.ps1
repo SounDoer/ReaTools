@@ -1,6 +1,6 @@
 param(
   [string]$ReaperPath = 'C:\Program Files\REAPER (x64)\reaper.exe',
-  [int]$TimeoutSeconds = 25
+  [int]$TimeoutSeconds = 60
 )
 
 $ErrorActionPreference = 'Stop'

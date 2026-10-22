@@ -11,29 +11,20 @@ local PARENTS = {
 function M.open_import(env)
   local path = workflow.choose_json(env.reaper, "Select Source delivery.json")
   if not path then return end
-  local review, err = env.services.delivery_import.review(env.adapter, env.fs, path)
-  if not review then
-    env.app:notify(err, true)
-    return
-  end
-  env.app:open_review("delivery_import", {
-    data = review, mappings = {}, row_errors = {}, allow_reference = false,
-  })
+  workflow.start_check(env, "delivery_import", { mappings = {}, row_errors = {}, allow_reference = false },
+    function(fs) return env.services.delivery_import.review(env.adapter, fs, path) end,
+    function(review, data) review.data = data end)
 end
 
--- On failure the current Review, if any, stays open.
+-- Load reuses the open Review: its current data stays visible while the new
+-- revision is checked, and stays open if that check fails.
 function M.open_update(env, source_project_id, target_revision)
-  local review, err = env.services.delivery_update.review(
-    env.adapter, env.fs, source_project_id, target_revision
-  )
-  if not review then
-    env.app:notify(err, true)
-    return
-  end
-  env.app:open_review("delivery_update", {
-    data = review, mappings = {}, rebindings = {}, row_errors = {},
-    allow_reference = false, target_input = review.target_revision,
-  })
+  workflow.start_check(env, "delivery_update", {}, function(fs)
+    return env.services.delivery_update.review(env.adapter, fs, source_project_id, target_revision)
+  end, function(review, data)
+    review.data, review.target_input = data, data.target_revision
+    review.mappings, review.rebindings, review.row_errors, review.allow_reference = {}, {}, {}, false
+  end)
 end
 
 -- Returns "Missing track" instead of crashing/misleading when a mapped or
@@ -255,7 +246,8 @@ local function draw_update(env, review)
   local shell = env.design_system.patterns.review_shell
   local data = review.data
 
-  local ready = data.blocker_count == 0 and (not data.reference_warning or review.allow_reference) and
+  local ready = not review.checking and data.blocker_count == 0 and
+    (not data.reference_warning or review.allow_reference) and
     (data.pending_count > 0 or next(review.rebindings) ~= nil)
   local summary, level = string.format("Syncs Delivery r%d", data.target_revision), "neutral"
   if data.blocker_count > 0 then
@@ -275,6 +267,8 @@ local function draw_update(env, review)
     },
     footer = { summary = summary, role = level, complete_label = "Sync", enabled = ready },
     render_body = function()
+      workflow.draw_job_status(env, "delivery-update", review)
+      if review.checking then env.ImGui.BeginDisabled(env.ctx, true) end
       local items = {}
       reference_issues(items, data, review)
       for index, clip in ipairs(data.additions) do
@@ -299,6 +293,7 @@ local function draw_update(env, review)
           draw_bound_lanes(env, review)
         end)
       end
+      if review.checking then env.ImGui.EndDisabled(env.ctx) end
     end,
   }))
 
@@ -325,7 +320,17 @@ end
 
 function M.draw(env)
   local review = env.app.review
-  if review.kind == "delivery_import" then draw_import(env, review) else draw_update(env, review) end
+  if review.kind == "delivery_import" then
+    if review.checking then
+      workflow.draw_checking(env, "delivery-import", "Add Delivery", "Import")
+    else
+      draw_import(env, review)
+    end
+  elseif review.checking and not review.data then
+    workflow.draw_checking(env, "delivery-update", "Sync Delivery", "Sync")
+  else
+    draw_update(env, review)
+  end
 end
 
 return M

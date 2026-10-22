@@ -159,7 +159,10 @@ local function fake_view_env(script)
       },
     },
     reaper = {
-      GetUserFileNameForRead = function() calls.import_opened = true; return false end,
+      GetUserFileNameForRead = function()
+        calls.import_opened = true
+        return script.import_path ~= nil, script.import_path
+      end,
     },
     app = {
       checks = {
@@ -359,6 +362,7 @@ function tests.master_deliveries_actions_route()
 
   env, calls = master_env({ list = { events = {}, action = { row = "a", id = "sync" } } })
   master_main.draw(env, MASTER_STATE)
+  calls.job_spec.run({})
   equal(calls.update_opened, "a", "sync opens update for the row")
 
   env, calls = master_env({ list = { events = {}, action = { row = "b", id = "remove" } } })
@@ -611,8 +615,62 @@ function tests.update_load_reopens_review()
   delivery_sync_review.draw(env)
   equal(calls.number_field.description, "Latest is r4", "load context")
   equal(calls.number_field.action.label, "Load", "load action")
+  calls.job_spec.run({})
   equal(calls.update_opened, "a", "load reopens the update review")
   equal(calls.update_target, 2, "load uses the typed target")
+end
+
+function tests.delivery_update_load_restarts_check()
+  local data = {
+    target_snapshot = { sourceProjectName = "Dialogue" }, target_revision = 3, latest_revision = 4,
+    replacement_count = 1, source_item_count = 1, additions = {}, unmapped_lanes = {}, bound_lanes = {},
+    blocker_count = 0, pending_count = 1, source_project_id = "a",
+  }
+  local review = { kind = "delivery_update", mappings = { l1 = { kind = "unmapped" } }, rebindings = {},
+    row_errors = {}, allow_reference = false, target_input = 4, data = data }
+  local env, calls = fake_view_env({ review = review, number_field = { events = {}, action = "load" } })
+  delivery_sync_review.draw(env)
+  equal(env.app.review, review, "same review")
+  equal(review.checking, true, "checking")
+  calls.number_field = nil
+  delivery_sync_review.draw(env)
+  equal(calls.number_field ~= nil, true, "current data stays visible")
+  equal(calls.body_disabled, true, "body disabled while checking")
+  equal(calls.review_shell.footer.enabled, false, "Sync disabled while checking")
+  equal(calls.status.label, "Checking media", "status block")
+  local next_data = { target_revision = 4 }
+  review.job.state, review.job.result = "succeeded", next_data
+  review.job.on_done(review.job)
+  equal(review.data, next_data, "new data")
+  equal(review.target_input, 4, "target follows the loaded revision")
+  equal(next(review.mappings), nil, "mappings reset for the new revision")
+end
+
+function tests.reference_update_open_starts_check()
+  local env, calls = fake_view_env()
+  reference_update_review.open(env)
+  equal(calls.job_spec.kind, "check", "check job")
+  local review = env.app.review
+  equal(review.kind, "reference_update", "review opened")
+  reference_update_review.draw(env)
+  equal(calls.review_shell.header.title, "Update Reference", "checking header")
+  equal(calls.review_shell.footer.enabled, false, "footer disabled while checking")
+  local status = { latest_revision = 5, available = false, video_error = "Media File Not Found" }
+  review.job.state, review.job.result = "succeeded", status
+  review.job.on_done(review.job)
+  equal(review.status, status, "status filled")
+  equal(env.app.checks.reference.latest, 5, "pointer check updated")
+  equal(env.app.media_error, "Media File Not Found", "media error surfaced")
+end
+
+function tests.delivery_import_open_starts_check()
+  local env, calls = fake_view_env({ import_path = "P:/Dialogue/delivery.json" })
+  delivery_sync_review.open_import(env)
+  equal(calls.job_spec.kind, "check", "check job")
+  equal(env.app.review.kind, "delivery_import", "review opened")
+  delivery_sync_review.draw(env)
+  equal(calls.review_shell.header.title, "Add Delivery", "checking header")
+  equal(calls.review_shell.footer.enabled, false, "footer disabled while checking")
 end
 
 function tests.check_opens_review_in_checking_state()

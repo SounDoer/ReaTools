@@ -130,6 +130,20 @@ local reviews = {
       }
     end,
   },
+  reference_update_checking = {
+    kind = "reference_update",
+    fields = function()
+      return { shift_entire_project = false, checking = true,
+        job = { kind = "check", done_bytes = 40, total_bytes = 100 } }
+    end,
+  },
+  delivery_import_checking = {
+    kind = "delivery_import",
+    fields = function()
+      return { mappings = {}, row_errors = {}, allow_reference = false, checking = true,
+        job = { kind = "check", done_bytes = 0, total_bytes = 100 } }
+    end,
+  },
   reference_publish_checking = {
     kind = "reference_publish",
     fields = function()
@@ -268,6 +282,7 @@ local views = {
   with(populated_master, { project_type = "master" }),
   { project_type = "source", view = "settings" },
   { project_type = "source", review = reviews.reference_update },
+  { project_type = "source", review = reviews.reference_update_checking },
   { project_type = "source", review = reviews.delivery_publish },
   { project_type = "source", review = reviews.delivery_publish_first },
   { project_type = "source", review = reviews.delivery_publish_same_reference },
@@ -281,6 +296,7 @@ local views = {
   { project_type = "master", review = reviews.reference_publish_checking },
   { project_type = "master", review = reviews.reference_publish_running },
   { project_type = "master", review = reviews.delivery_import },
+  { project_type = "master", review = reviews.delivery_import_checking },
   { project_type = "master", review = reviews.delivery_update },
 }
 

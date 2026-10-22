@@ -6,20 +6,23 @@ local M = {}
 -- The full check hashes Reference media, so it only runs when the user opens
 -- this Review.
 function M.open(env)
-  local status, err = env.services.reference_subscription.check(env.adapter, env.fs)
-  if not status then
-    env.app:notify(err, true)
-    return
-  end
-  env.app.checks.reference = { state = "done", latest = status.latest_revision }
-  env.app.media_error = not status.available and status.video_error or nil
-  env.app:open_review("reference_update", { status = status, shift_entire_project = false })
+  workflow.start_check(env, "reference_update", { shift_entire_project = false }, function(fs)
+    return env.services.reference_subscription.check(env.adapter, fs)
+  end, function(review, status)
+    env.app.checks.reference = { state = "done", latest = status.latest_revision }
+    env.app.media_error = not status.available and status.video_error or nil
+    review.status = status
+  end)
 end
 
 function M.draw(env)
   local app = env.app
   local components, shell = env.design_system.components, env.design_system.patterns.review_shell
   local review = app.review
+  if review.checking then
+    workflow.draw_checking(env, "reference-update", "Update Reference", "Synchronize")
+    return
+  end
   local status = review.status
   local snapshot = status.snapshot or {}
 

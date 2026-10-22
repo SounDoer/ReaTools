@@ -147,6 +147,20 @@ function M.draw_job_status(env, id, review)
   return action
 end
 
+-- Review shell shown while a review's first check runs: the status block
+-- and a disabled footer.
+function M.draw_checking(env, id, title, complete_label)
+  local review = env.app.review
+  M.draw_notices(env)
+  local result = env.design_system.patterns.review_shell.draw({
+    id = id,
+    header = { title = title },
+    footer = { summary = "Checking media...", role = "neutral", complete_label = complete_label, enabled = false },
+    render_body = function() M.draw_job_status(env, id, review) end,
+  })
+  if M.review_flags(result).back then env.app:back() end
+end
+
 function M.job_header(review, header)
   if review.job and review.job.kind == "publish" then header.disabled = true end
   return header

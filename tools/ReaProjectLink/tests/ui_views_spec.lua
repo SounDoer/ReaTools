@@ -405,6 +405,7 @@ function tests.reference_publish_issues_route_by_id()
   equal(calls.issue_list.items[1].id, "save-as", "save-as issue")
   equal(calls.issue_list.items[1].role, "blocked", "save-as role")
   equal(#calls.issue_list.items, 1, "the save-as blocker is not repeated")
+  calls.job_spec.run({})
   equal(calls.rebuilt.save_as_decision, "new", "decision rebuilds the review")
   equal(has(calls.sections, "Issues"), true, "Issues section")
 
@@ -424,6 +425,7 @@ function tests.publish_issue_actions_request_confirmations()
     rebuilt_review = data,
   })
   reference_publish_review.draw(env)
+  calls.job_spec.run({})
   equal(calls.rebuilt.save_as_decision, "continue", "continue rebuilds the review")
 
   for _, case in ipairs({
@@ -499,6 +501,32 @@ function tests.delivery_publish_retry_refreshes()
   equal(env.app.review.outcome, nil, "outcome cleared")
 end
 
+function tests.reference_publish_open_starts_check()
+  local env, calls = fake_view_env()
+  reference_publish_review.open(env)
+  equal(calls.job_spec.kind, "check", "check job")
+  equal(env.app.review.checking, true, "checking")
+  reference_publish_review.draw(env)
+  equal(calls.review_shell.header.title, "Publish Reference", "checking header")
+  equal(calls.review_shell.footer.enabled, false, "footer disabled while checking")
+  equal(calls.status.label, "Checking media", "status block")
+end
+
+function tests.reference_publish_complete_starts_publish_job()
+  local env, calls = fake_view_env({
+    review = { kind = "reference_publish", data = reference_publish_data({ package_root = "P:/Package" }),
+      options = {} },
+    review_shell = { events = { { type = "review.complete_requested" } } },
+  })
+  reference_publish_review.draw(env)
+  equal(calls.job_spec.kind, "publish", "publish job")
+  equal(calls.job_spec.total_bytes, nil, "indeterminate progress")
+  reference_publish_review.draw(env)
+  equal(calls.review_shell.header.disabled, true, "Back disabled")
+  equal(calls.review_shell.footer.complete_label, "Publishing...", "running label")
+  equal(calls.status.label, "Publishing", "status block")
+end
+
 function tests.delivery_publish_select_item()
   local lane = { lane_id = "l1", display_name = "Dialogue", clips = {
     { display_name = "Line 1", blockers = { "Offline media" }, clip = { item_ref = "item-1" } },
@@ -531,6 +559,7 @@ function tests.stale_review_passes_stale()
   })
   reference_publish_review.draw(env)
   equal(calls.review_shell.stale.refresh_label, "Refresh Review", "stale state")
+  calls.job_spec.run({})
   equal(calls.rebuilt ~= nil, true, "refresh rebuilds the review")
 end
 

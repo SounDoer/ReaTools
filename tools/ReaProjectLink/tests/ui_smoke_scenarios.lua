@@ -130,6 +130,26 @@ local reviews = {
       }
     end,
   },
+  reference_publish_checking = {
+    kind = "reference_publish",
+    fields = function()
+      return { options = {}, checking = true, job = { kind = "check", done_bytes = 0, total_bytes = 100 } }
+    end,
+  },
+  reference_publish_running = {
+    kind = "reference_publish",
+    fields = function()
+      return {
+        options = {},
+        job = { kind = "publish", phase = "working", done_bytes = 0 },
+        data = {
+          reference_revision = 9, base_revision = 8, blocker_count = 0, blockers = {}, package_root = "C:/smoke",
+          lanes = { { displayName = "Picture", items = { {} } } },
+          markers = { { name = "FFOP" } }, regions = {},
+        },
+      }
+    end,
+  },
   delivery_import = {
     kind = "delivery_import",
     fields = function()
@@ -258,6 +278,8 @@ local views = {
   { project_type = "master" },
   { project_type = "master", view = "settings" },
   { project_type = "master", review = reviews.reference_publish },
+  { project_type = "master", review = reviews.reference_publish_checking },
+  { project_type = "master", review = reviews.reference_publish_running },
   { project_type = "master", review = reviews.delivery_import },
   { project_type = "master", review = reviews.delivery_update },
 }

@@ -3,29 +3,35 @@ local workflow = require("reaprojectlink.ui.workflow")
 
 local M = {}
 
-local function build(env, options)
-  return env.services.delivery_publish.review(env.adapter, env.fs, options)
+local function refresh(env, options)
+  workflow.start_check(env, "delivery_publish", { options = options }, function(fs)
+    return env.services.delivery_publish.review(env.adapter, fs, options)
+  end, function(review, data)
+    review.options = options
+    review.data = data
+  end)
 end
 
 function M.open(env)
-  local options = { publish_anyway = false }
-  local review, err = build(env, options)
-  if not review then
-    env.app:notify(err, true)
-    return
-  end
-  env.app:open_review("delivery_publish", { data = review, options = options })
+  refresh(env, { publish_anyway = false })
 end
 
-local function refresh(env, options)
-  local review, err = build(env, options)
-  if review then
-    local current = env.app.review
-    current.options = options
-    current.data = review
-  else
-    env.app:notify(err, true)
+local function publish(env, data)
+  local total = 0
+  for _, lane in ipairs(data.current.lanes) do
+    for _, clip in ipairs(lane.clips) do total = total + clip.media_size end
   end
+  workflow.start_publish(env, {
+    label = "Publishing",
+    total_bytes = total,
+    package_root = data.package_root,
+    run = function(job_fs)
+      return env.services.delivery_publish.publish(data, env.adapter, job_fs, workflow.metadata())
+    end,
+    on_success = function(result)
+      env.app:notify(workflow.publish_message("Delivery", result.delivery_revision, result))
+    end,
+  })
 end
 
 local function item_count(data)
@@ -164,26 +170,22 @@ function M.draw(env)
   local app = env.app
   local review = app.review
   local data = review.data
-  if review.publish_ready then
-    review.publish_ready = nil
-    local result, err = env.services.delivery_publish.publish(
-      data, env.adapter, env.fs, workflow.metadata()
-    )
-    if result then
-      local message, is_error = workflow.publish_message("Delivery", result.delivery_revision, result)
-      app:back()
-      app:notify(message, is_error)
-    else
-      review.publishing = nil
-      app:notify(err, true)
-      workflow.inspect_lock(env, data.package_root)
-    end
+  local components, shell = env.design_system.components, env.design_system.patterns.review_shell
+  if review.checking then
+    workflow.draw_notices(env)
+    local result = shell.draw({
+      id = "delivery-publish",
+      header = { title = "Publish Delivery" },
+      footer = { summary = "Checking media...", role = "neutral", complete_label = "Publish", enabled = false },
+      render_body = function() workflow.draw_job_status(env, "delivery-publish", review) end,
+    })
+    if workflow.review_flags(result).back then app:back() end
     return
   end
   local options = {}
   for key, value in pairs(review.options) do options[key] = value end
-  local stale = workflow.is_stale(env, data)
-  local components, shell = env.design_system.components, env.design_system.patterns.review_shell
+  local publishing = review.job ~= nil
+  local stale = not publishing and workflow.is_stale(env, data)
   local items = item_count(data)
 
   local summary, level = string.format("Publishes %s as Delivery r%d",
@@ -193,22 +195,24 @@ function M.draw(env)
   elseif data.blocker_count > 0 then
     summary, level = view_models.blocked_summary(data.blocker_count, "publish"), "blocked"
   end
-  if review.publishing then
+  if publishing then
     summary, level = "Publishing Delivery...", "neutral"
   end
 
-  local issue_action, item_refs
+  local issue_action, item_refs, status_action
   workflow.draw_notices(env)
   local result = shell.draw({
     id = "delivery-publish",
-    header = {
+    header = workflow.job_header(review, {
       title = string.format("Publish Delivery r%d", data.delivery_revision),
       summary = view_models.count(#data.lanes, "track") .. " · " .. view_models.count(items, "item"),
-    },
-    footer = { summary = summary, role = level, complete_label = review.publishing and "Publishing..." or "Publish",
-      enabled = not review.publishing and not stale and data.blocker_count == 0 },
+    }),
+    footer = { summary = summary, role = level, complete_label = publishing and "Publishing..." or "Publish",
+      enabled = not publishing and not stale and data.blocker_count == 0 },
     stale = stale and workflow.STALE_REVIEW or nil,
     render_body = function()
+      status_action = workflow.draw_job_status(env, "delivery-publish", review)
+      if publishing then env.ImGui.BeginDisabled(env.ctx, true) end
       components.stat_group.draw({ id = "delivery-publish-scope", stats = {
         { label = "Tracks", value = #data.lanes },
         { label = "Items", value = items },
@@ -228,6 +232,7 @@ function M.draw(env)
       shell.section({ id = "delivery-publish-items", title = "Items" }, function()
         draw_details(env, data)
       end)
+      if publishing then env.ImGui.EndDisabled(env.ctx) end
     end,
   })
   local flags = workflow.review_flags(result)
@@ -235,14 +240,12 @@ function M.draw(env)
 
   if flags.back then
     app:back()
-  elseif flags.refresh then
+  elseif flags.refresh or status_action == "retry" then
     refresh(env, review.options)
   elseif changed then
     refresh(env, options)
-  elseif review.publishing then
-    review.publish_ready = true
   elseif flags.complete then
-    review.publishing = true
+    publish(env, data)
   end
 end
 

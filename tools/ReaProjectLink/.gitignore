@@ -2,6 +2,7 @@ tests/.last-result
 tests/.last-ui-result
 tests/.hash-fixture
 tests/.filesystem-fixture/
+tests/.publish-cancel-fixture/
 tests/.adapter-fixture.wav
 tests/.runner-project.rpp
 tests/.manual-runner-project.rpp

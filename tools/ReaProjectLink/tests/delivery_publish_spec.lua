@@ -267,4 +267,63 @@ do
   assert(not new_review.removed_blocker, "Save As new has no removed-content blocker")
 end
 
-return 8
+-- A Publish cancelled during a background copy can be published again -------
+
+do
+  local filesystem = require("reaprojectlink.filesystem")
+  local jobs = require("reaprojectlink.jobs")
+  local source = debug.getinfo(1, "S").source:sub(2)
+  local root = assert(source:match("^(.*)[/\\]")) .. "/.publish-cancel-fixture"
+  local real_fs = filesystem.create(reaper)
+  real_fs.remove_tree(root)
+  assert(real_fs.make_directory(root))
+  assert(real_fs.write_file(root .. "/a.wav", string.rep("a", 4096)))
+  assert(real_fs.write_file(root .. "/b.wav", string.rep("b", 4096)))
+
+  local cancel_adapter = removed_fixture()
+  cancel_adapter.set_project_path(root .. "/CIN_100_DX.rpp")
+  local tracks = cancel_adapter.all_tracks()
+  tracks[1].items[1].media.path = root .. "/a.wav"
+  tracks[2].items[1].media.path = root .. "/b.wav"
+  cancel_adapter.file_exists = real_fs.exists
+  function cancel_adapter.with_project(_, fn, ...) return fn(...) end
+  local service = delivery_publish.create()
+  local runner = jobs.create({ fs = real_fs, adapter = cancel_adapter })
+  local metadata = { published_at = "2026-10-22T00:00:00+00:00", published_by = "Bob" }
+
+  local function publish_through_job(review, cancel)
+    local job = runner:start({ kind = "publish", run = function(job_fs)
+      return service.publish(review, cancel_adapter, job_fs, metadata)
+    end })
+    runner:step()
+    assert(job.pending and job.pending.kind == "copy",
+      "first media copy is in flight: " .. tostring(job.state) .. " " .. tostring(job.error))
+    if cancel then runner:cancel() end
+    local deadline = reaper.time_precise() + 60
+    while runner:busy() do
+      assert(reaper.time_precise() < deadline, "publish job did not finish")
+      runner:step()
+    end
+    return job
+  end
+
+  local first = assert(service.review(cancel_adapter, real_fs, {}))
+  local package_root = first.package_root
+  local cancelled = publish_through_job(first, true)
+  assert(cancelled.state == "cancelled", "job cancelled: " .. tostring(cancelled.error))
+  local staging = package_root .. "/.staging"
+  assert(not reaper.EnumerateFiles(staging, 0) and not reaper.EnumerateSubdirectories(staging, 0),
+    "staging is empty")
+  assert(not real_fs.exists(package_root .. "/.publish.lock"), "lock released")
+  assert(not real_fs.exists(package_root .. "/delivery.json"), "nothing published")
+
+  local second = assert(service.review(cancel_adapter, real_fs, {}))
+  assert(second.blocker_count == 0, "publishable after a cancel")
+  local published = publish_through_job(second, false)
+  assert(published.state == "succeeded", "publish again: " .. tostring(published.error))
+  local pointer = json.decode(real_fs.read_file(package_root .. "/delivery.json"))
+  assert(pointer.latestDeliveryRevision == 1, "next revision published")
+  real_fs.remove_tree(root)
+end
+
+return 9

@@ -114,7 +114,12 @@ local function fake_view_env(script)
   function jobs:discard() calls.job_discarded = true; self.current = nil end
   function jobs:dismiss() calls.job_dismissed = true; self.current = nil end
   local env = {
-    ImGui = { TextColored = function() end }, ctx = {}, c = c,
+    ImGui = {
+      TextColored = function() end,
+      BeginDisabled = function() calls.body_disabled = true end,
+      EndDisabled = function() end,
+    },
+    ctx = {}, c = c,
     jobs = jobs,
     fs = { read_lock = function(root) calls.lock_inspected = root end },
     design_system = {
@@ -439,13 +444,59 @@ function tests.publish_issue_actions_request_confirmations()
 end
 
 function tests.delivery_publish_running_footer()
-  local env, calls = fake_view_env({ review = { data = delivery_publish_data(), options = {}, publishing = true } })
+  local job = { kind = "publish", phase = "working", done_bytes = 0 }
+  local env, calls = fake_view_env({ review = { data = delivery_publish_data(), options = {}, job = job },
+    change_count = 1 })
+  env.app.review.data.project_change_count = 0
   delivery_publish_review.draw(env)
   local footer = calls.review_shell.footer
   equal(footer.complete_label, "Publishing...", "running label")
   equal(footer.enabled, false, "footer disabled while publishing")
   equal(footer.summary, "Publishing Delivery...", "running summary")
-  equal(env.app.review.publish_ready, true, "publish handshake continues")
+  equal(calls.review_shell.header.disabled, true, "Back disabled")
+  equal(calls.review_shell.stale, nil, "edits during Publish don't replace the status")
+  equal(calls.status.label, "Publishing", "status block")
+  equal(calls.body_disabled, true, "body disabled while publishing")
+end
+
+function tests.delivery_publish_open_starts_check()
+  local env, calls = fake_view_env()
+  delivery_publish_review.open(env)
+  equal(calls.job_spec.kind, "check", "check job")
+  equal(env.app.review.checking, true, "checking")
+  delivery_publish_review.draw(env)
+  equal(calls.review_shell.header.title, "Publish Delivery", "checking header")
+  equal(calls.review_shell.footer.enabled, false, "footer disabled while checking")
+  equal(calls.status.label, "Checking media", "status block")
+  equal(calls.stat_group, nil, "no body sections while checking")
+end
+
+function tests.delivery_publish_complete_starts_publish_job()
+  local data = delivery_publish_data({ package_root = "P:/Package", current = { lanes = {
+    { clips = { { media_size = 30 }, { media_size = 70 } } },
+  } } })
+  local env, calls = fake_view_env({
+    review = { data = data, options = {} },
+    review_shell = { events = { { type = "review.complete_requested" } } },
+  })
+  delivery_publish_review.draw(env)
+  equal(calls.job_spec.kind, "publish", "publish job")
+  equal(calls.job_spec.total_bytes, 100, "total bytes")
+  equal(env.app.review.job, env.jobs.current, "review owns the job")
+  delivery_publish_review.draw(env)
+  equal(calls.review_shell.header.disabled, true, "Back disabled")
+end
+
+function tests.delivery_publish_retry_refreshes()
+  local env, calls = fake_view_env({
+    review = { kind = "delivery_publish", data = delivery_publish_data(), options = { publish_anyway = true },
+      outcome = { state = "failed", message = "disk full" } },
+    status = { action = "retry" },
+  })
+  delivery_publish_review.draw(env)
+  equal(calls.job_spec.kind, "check", "retry rechecks")
+  equal(env.app.review.checking, true, "checking")
+  equal(env.app.review.outcome, nil, "outcome cleared")
 end
 
 function tests.delivery_publish_select_item()

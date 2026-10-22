@@ -1,6 +1,31 @@
 -- One UI frame is rendered per scenario (see tests/run_ui_smoke.lua). Review
 -- fixtures contain only the fields the views read; `fields` builds a fresh
 -- table per scenario because views mutate Review state.
+
+-- A publishable first Delivery Publish Review plus job state fields.
+local function delivery_publish_with(extra)
+  return {
+    kind = "delivery_publish",
+    fields = function()
+      local fields = {
+        options = {},
+        data = {
+          delivery_revision = 1, blocker_count = 0, has_unprocessed_fx = false,
+          synchronized_reference_revision = 5, last_declared_reference_revision = 0,
+          reviewed_reference_revision = 5, package_root = "C:/smoke",
+          lanes = {
+            { lane_id = "lane-1", display_name = "SFX_Impacts", clips = {
+              { display_name = "Hit_01", blockers = {}, clip = {} },
+            } },
+          },
+        },
+      }
+      for key, value in pairs(extra) do fields[key] = value end
+      return fields
+    end,
+  }
+end
+
 local reviews = {
   reference_update = {
     kind = "reference_update",
@@ -75,24 +100,21 @@ local reviews = {
       }
     end,
   },
-  delivery_publish_running = {
+  delivery_publish_checking = {
     kind = "delivery_publish",
     fields = function()
-      return {
-        options = {}, publishing = true,
-        data = {
-          delivery_revision = 1, blocker_count = 0, has_unprocessed_fx = false,
-          synchronized_reference_revision = 5, last_declared_reference_revision = 0,
-          reviewed_reference_revision = 5, package_root = "C:/smoke",
-          lanes = {
-            { lane_id = "lane-1", display_name = "SFX_Impacts", clips = {
-              { display_name = "Hit_01", blockers = {}, clip = {} },
-            } },
-          },
-        },
-      }
+      return { options = {}, checking = true, job = { kind = "check", done_bytes = 40, total_bytes = 100 } }
     end,
   },
+  delivery_publish_running = delivery_publish_with({
+    job = { kind = "publish", phase = "working", done_bytes = 40, total_bytes = 100 },
+  }),
+  delivery_publish_cancelling = delivery_publish_with({
+    job = { kind = "publish", phase = "cancelling", done_bytes = 40, total_bytes = 100 },
+  }),
+  delivery_publish_failed = delivery_publish_with({
+    outcome = { state = "failed", message = "Could not copy Hit_01.wav: the network path was not found." },
+  }),
   reference_publish = {
     kind = "reference_publish",
     fields = function()
@@ -229,7 +251,10 @@ local views = {
   { project_type = "source", review = reviews.delivery_publish },
   { project_type = "source", review = reviews.delivery_publish_first },
   { project_type = "source", review = reviews.delivery_publish_same_reference },
+  { project_type = "source", review = reviews.delivery_publish_checking },
   { project_type = "source", review = reviews.delivery_publish_running },
+  { project_type = "source", review = reviews.delivery_publish_cancelling },
+  { project_type = "source", review = reviews.delivery_publish_failed },
   { project_type = "master" },
   { project_type = "master", view = "settings" },
   { project_type = "master", review = reviews.reference_publish },

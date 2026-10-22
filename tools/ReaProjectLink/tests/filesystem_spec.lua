@@ -132,6 +132,39 @@ local copied, copy_error = failed_command_fs.copy_file("source.wav", "destinatio
 assert(copied == nil and copy_error:find("native copy failed", 1, true),
   "native copy errors are returned")
 
+local function wait_for(handle)
+  local deadline = reaper.time_precise() + 30
+  while reaper.time_precise() < deadline do
+    local status, value = fs.poll(handle)
+    if status ~= "running" then return status, value end
+  end
+  error("background job did not finish: " .. handle.path)
+end
+
+assert(fs.make_directory(fs.join(root, "background")))
+for _, name in ipairs({ "plain.wav", "it's here.wav", "中文 音效.wav" }) do
+  local path = fs.join(root, name)
+  assert(fs.write_file(path, binary_bytes .. name))
+  local status, digest = wait_for(fs.start_hash(path))
+  assert(status == "done" and digest == fs.hash_file(path), "background hash of " .. name)
+  local destination = fs.join(root, "background", name)
+  status = wait_for(fs.start_copy(path, destination))
+  assert(status == "done", "background copy of " .. name)
+  assert(fs.read_file(destination) == fs.read_file(path), "background copy bytes of " .. name)
+end
+
+local missing_status, missing_error = wait_for(fs.start_copy(fs.join(root, "missing.wav"),
+  fs.join(root, "background", "missing.wav")))
+assert(missing_status == "failed" and missing_error ~= "", "background copy of a missing file fails")
+
+local lost = fs.start_hash(fs.join(root, "plain.wav"))
+lost.id = "never-written"
+lost.started_at = reaper.time_precise() - filesystem.BACKGROUND_TIMEOUT_SECONDS - 1
+local lost_status, lost_error = fs.poll(lost)
+assert(lost_status == "failed" and lost_error:find("timed out", 1, true) and
+  lost_error:find(lost.path, 1, true), "background job without a result times out")
+fs.clear_background()
+
 assert(fs.remove_tree(root))
 assert(not fs.exists(root), "fixture directory is removed")
 

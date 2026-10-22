@@ -3,6 +3,8 @@ local sha256 = require("reaprojectlink.sha256")
 
 local M = {}
 
+M.BACKGROUND_TIMEOUT_SECONDS = 1800
+
 function M.create(reaper_api)
   local fs = {}
   local separator = package.config:sub(1, 1)
@@ -202,6 +204,93 @@ function M.create(reaper_api)
 
   function fs.hash_file(path)
     return native_hash_file(path) or sha256.file(path)
+  end
+
+  -- Background jobs run in a child process that is not waited for; the child
+  -- writes "<exit code> <value or message>" to `<id>.tmp` and renames it to
+  -- `<id>.result`, so a result file is always complete.
+  local background_root
+  local function job_root()
+    if not background_root then
+      background_root = fs.join(reaper_api.GetResourcePath(), "ReaProjectLink", "jobs")
+      assert(fs.make_directory(background_root))
+    end
+    return background_root
+  end
+
+  local function start_background(kind, path, windows_body, posix_command)
+    local id = reaper_api.genGuid(""):gsub("[{}]", ""):lower()
+    local result_path = fs.join(job_root(), id .. ".result")
+    local temporary_path = fs.join(job_root(), id .. ".tmp")
+    local command
+    if separator == "\\" then
+      local script = table.concat({
+        "& {",
+        "try { $value = & { " .. windows_body .. " }; $text = '0 ' + $value }",
+        "catch { $text = '1 ' + $_.Exception.Message }",
+        "[IO.File]::WriteAllText(" .. powershell_literal(temporary_path) .. ", $text);",
+        "[IO.File]::Move(" .. powershell_literal(temporary_path) .. ", " .. powershell_literal(result_path) .. ")",
+        "}",
+      }, " ")
+      command = 'powershell.exe -NoProfile -NonInteractive -Command "' .. script .. '"'
+    else
+      local inner = "out=$(" .. posix_command .. " 2>&1); code=$?; printf '%s %s' \"$code\" \"$out\" > " ..
+        posix_literal(temporary_path) .. " && mv " .. posix_literal(temporary_path) .. " " ..
+        posix_literal(result_path)
+      command = "/bin/sh -c " .. posix_literal("(" .. inner .. ") >/dev/null 2>&1 &")
+    end
+    reaper_api.ExecProcess(command, -1)
+    return { id = id, kind = kind, path = path, started_at = reaper_api.time_precise() }
+  end
+
+  function fs.start_hash(path)
+    local native = native_path(path)
+    return start_background("hash", path,
+      "$stream = [IO.File]::OpenRead(" .. powershell_literal(windows_extended_path(native)) .. "); " ..
+        "try { ([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($stream)) " ..
+        "-replace '-', '').ToLower() } finally { $stream.Dispose() }",
+      "shasum -a 256 " .. posix_literal(native))
+  end
+
+  function fs.start_copy(source, destination)
+    local native_source, native_destination = native_path(source), native_path(destination)
+    return start_background("copy", source,
+      "[IO.File]::Copy(" .. powershell_literal(windows_extended_path(native_source)) .. ", " ..
+        powershell_literal(windows_extended_path(native_destination)) .. ", $false); 'copied'",
+      "/bin/cp " .. posix_literal(native_source) .. " " .. posix_literal(native_destination))
+  end
+
+  function fs.poll(handle)
+    local result_path = fs.join(job_root(), handle.id .. ".result")
+    local file = io.open(result_path, "rb")
+    if not file then
+      if reaper_api.time_precise() - handle.started_at > M.BACKGROUND_TIMEOUT_SECONDS then
+        return "failed", string.format("Background %s timed out: %s", handle.kind, handle.path)
+      end
+      return "running"
+    end
+    local text = file:read("*a")
+    file:close()
+    os.remove(result_path)
+    local code, value = text:match("^%s*(-?%d+)%s?(.*)$")
+    if code ~= "0" then
+      local message = value and value:match("^%s*(.-)%s*$") or ""
+      if message == "" then message = "Background " .. handle.kind .. " failed" end
+      return "failed", message .. ": " .. handle.path
+    end
+    if handle.kind == "hash" then
+      local digest = value:match("^%s*(%x+)")
+      if not digest or #digest ~= 64 then return "failed", "Unexpected hash output: " .. handle.path end
+      return "done", digest:lower()
+    end
+    return "done", true
+  end
+
+  function fs.clear_background()
+    local root = job_root()
+    background_root = nil
+    if fs.exists(root) then return fs.remove_tree(root) end
+    return true
   end
 
   function fs.move_file(source, destination)

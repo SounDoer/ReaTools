@@ -1,4 +1,5 @@
 local view_models = require("reaprojectlink.ui.view_models")
+local workflow = require("reaprojectlink.ui.workflow")
 local header = require("reaprojectlink.ui.views.header")
 local setup = require("reaprojectlink.ui.views.setup")
 local source_main = require("reaprojectlink.ui.views.source_main")
@@ -96,14 +97,34 @@ local function fake_view_env(script)
     request_confirmation = function(options) calls.confirmation = options; return true end,
   }
   local surface = script.surface or { tracks = {}, markers = {}, regions = {} }
+  local operation_status = {
+    draw = function(options)
+      calls.status = options
+      return script.status or {}
+    end,
+  }
+  local jobs = {}
+  function jobs:start(spec)
+    calls.job_spec = spec
+    self.current = { kind = spec.kind, state = "running", phase = "working", done_bytes = 0,
+      total_bytes = spec.total_bytes, on_done = spec.on_done }
+    return self.current
+  end
+  function jobs:cancel() calls.job_cancelled = true end
+  function jobs:discard() calls.job_discarded = true; self.current = nil end
+  function jobs:dismiss() calls.job_dismissed = true; self.current = nil end
   local env = {
     ImGui = { TextColored = function() end }, ctx = {}, c = c,
+    jobs = jobs,
+    fs = { read_lock = function(root) calls.lock_inspected = root end },
     design_system = {
       components = components,
-      patterns = { review_shell = review_shell },
+      patterns = { review_shell = review_shell, external_operation_status = operation_status },
       adapter = { resolve = function() return 0 end },
     },
     adapter = {
+      current_project = function() return "project-1" end,
+      project_path = function() return "C:/Session/Mix.rpp" end,
       get_project_value = function() return script.subscriptions end,
       project_change_count = function() return script.change_count or 0 end,
       select_items = function(refs) calls.selected_items = refs end,
@@ -141,11 +162,15 @@ local function fake_view_env(script)
         deliveries = script.delivery_checks or {},
       },
       review = script.review,
+      open_review = function(self, kind, fields)
+        fields.kind = kind
+        self.review = fields
+      end,
       back = function() calls.back = true end,
       seconds_since_check = function() return 5 end,
       request_check = function() calls.check_requested = true end,
       open_settings = function() calls.settings_opened = true end,
-      notify = function() end,
+      notify = function(_, text) calls.notified = text end,
     },
   }
   return env, calls
@@ -508,6 +533,86 @@ function tests.update_load_reopens_review()
   equal(calls.number_field.action.label, "Load", "load action")
   equal(calls.update_opened, "a", "load reopens the update review")
   equal(calls.update_target, 2, "load uses the typed target")
+end
+
+function tests.check_opens_review_in_checking_state()
+  local env, calls = fake_view_env()
+  local received
+  workflow.start_check(env, "delivery_publish", { options = {} }, function() end, function(review, result)
+    received = { review = review, result = result }
+  end)
+  local review = env.app.review
+  equal(review.kind, "delivery_publish", "review opened")
+  equal(review.checking, true, "checking")
+  equal(review.job, env.jobs.current, "job owned by the review")
+  equal(calls.job_spec.kind, "check", "check job")
+  workflow.draw_job_status(env, "delivery-publish", review)
+  equal(calls.status.label, "Checking media", "status label")
+  equal(calls.status.message, "Hashing media files", "status message")
+  equal(calls.status.can_cancel, true, "cancel offered")
+  review.job.state, review.job.result = "succeeded", "review data"
+  review.job.on_done(review.job)
+  equal(received.result, "review data", "result delivered")
+  equal(received.review, review, "into the open review")
+  equal(review.checking, nil, "checking cleared")
+  equal(review.job, nil, "job released")
+end
+
+function tests.check_cancel_returns()
+  local env, calls = fake_view_env({ status = { action = "cancel" } })
+  workflow.start_check(env, "delivery_publish", { options = {} }, function() end, function() end)
+  workflow.draw_job_status(env, "delivery-publish", env.app.review)
+  equal(calls.job_discarded, true, "check discarded")
+  equal(calls.back, true, "review closed")
+end
+
+function tests.publish_status_shows_progress_and_disables_back()
+  local review = { kind = "delivery_publish", data = {} }
+  local env, calls = fake_view_env({ review = review })
+  workflow.start_publish(env, { label = "Publishing", total_bytes = 100, run = function() end,
+    on_success = function() end })
+  equal(calls.job_spec.kind, "publish", "publish job")
+  equal(calls.job_spec.project, "project-1", "bound to the current project")
+  equal(calls.job_spec.project_name, "Mix", "project name")
+  review.job.done_bytes = 40
+  workflow.draw_job_status(env, "delivery-publish", review)
+  equal(calls.status.label, "Publishing", "status label")
+  equal(calls.status.message, "Copying and verifying media", "phase message")
+  equal(calls.status.progress, 40, "progress")
+  equal(workflow.job_header(review, { title = "Publish" }).disabled, true, "Back disabled")
+  review.job.phase = "finishing"
+  workflow.draw_job_status(env, "delivery-publish", review)
+  equal(calls.status.can_cancel, false, "no cancel while finishing")
+end
+
+function tests.successful_publish_closes_review()
+  local review = { kind = "delivery_publish", data = {} }
+  local env, calls = fake_view_env({ review = review })
+  local published
+  workflow.start_publish(env, { label = "Publishing", run = function() end,
+    on_success = function(result) published = result end })
+  local job = review.job
+  job.state, job.result = "succeeded", "result"
+  job.on_done(job)
+  equal(calls.back, true, "review closed")
+  equal(published, "result", "success handler")
+end
+
+function tests.failed_publish_shows_retry()
+  local review = { kind = "delivery_publish", data = {} }
+  local env, calls = fake_view_env({ review = review, status = { action = "retry" } })
+  workflow.start_publish(env, { label = "Publishing", package_root = "P:/Package", run = function() end,
+    on_success = function() end })
+  local job = review.job
+  job.state, job.error = "failed", "disk full"
+  job.on_done(job)
+  equal(review.job, nil, "job released")
+  equal(calls.job_dismissed, true, "runner job dismissed so the app banner stays hidden")
+  equal(calls.lock_inspected, "P:/Package", "lock inspected")
+  equal(workflow.draw_job_status(env, "delivery-publish", review), "retry", "retry returned")
+  equal(calls.status.state, "failed", "failed state")
+  equal(calls.status.message, "disk full", "error shown")
+  equal(calls.status.can_retry, true, "retry offered")
 end
 
 local passed = 0

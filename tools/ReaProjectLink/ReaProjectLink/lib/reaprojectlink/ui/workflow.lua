@@ -1,5 +1,7 @@
 -- Helpers shared by views. `env` is the table built in ui/app.lua.
 local view_models = require("reaprojectlink.ui.view_models")
+local jobs = require("reaprojectlink.jobs")
+local hash_prefetch = require("reaprojectlink.hash_prefetch")
 
 local M = {}
 
@@ -62,6 +64,92 @@ local PUBLISH_PHASES = {
 
 function M.job_message(job)
   return PUBLISH_PHASES[job.phase] or PUBLISH_PHASES.working
+end
+
+-- Opens the review of `kind` (or keeps it open) and builds its data in a
+-- background check; `build(fs)` is the service's review function.
+function M.start_check(env, kind, fields, build, on_result)
+  local app = env.app
+  if not (app.review and app.review.kind == kind) then app:open_review(kind, fields) end
+  local review = app.review
+  if review.job then env.jobs:discard() end
+  review.checking, review.outcome = true, nil
+  review.job = env.jobs:start({
+    kind = "check",
+    label = "Checking media",
+    run = function(job_fs) return hash_prefetch.run(job_fs, build) end,
+    on_done = function(job)
+      if app.review ~= review then return end
+      review.checking, review.job = nil, nil
+      env.jobs:dismiss()
+      if job.state == "succeeded" then
+        on_result(review, job.result)
+      else
+        if job.state == "failed" then app:notify(job.error, true) end
+        if review.data == nil then app:back() end
+      end
+    end,
+  })
+end
+
+-- spec: { label, total_bytes, package_root, run(job_fs), on_success(result) }.
+-- The open review owns the job; on success it is closed before on_success.
+function M.start_publish(env, spec)
+  local app, review = env.app, env.app.review
+  review.outcome = nil
+  review.job = env.jobs:start({
+    kind = "publish",
+    label = spec.label,
+    project = env.adapter.current_project(),
+    project_name = env.adapter.project_path():match("([^/\\]+)%.[Rr][Pp][Pp]$") or "project",
+    total_bytes = spec.total_bytes,
+    run = spec.run,
+    on_done = function(job)
+      if job.state == "succeeded" then
+        if app.review == review then app:back() end
+        spec.on_success(job.result)
+      elseif app.review == review then
+        review.job = nil
+        review.outcome = { state = job.state, message = job.error }
+        env.jobs:dismiss()
+        if job.state == "failed" then M.inspect_lock(env, spec.package_root) end
+      end
+    end,
+  })
+end
+
+-- Status block for the review's job or its last outcome. Cancel is handled
+-- here; returns the action so views can react to "retry".
+function M.draw_job_status(env, id, review)
+  local job, outcome = review.job, review.outcome
+  if not job and not outcome then return nil end
+  local options
+  if job and job.kind == "check" then
+    options = { label = "Checking media", message = "Hashing media files", state = "running",
+      progress = jobs.progress(job), can_cancel = true }
+  elseif job then
+    options = { label = "Publishing", message = M.job_message(job), state = "running",
+      progress = jobs.progress(job), can_cancel = job.phase ~= "finishing",
+      detail = "Edits made now will be in the next revision. Cancel or wait for Publish to finish." }
+  else
+    options = { label = "Publishing", message = outcome.message or "Publish failed.", state = outcome.state,
+      can_retry = true }
+  end
+  options.id = id
+  local action = env.design_system.patterns.external_operation_status.draw(options).action
+  if action == "cancel" and job.kind == "check" then
+    env.jobs:discard()
+    review.checking, review.job = nil, nil
+    if review.data == nil then env.app:back() end
+  elseif action == "cancel" then
+    env.jobs:cancel()
+  end
+  return action
+end
+
+function M.job_header(review, header)
+  if review.job and review.job.kind == "publish" then header.disabled = true end
+  return header
 end
 
 function M.inspect_lock(env, package_root)

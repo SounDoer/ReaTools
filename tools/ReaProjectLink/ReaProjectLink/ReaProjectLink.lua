@@ -1,8 +1,10 @@
 -- @description ReaProjectLink
--- @version 0.1.0
+-- @version 0.2.0
 -- @author ReaProjectLink contributors
 -- @changelog
---   Initial release.
+--   Redesigned interface built on the shared ReaToolUI system.
+--   Copy, publish, update, and sync operations run in the background with
+--   progress and cancel, without blocking REAPER.
 -- @about
 --   Source-Master project coordination for REAPER on shared storage.
 --

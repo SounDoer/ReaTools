@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "reaprojectlink",
   "displayName": "ReaProjectLink",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "kind": "reaper-tool",
   "entry": "ReaProjectLink.lua",
   "uiContract": {

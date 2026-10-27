@@ -8,6 +8,7 @@ function M.options(model, id, icon, title, highlighted)
     id = id, icon = icon, title = title,
     variant = highlighted and "emphasized" or nil,
     status = { role = model.level, text = model.status, detail = model.status_detail },
+    selection = model.selection,
     footer = view_models.card_footer(model, highlighted),
   }
 end

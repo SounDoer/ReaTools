@@ -31,30 +31,23 @@ function M.blocked_summary(count, verb)
   return string.format("Fix %s to %s", M.count(count, "issue"), verb)
 end
 
-local SELECTION_ORDER = { "tracks", "markers", "regions" }
-local SELECTION_NOUNS = { tracks = "Track", markers = "Marker", regions = "Region" }
+local SELECTION_LABELS = { tracks = "Tracks", markers = "Markers", regions = "Regions" }
 local SELECTION_ACTIONS = {
   { id = "register_selected", label = "Register" },
   { id = "unregister_selected", label = "Unregister" },
 }
 
-local function join_list(parts)
-  if #parts == 1 then return parts[1] end
-  return table.concat(parts, ", ", 1, #parts - 1) .. " and " .. parts[#parts]
-end
-
--- "Selected: 2 Tracks, 1 Region" style summary of what's selected in REAPER,
--- read from the `.selected` counts of the shape reference_publish/project_service
--- `selection_counts` return.
-function M.selection_text(counts)
+-- Card selection for what's selected in REAPER, read from the `.selected`
+-- counts of the shape reference_publish/project_service `selection_counts`
+-- return. Every kind in `kinds` (what the card can register) is listed,
+-- including zeros.
+function M.selection(counts, kinds)
   local parts = {}
-  for _, key in ipairs(SELECTION_ORDER) do
-    local bucket = counts[key]
-    local n = bucket and bucket.selected or 0
-    if n > 0 then table.insert(parts, M.count(n, SELECTION_NOUNS[key])) end
+  for index, key in ipairs(kinds) do
+    local bucket = (counts or {})[key]
+    parts[index] = { label = SELECTION_LABELS[key], value = bucket and bucket.selected or 0 }
   end
-  if #parts == 0 then return "Nothing selected in REAPER" end
-  return "Selected: " .. join_list(parts)
+  return { heading = "Selected", parts = parts, actions = SELECTION_ACTIONS }
 end
 
 local function count_stats(tracks, middle_label, middle, last_label, last)
@@ -119,13 +112,13 @@ end
 function M.source_delivery(input, pending_reference)
   local track_count = input.track_count or 0
   local stats = count_stats(track_count, "Items", input.item_count)
-  local selection_note = M.selection_text(input.selection_counts or {})
+  local selection = M.selection(input.selection_counts, { "tracks" })
   if track_count == 0 then
     return {
       state = "unconfigured", status = "No Delivery Tracks", level = "warning",
       note = "Select tracks in REAPER first.",
       stats = stats,
-      selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
+      selection = selection,
       attention = true,
     }
   end
@@ -136,7 +129,7 @@ function M.source_delivery(input, pending_reference)
     level = revision > 0 and "ready" or "neutral",
     stats = stats,
     note = pending_reference and string.format("Will record Reference r%d", pending_reference) or nil,
-    selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
+    selection = selection,
     action = { id = "review_publish", label = "Review and Publish" },
     attention = true,
   }
@@ -158,12 +151,12 @@ function M.master_reference(input)
   local marker_count = input.marker_count or 0
   local region_count = input.region_count or 0
   local stats = count_stats(track_count, "Markers", marker_count, "Regions", region_count)
-  local selection_note = M.selection_text(input.selection_counts or {})
+  local selection = M.selection(input.selection_counts, { "tracks", "markers", "regions" })
   if track_count == 0 and marker_count == 0 and region_count == 0 then
     return {
       state = "unregistered", status = "Nothing Registered", level = "warning", stats = stats,
       note = "Select Tracks, Markers, or Regions in REAPER, then register them.",
-      selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
+      selection = selection,
       attention = true,
     }
   end
@@ -171,7 +164,7 @@ function M.master_reference(input)
   if revision == 0 then
     return {
       state = "unpublished", status = "Not Published Yet", level = "warning", stats = stats,
-      selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
+      selection = selection,
       action = { id = "review_publish", label = "Review and Publish" }, attention = true,
     }
   end
@@ -182,13 +175,13 @@ function M.master_reference(input)
       note = string.format(
         "Published files for Reference r%d weren't found. Publish again to restore them.", revision
       ),
-      selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
+      selection = selection,
       action = { id = "review_publish", label = "Review and Publish" }, attention = true,
     }
   end
   return {
     state = "published", status = "Published r" .. revision, level = "neutral", stats = stats,
-    selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
+    selection = selection,
     action = { id = "review_publish", label = "Review and Publish" }, attention = false,
   }
 end
@@ -254,19 +247,12 @@ function M.master_cards(input)
   }
 end
 
--- Card footer for the Action Bar: selection actions first, then the card
--- action, which is the view's primary button on the highlighted card.
+-- Card footer for the Action Bar: the card action, which is the view's
+-- primary button on the highlighted card.
 function M.card_footer(card, highlighted)
-  local actions = {}
-  for _, action in ipairs(card.selection_actions or {}) do
-    table.insert(actions, { id = action.id, label = action.label })
-  end
-  if card.action then
-    table.insert(actions, { id = card.action.id, label = card.action.label,
-      variant = highlighted and "primary" or nil })
-  end
-  if #actions == 0 and not card.selection_note then return nil end
-  return { context = card.selection_note, actions = actions }
+  if not card.action then return nil end
+  return { actions = { { id = card.action.id, label = card.action.label,
+    variant = highlighted and "primary" or nil } } }
 end
 
 function M.deliveries_status(rows)

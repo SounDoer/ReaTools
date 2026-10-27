@@ -1,4 +1,3 @@
-local view_models = require("reaprojectlink.ui.view_models")
 local workflow = require("reaprojectlink.ui.workflow")
 local header = require("reaprojectlink.ui.views.header")
 local setup = require("reaprojectlink.ui.views.setup")
@@ -280,13 +279,15 @@ function tests.source_cards_use_card_row()
   equal(delivery.variant, "emphasized", "delivery emphasized")
   equal(reference.status.text, "Up to Date", "reference status")
   equal(reference.status.detail, "Reference r2", "reference status detail")
+  equal(delivery.selection.actions[1].label, "Register", "first selection action")
+  equal(delivery.selection.actions[2].label, "Unregister", "second selection action")
+  equal(delivery.selection.heading, "Selected", "selection heading")
+  equal(delivery.selection.parts[1].value, 2, "selected track count")
+  equal(reference.selection, nil, "source reference has no selection")
   local actions = delivery.footer.actions
-  equal(#actions, 3, "three delivery actions")
-  equal(actions[1].label, "Register", "first action")
-  equal(actions[2].label, "Unregister", "second action")
-  equal(actions[3].label, "Review and Publish", "last action")
-  equal(actions[3].variant, "primary", "last action primary")
-  equal(delivery.footer.context, view_models.selection_text(selection), "selection context")
+  equal(#actions, 1, "one card action")
+  equal(actions[1].label, "Review and Publish", "card action")
+  equal(actions[1].variant, "primary", "card action primary")
 end
 
 function tests.source_reference_names_list()
@@ -351,7 +352,7 @@ function tests.master_deliveries_rows_use_list()
   equal(rows[3].action.label, "Map Lanes", "unmapped row action")
   equal(rows[3].action.variant, nil, "second attention row is not primary")
   equal(rows[1].menu.items[2].id, "remove", "row menu")
-  equal(card_options(calls, "master-reference").footer.actions[3].variant, nil,
+  equal(card_options(calls, "master-reference").footer.actions[1].variant, nil,
     "Reference footer has no primary when Deliveries is highlighted")
 end
 

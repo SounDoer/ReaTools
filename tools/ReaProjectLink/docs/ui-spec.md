@@ -83,11 +83,14 @@ remaining setup.
 Every card is a ReaToolUI Card with the same anatomy: icon + title + optional
 trailing icon button; one status line (status glyph + text) with an optional
 secondary detail such as the revision; stat tiles for the counts; an optional
-note; and a footer Action Bar. On a card with registerable content, the footer
-shows the muted selection context (`Selected: 2 Tracks, 1 Region` or `Nothing
-selected in REAPER`) and two secondary buttons, `Register` and `Unregister`,
-that act on whatever is selected in REAPER (D093). The card-level button comes
-last in the footer and is primary only on the highlighted card.
+note; and a footer Action Bar. On a card with registerable content, a
+selection section follows the counts behind a divider: a `Selected` heading,
+the selected count for every kind the card registers (Tracks **4** · Markers
+**0** · Regions **2** on the Master Reference; Tracks only on the Source
+Delivery; zero counts are muted), and a row with two secondary buttons,
+`Register` and `Unregister`, that act on whatever is selected in REAPER
+(D093). The footer holds only the card-level
+button, pinned to the bottom right and primary only on the highlighted card.
 
 ### 2.1 Source · Reference
 
@@ -109,7 +112,7 @@ When a Reference revision is already in the project, a compact List below the co
 
 ### 2.2 Source · Delivery
 
-The footer's selection context and `Register` / `Unregister` buttons act on
+The selection section and its `Register` / `Unregister` buttons act on
 whatever Tracks are selected in REAPER. There is no `···` menu on this card.
 
 | State | Status line | Info | Button |

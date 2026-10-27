@@ -982,6 +982,14 @@ The ReaToolUI Direction C migration changes five product details:
 Settings lists Project and About values as shared List rows, with `Copy` as
 the row action on Project rows.
 
+Amendment (2026-10-27): the selection context and the `Register` /
+`Unregister` buttons move out of the footer into a card selection section
+right after the counts (ReaToolUI DS023). Under a `Selected` heading it lists
+every kind the card registers with its selected count, for example `Tracks 4 ·
+Markers 0 · Regions 2`, with bold counts and muted zeros; `Nothing selected in
+REAPER` is no longer shown. The buttons sit on their own row below. The footer
+keeps only the card-level button, pinned to the bottom right.
+
 ### D094 — Long operations run in the background
 
 Media hashing and copying run in background child processes so REAPER keeps

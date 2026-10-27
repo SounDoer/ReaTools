@@ -131,11 +131,13 @@ function tests.source_delivery_card_states()
   equal(empty.status, "No Delivery Tracks", "no tracks")
   equal(empty.action, nil, "no card action when unconfigured")
   assert_stats(empty.stats, { "Tracks", 0, "Items", 0 }, "unconfigured")
-  equal(empty.selection_actions[1].id, "register_selected", "register selected action id")
-  equal(empty.selection_actions[1].label, "Register", "register label")
-  equal(empty.selection_actions[2].id, "unregister_selected", "unregister selected action id")
-  equal(empty.selection_actions[2].label, "Unregister", "unregister label")
-  equal(empty.selection_note, "Nothing selected in REAPER", "default selection note")
+  equal(empty.selection.actions[1].id, "register_selected", "register selected action id")
+  equal(empty.selection.actions[1].label, "Register", "register label")
+  equal(empty.selection.actions[2].id, "unregister_selected", "unregister selected action id")
+  equal(empty.selection.actions[2].label, "Unregister", "unregister label")
+  equal(#empty.selection.parts, 1, "delivery lists only Tracks")
+  equal(empty.selection.parts[1].label, "Tracks", "delivery kind")
+  equal(empty.selection.parts[1].value, 0, "nothing selected by default")
   local never = view_models.source_cards(source_input({ delivery_revision = 0 })).delivery
   equal(never.status, "Not Published Yet", "never published")
   equal(never.level, "neutral", "source not-published level")
@@ -148,7 +150,8 @@ function tests.source_delivery_card_states()
   local selecting = view_models.source_cards(source_input({
     selection_counts = { tracks = { selected = 2, registered = 1 } },
   })).delivery
-  equal(selecting.selection_note, "Selected: 2 Tracks", "delivery selection note")
+  equal(selecting.selection.parts[1].value, 2, "delivery selection count")
+  equal(selecting.selection.parts[1].label, "Tracks", "delivery selection label")
   local pending = view_models.source_cards(source_input({ check = { state = "done", latest = 5 } })).delivery
   equal(pending.note, "Will record Reference r4", "pending note")
   local unsynchronized = view_models.source_cards(source_input({
@@ -210,9 +213,10 @@ function tests.master_reference_card_states()
   equal(unregistered.action, nil, "nothing registered has no publish action")
   equal(unregistered.attention, true, "nothing registered needs attention")
   assert_master_rows(unregistered.stats, 0, 0, 0)
-  equal(unregistered.selection_actions[1].id, "register_selected", "register selected action id")
-  equal(unregistered.selection_actions[2].id, "unregister_selected", "unregister selected action id")
-  equal(unregistered.selection_note, "Nothing selected in REAPER", "default selection note")
+  equal(unregistered.selection.actions[1].id, "register_selected", "register selected action id")
+  equal(unregistered.selection.actions[2].id, "unregister_selected", "unregister selected action id")
+  equal(#unregistered.selection.parts, 3, "master lists every kind")
+  equal(unregistered.selection.parts[3].value, 0, "nothing selected by default")
 
   local unpublished = view_models.master_cards(master_input({ reference_revision = 0 })).reference
   equal(unpublished.status, "Not Published Yet", "unpublished")
@@ -232,7 +236,9 @@ function tests.master_reference_card_states()
       tracks = { selected = 2 }, markers = { selected = 0 }, regions = { selected = 1 },
     },
   })).reference
-  equal(selecting.selection_note, "Selected: 2 Tracks and 1 Region", "master selection note")
+  equal(selecting.selection.parts[1].value, 2, "master selected tracks")
+  equal(selecting.selection.parts[2].value, 0, "master selected markers")
+  equal(selecting.selection.parts[3].value, 1, "master selected regions")
 
   local empty = view_models.master_cards(master_input({ rows = {} })).deliveries_empty
   equal(empty.action.id, "add_delivery", "add action")
@@ -352,17 +358,29 @@ function tests.mapping_summary_and_parent()
     "suggestions do not preselect the label")
 end
 
-function tests.selection_text_summarizes_the_reaper_selection()
-  equal(view_models.selection_text({}), "Nothing selected in REAPER", "nothing selected")
-  equal(view_models.selection_text({
-    tracks = { selected = 0 }, markers = { selected = 0 }, regions = { selected = 0 },
-  }), "Nothing selected in REAPER", "all zero")
-  equal(view_models.selection_text({ tracks = { selected = 1 } }), "Selected: 1 Track", "one track")
-  equal(view_models.selection_text({ tracks = { selected = 2 }, regions = { selected = 1 } }),
-    "Selected: 2 Tracks and 1 Region", "two kinds")
-  equal(view_models.selection_text({
+local ALL_KINDS = { "tracks", "markers", "regions" }
+
+local function selection_summary(counts, kinds)
+  local parts = {}
+  for index, part in ipairs(view_models.selection(counts, kinds or ALL_KINDS).parts) do
+    parts[index] = part.label .. " " .. part.value
+  end
+  return table.concat(parts, ", ")
+end
+
+function tests.selection_lists_every_kind_the_card_registers()
+  local nothing = view_models.selection({}, ALL_KINDS)
+  equal(nothing.heading, "Selected", "heading")
+  equal(nothing.actions[1].id, "register_selected", "register action")
+  equal(nothing.actions[2].id, "unregister_selected", "unregister action")
+  equal(selection_summary({}), "Tracks 0, Markers 0, Regions 0", "nothing selected")
+  equal(selection_summary(nil), "Tracks 0, Markers 0, Regions 0", "no counts")
+  equal(selection_summary({ tracks = { selected = 1 } }), "Tracks 1, Markers 0, Regions 0", "one track")
+  equal(selection_summary({
     tracks = { selected = 2 }, markers = { selected = 1 }, regions = { selected = 3 },
-  }), "Selected: 2 Tracks, 1 Marker and 3 Regions", "three kinds")
+  }), "Tracks 2, Markers 1, Regions 3", "three kinds")
+  equal(selection_summary({ tracks = { selected = 2 }, regions = { selected = 1 } }, { "tracks" }), "Tracks 2",
+    "only the listed kinds")
 end
 
 function tests.reference_declaration_options()
@@ -393,20 +411,17 @@ function tests.source_delivery_and_master_reference_stats()
   assert_master_rows(reference.reference.stats, 4, 1, 2)
 end
 
-function tests.card_footer_orders_primary_last()
+function tests.card_footer_holds_only_the_card_action()
   local card = view_models.master_cards(master_input({
     selection_counts = { tracks = { selected = 2 } },
   })).reference
   local footer = view_models.card_footer(card, true)
-  equal(footer.context, "Selected: 2 Tracks", "selection context")
-  local ids = {}
-  for index, action in ipairs(footer.actions) do ids[index] = action.id end
-  equal(table.concat(ids, ","), "register_selected,unregister_selected,review_publish", "action order")
-  equal(footer.actions[3].variant, "primary", "card action is primary when highlighted")
-  equal(footer.actions[1].variant, nil, "selection actions stay secondary")
-  local quiet = view_models.card_footer(card, false)
-  for _, action in ipairs(quiet.actions) do equal(action.variant, nil, action.id .. " not primary") end
-  equal(view_models.card_footer({ status = "Checking..." }, true), nil, "no footer without actions or context")
+  equal(#footer.actions, 1, "only the card action in the footer")
+  equal(footer.actions[1].id, "review_publish", "card action")
+  equal(footer.actions[1].variant, "primary", "card action is primary when highlighted")
+  equal(view_models.card_footer(card, false).actions[1].variant, nil, "card action not primary")
+  equal(view_models.card_footer({ status = "Checking...", selection = card.selection }, true), nil,
+    "no footer without a card action")
 end
 
 function tests.deliveries_status_aggregates_rows()

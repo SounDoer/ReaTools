@@ -22,12 +22,27 @@ Top to bottom:
    drawn with the `prominent` Status presentation.
 4. **Body**: the caller's `render_body` content, composed from shared blocks
    (Stat Group, List, Notice, text).
-5. **Footer**: optional `footer = { context?, actions }`, drawn by Action Bar
-   below the card's only separator. The footer sticks to the card bottom when
-   the card is taller than its content.
+5. **Selection**: optional `selection = { heading, parts, actions }` for
+   actions that act on the host application's current selection (DS023). It
+   follows the body behind its own separator, with
+   `semantic.space.footer.padding_y` below the separator, and stays with the
+   content when the footer is pinned. Three rows, top to bottom:
+   - `heading` in the `metadata` role and `component.card.selection.heading`
+     color, like a List group label;
+   - the parts, a fixed list of `{ label, value }` joined with ` · `, for
+     example Tracks **4** · Markers **0** · Regions **2**. The label uses
+     `body` and the numeric value `heading`, sharing a bottom edge. Nonzero
+     parts use `component.card.selection.label` / `.value`; zero parts and the
+     separators use `.muted`. The line wraps between parts;
+   - the actions on their own row, `semantic.space.control.gap` below, on the
+     Action Bar layout. Selection actions cannot be `primary`.
+6. **Footer**: optional `footer = { context?, actions }`, drawn by Action Bar
+   below its own separator. The footer sticks to the card bottom when the card
+   is taller than its content.
 
 Blocks are separated by `semantic.space.block.gap`. The footer content sits
-`semantic.space.footer.padding_y` below its separator.
+`semantic.space.footer.padding_y` below its separator. A card has at most two
+separators: above the selection and above the footer.
 
 ```lua
 local result = card.draw({
@@ -50,7 +65,8 @@ local result = card.draw({
 `draw` returns a table:
 
 - `events`: `{ type = "card.action_selected", id = <card id>, action = <id> }`
-  for the trailing button, a chosen menu item, or a footer action;
+  for the trailing button, a chosen menu item, a selection action, or a
+  footer action;
 - `action`: the same action id, or `nil`;
 - `body_result`: the value returned by `render_body`;
 - `natural_height`: the card's content height from this frame, measured
@@ -82,7 +98,9 @@ one faulty Gallery or product composition from corrupting later UI frames.
 ## Validation
 
 Automated checks cover the fixed title row, prominent status, footer pinning,
-natural height and shrinking, trailing, menu, and footer actions, empty cards,
-variants, callback failures, balanced Child and style stacks, and invalid
-inputs. Gallery fixtures cover default, emphasized, trailing icon, trailing
-menu, status detail, footer, and title-free cards in both themes.
+natural height and shrinking, trailing, menu, selection, and footer actions,
+selection placement under a pinned footer, the selection heading, muted zero
+counts, and wrapping, empty cards, variants, callback failures, balanced Child and style
+stacks, and invalid inputs. Gallery fixtures cover default, emphasized,
+trailing icon, trailing menu, status detail, footer, zero and nonzero
+selection, and title-free cards in both themes.

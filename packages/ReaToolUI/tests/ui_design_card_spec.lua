@@ -54,7 +54,9 @@ local function dependencies(options)
   function ImGui.PushTextWrapPos(_, x) calls.wrap_pos = x end
   function ImGui.PopTextWrapPos() end
   function ImGui.TextWrapped(_, value) table.insert(calls.wrapped, value); cursor.x = 16; advance(16) end
-  function ImGui.Separator() calls.separator_y = cursor.y; advance(1) end
+  function ImGui.Separator()
+    calls.separator_y = cursor.y; calls.separators = (calls.separators or 0) + 1; advance(1)
+  end
   function ImGui.Dummy(_, w, h) advance(h); calls.last = "dummy " .. w .. "x" .. h end
   local adapter = {
     resolve = function(id)
@@ -81,6 +83,11 @@ local function dependencies(options)
     action_bar = { draw = function(bar_options)
       calls.footer = bar_options; calls.footer_y = cursor.y; advance(options.footer_height or 28)
       if options.click == "footer" then return { events = {}, action = "publish" } end
+      return { events = {} }
+    end },
+    selection_strip = { draw = function(strip_options)
+      calls.selection = strip_options; calls.selection_y = cursor.y; advance(44)
+      if options.click == "selection" then return { events = {}, action = "register" } end
       return { events = {} }
     end },
   }
@@ -203,6 +210,40 @@ function tests.trailing_menu_and_footer_actions_surface_as_action()
     equal(result.events[1].id, "card", fixture.click .. " card id")
     equal(result.events[1].action, fixture.expected, fixture.click .. " event action")
   end
+end
+
+local SELECTION = {
+  heading = "Selected", parts = { { label = "Tracks", value = 2 } },
+  actions = { { id = "register", label = "Register" } },
+}
+
+function tests.selection_follows_the_body_behind_its_own_separator()
+  local ImGui, adapter, deps, calls = dependencies({ click = "selection" })
+  local card = card_module.create(ImGui, "ctx", adapter, deps)
+  local result = card.draw({ id = "c", title = "Reference", selection = SELECTION }, body_lines(ImGui, 1))
+  local body_bottom = 16 + 28 + 16 + 16
+  equal(calls.separator_y, body_bottom + 16, "separator a block gap below the body")
+  equal(calls.selection_y, calls.separator_y + 12, "strip after the separator padding")
+  equal(calls.selection.id, "c-selection", "strip id")
+  equal(calls.selection.heading, "Selected", "strip heading")
+  equal(calls.selection.parts, SELECTION.parts, "strip parts")
+  equal(calls.selection.actions, SELECTION.actions, "strip actions")
+  equal(result.action, "register", "strip action surfaces")
+  equal(result.events[1].action, "register", "strip event")
+end
+
+function tests.pinned_footer_leaves_the_selection_with_the_content()
+  local ImGui, adapter, deps, calls = dependencies()
+  local card = card_module.create(ImGui, "ctx", adapter, deps)
+  local options = { id = "p", title = "Reference", selection = SELECTION, footer = FOOTER }
+  card.draw(options, body_lines(ImGui, 1))
+  local natural_selection_y = calls.selection_y
+  calls.separators = 0
+  options.min_height = 400
+  card.draw(options, body_lines(ImGui, 1))
+  equal(calls.selection_y, natural_selection_y, "selection stays below the body")
+  equal(calls.separators, 2, "one separator above the selection, one above the footer")
+  equal(calls.separator_y, 400 - 16 - 40, "footer separator pinned to the bottom")
 end
 
 function tests.empty_card_renders_without_events()

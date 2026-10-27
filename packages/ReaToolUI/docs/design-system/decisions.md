@@ -719,3 +719,24 @@ Product views must not hand-write layout. The repository layout scan (`tooling/c
 checkable.
 
 Accent remains DS019 Teal.
+
+### DS023: Cards show the host selection as its own section
+
+Confirmed: 2026-10-27.
+
+Actions that act on whatever is selected in the host application are a
+separate group from the card's own action. A Card may carry
+`selection = { heading, parts, actions }`, drawn right after the body behind a
+separator: a group-label heading, then a fixed list of every kind the card can
+register with its count (zeros included and muted), then the actions on their
+own row. The counts carry the emphasis through typography alone: each value
+uses the `heading` role (one step below Stat Group's `metric`, so it does not
+read as another stat tile). There is no container or glyph, and no separate
+empty text, because zero counts already say nothing is selected.
+
+The selection stays with the content; only the footer, holding the card
+action, is pinned to the card bottom. When Card Row stretches a card, the
+spare space falls between the selection and the footer.
+
+This amends the DS022 separator rule: a Card may also draw a divider between
+its body and its selection.

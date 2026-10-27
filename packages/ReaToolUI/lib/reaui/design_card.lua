@@ -3,6 +3,7 @@ local button_module = require("reaui.design_button")
 local status_module = require("reaui.design_status")
 local menu_module = require("reaui.design_menu")
 local action_bar_module = require("reaui.design_action_bar")
+local selection_strip_module = require("reaui.design_selection_strip")
 local layout_module = require("reaui.design_layout")
 
 local M = {}
@@ -32,6 +33,8 @@ function M.create(ImGui, ctx, adapter, deps)
   local action_bar = deps.action_bar or action_bar_module.create(ImGui, ctx, adapter, button)
   local icons = deps.icons or default_icons
   local layout = deps.layout or layout_module.create(ImGui, ctx, adapter)
+  local selection_strip = deps.selection_strip or
+    selection_strip_module.create(ImGui, ctx, adapter, { button = button, action_bar = action_bar })
   local component = {}
   -- Heights measured on the previous frame, keyed by card id.
   local natural, footer_heights = {}, {}
@@ -138,6 +141,19 @@ function M.create(ImGui, ctx, adapter, deps)
     if render_body then
       begin_block()
       result.body_result = render_body()
+      end_block(item_bottom())
+    end
+
+    if options.selection then
+      begin_block()
+      local top = ImGui.GetCursorPosY(ctx)
+      ImGui.Separator(ctx)
+      ImGui.SetCursorPosY(ctx, top + resolve("semantic.space.footer.padding_y"))
+      local selection = options.selection
+      choose(selection_strip.draw({
+        id = options.id .. "-selection", heading = selection.heading, parts = selection.parts,
+        actions = selection.actions,
+      }).action)
       end_block(item_bottom())
     end
 

@@ -834,6 +834,12 @@ M.registry = {
       },
       title = { type = "color", ref = "semantic.color.text.primary" },
       description = { type = "color", ref = "semantic.color.text.secondary" },
+      selection = {
+        heading = { type = "color", ref = "semantic.color.text.secondary" },
+        value = { type = "color", ref = "semantic.color.text.primary" },
+        label = { type = "color", ref = "semantic.color.text.primary" },
+        muted = { type = "color", ref = "semantic.color.text.secondary" },
+      },
     },
     stat_group = {
       background = { type = "color", ref = "semantic.color.surface.inset" },

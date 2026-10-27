@@ -245,9 +245,16 @@ function M.create(deps)
         status = { role = "warning", text = "2 references changed", detail = "Last published r7 · 3 hours ago" } },
       { id = "card-footer", icon = "film", title = "Reference", variant = "emphasized",
         status = { role = "ready", text = "Ready to publish", detail = "Synchronized r2" },
-        footer = { context = "Selected: 2 Tracks", actions = {
-          { id = "unregister", label = "Unregister" },
-          { id = "register", label = "Register", variant = "primary" },
+        selection = { heading = "Selected", parts = {
+          { label = "Tracks", value = 2 }, { label = "Markers", value = 0 }, { label = "Regions", value = 1 },
+        }, actions = {
+            { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
+          } },
+        footer = { actions = { { id = "publish", label = "Review and Publish", variant = "primary" } } } },
+      { id = "card-empty-selection", icon = "upload", title = "Delivery",
+        status = { role = "warning", text = "No Delivery Tracks" },
+        selection = { heading = "Selected", parts = { { label = "Tracks", value = 0 } }, actions = {
+          { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
         } } },
     }) do
       for _, event in ipairs(card.draw(fixture).events) do
@@ -926,10 +933,12 @@ function M.create(deps)
     record_events(card_row.draw({ id = "recipe-master-cards", cards = {
       { options = { id = "recipe-master-reference", icon = "film", title = "Reference",
           status = { role = "ready", text = "Published r1" },
-          footer = { context = "Selected: 1 Track, 2 Regions", actions = {
-            { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
-            { id = "publish", label = "Review and Publish" },
-          } } },
+          selection = { heading = "Selected", parts = {
+            { label = "Tracks", value = 1 }, { label = "Markers", value = 0 }, { label = "Regions", value = 2 },
+          }, actions = {
+              { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
+            } },
+          footer = { actions = { { id = "publish", label = "Review and Publish" } } } },
         render_body = function()
           stat_group.draw({ id = "recipe-master-stats", stats = {
             { label = "Tracks", value = 1 }, { label = "Markers", value = 1 }, { label = "Regions", value = 2 },
@@ -987,10 +996,10 @@ function M.create(deps)
         end },
       { options = { id = "recipe-source-delivery", icon = "upload", title = "Delivery",
           status = { role = "ready", text = "Last Published r12" },
-          footer = { context = "Selected: 2 Tracks", actions = {
-            { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
-            { id = "publish", label = "Review and Publish" },
-          } } },
+          selection = { heading = "Selected", parts = { { label = "Tracks", value = 2 } }, actions = {
+              { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
+            } },
+          footer = { actions = { { id = "publish", label = "Review and Publish" } } } },
         render_body = function()
           stat_group.draw({ id = "recipe-source-delivery-stats", stats = {
             { label = "Tracks", value = 4 }, { label = "Items", value = 12 },

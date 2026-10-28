@@ -1,7 +1,8 @@
 # Card Contract
 
 Status: Initial Slice 2D contract completed on 2026-10-12. DS022 revised the
-anatomy on 2026-10-20: title row, status slot, body, and footer. Automated
+anatomy on 2026-10-20: title row, status slot, body, and footer; DS024 added
+sections on 2026-10-28. Automated
 layout and event checks pass; visual review happens in round 2 of the visual
 language plan.
 
@@ -22,27 +23,23 @@ Top to bottom:
    drawn with the `prominent` Status presentation.
 4. **Body**: the caller's `render_body` content, composed from shared blocks
    (Stat Group, List, Notice, text).
-5. **Selection**: optional `selection = { heading, parts, actions }` for
-   actions that act on the host application's current selection (DS023). It
-   follows the body behind its own separator, with
-   `semantic.space.footer.padding_y` below the separator, and stays with the
-   content when the footer is pinned. Three rows, top to bottom:
-   - `heading` in the `metadata` role and `component.card.selection.heading`
-     color, like a List group label;
-   - the parts, a fixed list of `{ label, value }` joined with ` · `, for
-     example Tracks **4** · Markers **0** · Regions **2**. The label uses
-     `body` and the numeric value `heading`, sharing a bottom edge. Nonzero
-     parts use `component.card.selection.label` / `.value`; zero parts and the
-     separators use `.muted`. The line wraps between parts;
-   - the actions on their own row, `semantic.space.control.gap` below, on the
-     Action Bar layout. Selection actions cannot be `primary`.
+5. **Sections**: optional ordered `sections = { { id, heading, render } }`
+   (DS024), for content the card lists by name, such as what is registered
+   and what is selected in the host application. Each section follows the
+   previous block behind its own separator, with
+   `semantic.space.footer.padding_y` below the separator, then a Section
+   Heading (`heading` role, `gap_above = false`) and the caller's `render`
+   content, usually a compact List and, for selection actions, an Action Bar.
+   A non-nil value returned by `render` becomes the card action. Sections
+   stay with the content when the footer is pinned. `selection` (DS023) is
+   rejected.
 6. **Footer**: optional `footer = { context?, actions }`, drawn by Action Bar
    below its own separator. The footer sticks to the card bottom when the card
    is taller than its content.
 
 Blocks are separated by `semantic.space.block.gap`. The footer content sits
-`semantic.space.footer.padding_y` below its separator. A card has at most two
-separators: above the selection and above the footer.
+`semantic.space.footer.padding_y` below its separator. A card draws one
+separator before each section and one before the footer, and no others.
 
 ```lua
 local result = card.draw({
@@ -65,7 +62,7 @@ local result = card.draw({
 `draw` returns a table:
 
 - `events`: `{ type = "card.action_selected", id = <card id>, action = <id> }`
-  for the trailing button, a chosen menu item, a selection action, or a
+  for the trailing button, a chosen menu item, a section action, or a
   footer action;
 - `action`: the same action id, or `nil`;
 - `body_result`: the value returned by `render_body`;
@@ -98,9 +95,9 @@ one faulty Gallery or product composition from corrupting later UI frames.
 ## Validation
 
 Automated checks cover the fixed title row, prominent status, footer pinning,
-natural height and shrinking, trailing, menu, selection, and footer actions,
-selection placement under a pinned footer, the selection heading, muted zero
-counts, and wrapping, empty cards, variants, callback failures, balanced Child and style
-stacks, and invalid inputs. Gallery fixtures cover default, emphasized,
-trailing icon, trailing menu, status detail, footer, zero and nonzero
-selection, and title-free cards in both themes.
+natural height and shrinking, trailing, menu, section, and footer actions,
+section separators and headings, section placement under a pinned footer,
+empty cards, variants, callback failures, balanced Child and style stacks, and
+invalid inputs. Gallery fixtures cover default, emphasized, trailing icon,
+trailing menu, status detail, footer, filled and empty sections, and
+title-free cards in both themes.

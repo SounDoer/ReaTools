@@ -19,7 +19,6 @@ return {
   "ui_design_list_spec.lua",
   "ui_design_status_spec.lua",
   "ui_design_action_bar_spec.lua",
-  "ui_design_selection_strip_spec.lua",
   "ui_design_issue_item_spec.lua",
   "ui_design_page_header_spec.lua",
   "ui_design_section_heading_spec.lua",

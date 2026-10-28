@@ -722,7 +722,8 @@ Accent remains DS019 Teal.
 
 ### DS023: Cards show the host selection as its own section
 
-Confirmed: 2026-10-27.
+Confirmed: 2026-10-27. Superseded by DS024 on 2026-10-28: the selection
+became a Card section that lists names instead of counts.
 
 Actions that act on whatever is selected in the host application are a
 separate group from the card's own action. A Card may carry
@@ -740,3 +741,30 @@ spare space falls between the selection and the footer.
 
 This amends the DS022 separator rule: a Card may also draw a divider between
 its body and its selection.
+
+### DS024: Cards list their content in sections
+
+Confirmed: 2026-10-28.
+
+Counts alone do not tell a user which things a card covers. Cards that own
+content list it by name. The design record is
+`docs/superpowers/specs/2026-10-28-card-content-lists-design.md` at the
+repository root.
+
+- **Card sections.** A Card may carry an ordered
+  `sections = { { id, heading, render } }`, drawn after the body. Each section
+  sits behind its own divider, opens with a Section Heading (`heading` role,
+  no gap above), and stays with the content when the footer is pinned. A
+  non-nil value returned by `render` is a Card action. This replaces DS023's
+  `selection`, and the Selection Strip is removed.
+- **List groups.** A group header uses the `body` role. It can carry a count,
+  drawn before the noun in the primary text color while the noun uses the
+  secondary color (`3 Tracks`), and it can be collapsible, with the collapsed
+  state owned by the product. Rows can carry `trailing_text`. The List
+  overflow row (`Show All` / `Show Less`) is removed: lists have no item
+  limit, and long lists are collapsed group by group.
+- **Status detail.** A Status `detail` follows its text on the same line when
+  both fit, and moves below otherwise.
+
+This amends the DS022 separator rule: a Card draws a divider before each
+section and before its footer.

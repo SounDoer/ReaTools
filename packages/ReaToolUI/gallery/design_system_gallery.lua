@@ -108,6 +108,37 @@ function M.create(deps)
     if event then last_event = event.type .. " id=" .. event.id end
   end
 
+  -- Card sections the way products compose them: a compact List with counted
+  -- collapsible groups, an empty text, and optional actions below.
+  local function group(list_id, id, count, label)
+    return { kind = "group", id = id, label = label, count = count, collapsible = true,
+      collapsed = scenario_values.collapsed[list_id .. "/" .. id] == true }
+  end
+  local function list_section(id, heading, items, empty, actions)
+    return { id = id, heading = heading, render = function()
+      if #items > 0 then
+        local result = list.draw({ id = id, variant = "compact", items = items })
+        if result.toggled_group then
+          local key = id .. "/" .. result.toggled_group
+          scenario_values.collapsed[key] = not scenario_values.collapsed[key]
+        end
+        for _, event in ipairs(result.events) do last_event = event.type .. " id=" .. event.id end
+      else
+        adapter.with_text("body", function()
+          ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), empty)
+        end)
+      end
+      if actions then return action_bar.draw({ id = id .. "-actions", actions = actions }).action end
+    end }
+  end
+  local SELECTION_ACTIONS = {
+    { id = "register", label = "Register" }, { id = "unregister", label = "Unregister", disabled = true },
+  }
+  local function tagged(id, title, registered)
+    return { kind = "row", id = id, title = title, status = registered and { role = "ready", text = "Registered" }
+      or { role = "neutral", text = "Not Registered" } }
+  end
+
   local function record_field(key, result)
     field_values[key] = result.value
     for _, event in ipairs(result.events) do
@@ -245,17 +276,31 @@ function M.create(deps)
         status = { role = "warning", text = "2 references changed", detail = "Last published r7 · 3 hours ago" } },
       { id = "card-footer", icon = "film", title = "Reference", variant = "emphasized",
         status = { role = "ready", text = "Ready to publish", detail = "Synchronized r2" },
-        selection = { heading = "Selected", parts = {
-          { label = "Tracks", value = 2 }, { label = "Markers", value = 0 }, { label = "Regions", value = 1 },
-        }, actions = {
-            { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
-          } },
+        sections = {
+          list_section("card-footer-registered", "Registered", {
+            group("card-footer-registered", "tracks", 2, "Tracks"),
+            { kind = "row", id = "dialogue", title = "Dialogue Guide" },
+            { kind = "row", id = "picture", title = "Picture Cut v12" },
+            group("card-footer-registered", "regions", 1, "Region"),
+            { kind = "row", id = "scene", title = "Scene 1" },
+          }),
+          list_section("card-footer-selected", "Selected", {
+            group("card-footer-selected", "tracks", 1, "Track"),
+            tagged("dialogue", "Dialogue Guide", true),
+            group("card-footer-selected", "markers", 1, "Marker"),
+            tagged("intro", "Intro", false),
+          }, nil, { { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" } }),
+        },
         footer = { actions = { { id = "publish", label = "Review and Publish", variant = "primary" } } } },
       { id = "card-empty-selection", icon = "upload", title = "Delivery",
         status = { role = "warning", text = "No Delivery Tracks" },
-        selection = { heading = "Selected", parts = { { label = "Tracks", value = 0 } }, actions = {
-          { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
-        } } },
+        sections = {
+          list_section("card-empty-registered", "Registered", {}, "Nothing registered"),
+          list_section("card-empty-selected", "Selected", {}, "Nothing selected", {
+            { id = "register", label = "Register", disabled = true },
+            { id = "unregister", label = "Unregister", disabled = true },
+          }),
+        } },
     }) do
       for _, event in ipairs(card.draw(fixture).events) do
         last_event = event.type .. " id=" .. event.id .. " action=" .. event.action
@@ -937,17 +982,22 @@ function M.create(deps)
     record_events(card_row.draw({ id = "recipe-master-cards", cards = {
       { options = { id = "recipe-master-reference", icon = "film", title = "Reference",
           status = { role = "ready", text = "Published r1" },
-          selection = { heading = "Selected", parts = {
-            { label = "Tracks", value = 1 }, { label = "Markers", value = 0 }, { label = "Regions", value = 2 },
-          }, actions = {
-              { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
-            } },
-          footer = { actions = { { id = "publish", label = "Review and Publish" } } } },
-        render_body = function()
-          stat_group.draw({ id = "recipe-master-stats", stats = {
-            { label = "Tracks", value = 1 }, { label = "Markers", value = 1 }, { label = "Regions", value = 2 },
-          } })
-        end },
+          sections = {
+            list_section("recipe-master-registered", "Registered", {
+              group("recipe-master-registered", "tracks", 1, "Track"),
+              { kind = "row", id = "picture", title = "Picture Cut v12" },
+              group("recipe-master-registered", "markers", 1, "Marker"),
+              { kind = "row", id = "ffop", title = "FFOP" },
+              group("recipe-master-registered", "regions", 2, "Regions"),
+              { kind = "row", id = "scene-1", title = "Scene 1" },
+              { kind = "row", id = "scene-2", title = "Scene 2" },
+            }),
+            list_section("recipe-master-selected", "Selected", {
+              group("recipe-master-selected", "regions", 1, "Region"),
+              tagged("scene-3", "Scene 3", false),
+            }, nil, SELECTION_ACTIONS),
+          },
+          footer = { actions = { { id = "publish", label = "Review and Publish" } } } } },
       { options = { id = "recipe-master-deliveries", icon = "download", title = "Deliveries", variant = "emphasized",
           trailing = { kind = "icon_button", id = "add", icon = "plus", accessible_label = "Add Delivery" },
           status = { role = "warning", text = "2 Need Attention" } },
@@ -972,36 +1022,36 @@ function M.create(deps)
   direction_c_recipes["source-main"] = function()
     main_header("recipe-source-header", "Sub_Stems_Session", "Source", "Checked just now")
     local contents = {}
-    local function group(id, noun, names)
-      contents[#contents + 1] = { kind = "group", id = id, label = noun, count = #names, collapsible = true,
-        collapsed = scenario_values.collapsed[id] == true }
-      for _, name in ipairs(names) do
+    local function names(id, noun, titles)
+      contents[#contents + 1] = group("recipe-source-synchronized", id, #titles, noun)
+      for _, name in ipairs(titles) do
         contents[#contents + 1] = { kind = "row", id = id .. "-" .. name, title = name,
           action = { id = "detach", label = "Detach...", variant = "quiet" } }
       end
     end
-    group("tracks", "Tracks", { "Dialogue Guide", "Picture Cut v12", "Music Temp" })
-    group("markers", "Marker", { "Intro" })
+    names("tracks", "Tracks", { "Dialogue Guide", "Picture Cut v12", "Music Temp" })
+    names("markers", "Marker", { "Intro" })
     record_events(card_row.draw({ id = "recipe-source-cards", cards = {
       { options = { id = "recipe-source-reference", icon = "film", title = "Reference", variant = "emphasized",
           status = { role = "warning", text = "Reference r3 Available", detail = "Synchronized r2" },
-          footer = { actions = { { id = "review", label = "Review Update", variant = "primary" } } } },
-        render_body = function()
-          stat_group.draw({ id = "recipe-source-stats", stats = {
-            { label = "Tracks", value = 6 }, { label = "Markers", value = 4 }, { label = "Regions", value = 3 },
-          } })
-          record_events(list.draw({ id = "recipe-source-contents", variant = "compact", items = contents }))
-        end },
+          sections = { list_section("recipe-source-synchronized", "Synchronized", contents) },
+          footer = { actions = { { id = "review", label = "Review Update", variant = "primary" } } } } },
       { options = { id = "recipe-source-delivery", icon = "upload", title = "Delivery",
           status = { role = "ready", text = "Last Published r12" },
-          selection = { heading = "Selected", parts = { { label = "Tracks", value = 2 } }, actions = {
-              { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" },
-            } },
+          sections = {
+            list_section("recipe-source-registered", "Registered", {
+              group("recipe-source-registered", "tracks", 2, "Tracks · 5 Items"),
+              { kind = "row", id = "impacts", title = "SFX_Impacts", trailing_text = "4 Items" },
+              { kind = "row", id = "whooshes", title = "SFX_Whooshes", trailing_text = "1 Item" },
+            }),
+            list_section("recipe-source-selected", "Selected", {
+              group("recipe-source-selected", "tracks", 2, "Tracks"),
+              tagged("impacts", "SFX_Impacts", true),
+              tagged("room", "Room Tone", false),
+            }, nil, { { id = "register", label = "Register" }, { id = "unregister", label = "Unregister" } }),
+          },
           footer = { actions = { { id = "publish", label = "Review and Publish" } } } },
         render_body = function()
-          stat_group.draw({ id = "recipe-source-delivery-stats", stats = {
-            { label = "Tracks", value = 4 }, { label = "Items", value = 12 },
-          } })
           adapter.with_text("metadata", function()
             ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), "Will record Reference r2")
           end)

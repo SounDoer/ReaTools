@@ -23,17 +23,21 @@ Top to bottom:
    drawn with the `prominent` Status presentation.
 4. **Body**: the caller's `render_body` content, composed from shared blocks
    (Stat Group, List, Notice, text). A body that draws nothing adds no block.
-5. **Sections**: optional ordered `sections = { { id, heading, render } }`
-   (DS024), for content the card lists by name, such as what is registered
-   and what is selected in the host application. Each section follows the
-   previous block behind its own separator, with
-   `semantic.space.footer.padding_y` below the separator, then a Section
-   Heading (`heading` role, `gap_above = false`) and the caller's `render`
-   content, usually a compact List and, for selection actions, an Action Bar.
+5. **Sections**: optional ordered
+   `sections = { { id, heading, render, actions? } }` (DS024), for content the
+   card lists by name, such as what is registered and what is selected in the
+   host application. Each section follows the previous block behind its own
+   separator, with `semantic.space.footer.padding_y` below the separator, then
+   a Section Heading (`heading` role, `gap_above = false`), the caller's
+   `render` content, usually a compact List, and, when `actions` is set, an
+   Action Bar of those actions (for example `Register` / `Unregister`). The
+   content and the Action Bar each sit `semantic.space.stack.tight` below
+   what precedes them.
    A section with nothing to list keeps its heading and shows one short empty
    text, for example `Nothing selected`, wrapped in the `body` role with
    `semantic.color.text.secondary`.
-   A non-nil value returned by `render` becomes the card action. Sections
+   A non-nil value returned by `render` or a chosen section action becomes
+   the card action. Sections
    stay with the content when the footer is pinned. `selection` (DS023) is
    rejected.
 6. **Footer**: optional `footer = { context?, actions }`, drawn by Action Bar

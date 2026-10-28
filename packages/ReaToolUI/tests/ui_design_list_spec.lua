@@ -7,6 +7,7 @@ end
 
 local TOKENS = {
   ["semantic.space.list.gap"] = 8,
+  ["semantic.space.section.default"] = 16,
   ["semantic.space.inset.padding_x"] = 12,
   ["semantic.space.inset.padding_y"] = 8,
   ["semantic.space.control.gap"] = 8,
@@ -307,6 +308,30 @@ function tests.trailing_text_sits_beside_the_title()
   equal(trailing.color, "semantic.color.text.secondary", "trailing text color")
   equal(trailing.x + #"2 Items" * CHAR, 12 + width, "right aligned")
   equal(trailing.y, text_named(calls, "Kick").y, "beside the title")
+end
+
+function tests.rows_with_trailing_content_stay_vertically_centered()
+  for _, row in ipairs({
+    { kind = "row", id = "a", title = "Kick", trailing_text = "2 Items" },
+    { kind = "row", id = "b", title = "Snare", status = { role = "neutral", text = "Not Registered" } },
+  }) do
+    local list, calls = fake()
+    list.draw({ id = "refs", variant = "compact", items = { row } })
+    calls.texts = {}
+    list.draw({ id = "refs", variant = "compact", items = { row } })
+    equal(calls.children[2].height, 32, row.id .. " compact height")
+    equal(text_named(calls, row.title).y + LINE / 2, 32 / 2, row.id .. " title centered in the row")
+  end
+end
+
+function tests.groups_are_separated_by_the_section_gap()
+  local list, calls = fake()
+  local items = { GROUPED[1], GROUPED[2], GROUPED[4], GROUPED[5] }
+  items[1] = { kind = "group", id = "tracks", label = "Tracks", count = 1, collapsible = true }
+  list.draw({ id = "refs", items = items })
+  local row = calls.children[1]
+  equal(calls.trees[2].y, row.y + row.height + 16, "section gap before the next group")
+  equal(calls.children[2].y, calls.trees[2].y + LINE + 8, "list gap below the header")
 end
 
 function tests.collapsible_group_requires_id()

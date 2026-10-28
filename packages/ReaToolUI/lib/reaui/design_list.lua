@@ -101,9 +101,12 @@ function M.create(ImGui, ctx, adapter, deps)
     ImGui.EndGroup(ctx)
     ImGui.PopTextWrapPos(ctx)
 
+    -- Trailing parts shorter than the control line still occupy all of it.
+    local bottom = top + line
     if #parts > 0 then
       local moved = layout.trailing(trailing_width)
       local base = moved and ImGui.GetCursorPosY(ctx) or top + (line - control_height) / 2
+      bottom = math.max(bottom, base + control_height)
       for index, part in ipairs(parts) do
         if index > 1 then ImGui.SameLine(ctx, 0, gap) end
         if part.kind == "text" then
@@ -134,7 +137,7 @@ function M.create(ImGui, ctx, adapter, deps)
         end
       end
     end
-    content_heights[key] = ImGui.GetCursorPosY(ctx) - spacing_y - top
+    content_heights[key] = math.max(ImGui.GetCursorPosY(ctx) - spacing_y, bottom) - top
   end
 
   local function draw_row(key, row, compact, choose)
@@ -195,24 +198,23 @@ function M.create(ImGui, ctx, adapter, deps)
     local compact = validate(options)
     local result = { events = {}, action = nil, toggled_group = nil }
     local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
-    local gap = resolve("semantic.space.list.gap")
     local first = true
-    local function separate()
-      if not first then ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + gap) end
+    local function separate(token)
+      if not first then ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + resolve(token)) end
       first = false
     end
 
     local hidden = false
     for _, item in ipairs(options.items) do
       if item.kind == "group" then
-        separate()
+        separate("semantic.space.section.default")
         draw_group(options.id, item, function()
           result.toggled_group = item.id
           table.insert(result.events, { type = "list.group_toggled", id = options.id, group = item.id })
         end)
         hidden = item.collapsible == true and item.collapsed == true
       elseif not hidden then
-        separate()
+        separate("semantic.space.list.gap")
         draw_row(options.id .. "-" .. item.id, item, compact, function(action)
           result.action = { row = item.id, id = action }
           table.insert(result.events, { type = "list.row_action", id = options.id, row = item.id, action = action })

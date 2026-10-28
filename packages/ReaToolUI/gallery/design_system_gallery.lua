@@ -115,7 +115,7 @@ function M.create(deps)
       collapsed = scenario_values.collapsed[list_id .. "/" .. id] == true }
   end
   local function list_section(id, heading, items, empty, actions)
-    return { id = id, heading = heading, render = function()
+    return { id = id, heading = heading, actions = actions, render = function()
       if #items > 0 then
         local result = list.draw({ id = id, variant = "compact", items = items })
         if result.toggled_group then
@@ -130,7 +130,6 @@ function M.create(deps)
           ImGui.PopStyleColor(ctx)
         end)
       end
-      if actions then return action_bar.draw({ id = id .. "-actions", actions = actions }).action end
     end }
   end
   local SELECTION_ACTIONS = {

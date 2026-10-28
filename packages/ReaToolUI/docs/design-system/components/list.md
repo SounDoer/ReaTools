@@ -39,7 +39,8 @@ local result = list.draw({
 
 In order: `trailing_text` (`metadata`, secondary color), inline Status, at
 most one action button, and a menu. All are centered on the compact control
-height. The trailing group is right-aligned beside the text when the text fits
+height, and the row centers that whole control line, not just the text. The
+trailing group is right-aligned beside the text when the text fits
 on one line next to it. Otherwise it moves to its own right-aligned line below
 the full-width text, so nothing scrolls horizontally.
 
@@ -49,6 +50,9 @@ the full-width text, so nothing scrolls horizontally.
   `body` role: the optional integer `count` in the primary text color, a
   space, then `label` in the secondary color (`3 Tracks`). The product writes
   the noun in the form that agrees with the count.
+- A header sits `semantic.space.list.gap` above its own rows and
+  `semantic.space.section.default` below the previous group, so each group
+  reads as one unit.
 - `collapsible = true` (requires `id`) makes the header a full-width
   disclosure with its arrow in the secondary color. `collapsed = true` hides
   the rows that follow, up to the next group. The product owns the collapsed

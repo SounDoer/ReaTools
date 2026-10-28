@@ -19,14 +19,13 @@ end
 -- results. `script` maps a component key to the result its draw returns.
 local function fake_view_env(script)
   script = script or {}
-  local calls = { notices = {}, block_gaps = 0, order = {}, lists = {}, action_bars = {} }
+  local calls = { notices = {}, block_gaps = 0, order = {}, lists = {} }
   local function recorder(key)
     return {
       draw = function(options, render_body)
         calls[key] = options
         table.insert(calls.order, key)
         if key == "list" then calls.lists[options.id] = options end
-        if key == "action_bar" then calls.action_bars[options.id] = options end
         if key == "card_row" then
           for _, entry in ipairs(options.cards) do
             if entry.render_body then entry.render_body() end
@@ -42,7 +41,7 @@ local function fake_view_env(script)
   end
   local components = {}
   for _, key in ipairs({ "page_header", "card_row", "card", "list", "notice", "stat_group", "issue_item",
-    "disclosure", "checkbox", "number_field", "action_bar" }) do
+    "disclosure", "checkbox", "number_field" }) do
     components[key] = recorder(key)
   end
   components.segmented_control = {
@@ -284,6 +283,12 @@ local function section_ids(options)
   return table.concat(ids, ",")
 end
 
+local function section_actions(calls, card_id, section_id)
+  for _, section in ipairs(card_options(calls, card_id).sections) do
+    if section.id == section_id then return section.actions end
+  end
+end
+
 local function contains(list, value)
   for _, entry in ipairs(list) do if entry == value then return true end end
   return false
@@ -318,7 +323,7 @@ function tests.source_cards_use_sections()
   local selected = calls.lists["source-delivery-selected"]
   equal(table.concat(rows(selected), ","), "SFX_Impacts,Room Tone", "selected names")
   equal(selected.items[3].status.text, "Not Registered", "selected state")
-  local selection_actions = calls.action_bars["source-delivery-selected-actions"].actions
+  local selection_actions = section_actions(calls, "source-delivery", "selected")
   equal(selection_actions[1].label, "Register", "register action")
   equal(selection_actions[2].label, "Unregister", "unregister action")
   equal(selection_actions[1].disabled, false, "register enabled")
@@ -382,7 +387,7 @@ function tests.empty_sections_show_muted_text()
   source_main.draw(env, SOURCE_STATE)
   equal(contains(calls.order, "muted:Nothing registered"), true, "nothing registered")
   equal(contains(calls.order, "muted:Nothing selected"), true, "nothing selected")
-  local selection_actions = calls.action_bars["source-delivery-selected-actions"].actions
+  local selection_actions = section_actions(calls, "source-delivery", "selected")
   equal(selection_actions[1].disabled, true, "register disabled")
   equal(selection_actions[2].disabled, true, "unregister disabled")
 

@@ -63,6 +63,9 @@ function M.create(ImGui, ctx, adapter, deps)
       required_string(section.id, "card section id")
       required_string(section.heading, "card section heading")
       if type(section.render) ~= "function" then error("card section render must be a function") end
+      if section.actions ~= nil and type(section.actions) ~= "table" then
+        error("card section actions must be a table")
+      end
     end
   end
 
@@ -157,7 +160,13 @@ function M.create(ImGui, ctx, adapter, deps)
       ImGui.Separator(ctx)
       ImGui.SetCursorPosY(ctx, top + resolve("semantic.space.footer.padding_y"))
       section_heading.draw({ id = options.id .. "-" .. section.id, title = section.heading, gap_above = false })
+      local stack_gap = resolve("semantic.space.stack.tight")
+      ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + stack_gap)
       choose(section.render())
+      if section.actions then
+        ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + stack_gap)
+        choose(action_bar.draw({ id = options.id .. "-" .. section.id .. "-actions", actions = section.actions }).action)
+      end
       end_block(item_bottom())
     end
 

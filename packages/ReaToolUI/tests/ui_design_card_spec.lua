@@ -8,6 +8,7 @@ local TOKENS = {
   ["semantic.space.container.padding"] = 16,
   ["semantic.space.block.gap"] = 16,
   ["semantic.space.footer.padding_y"] = 12,
+  ["semantic.space.stack.tight"] = 10,
   ["semantic.space.inline.default"] = 8,
   ["semantic.size.control.medium"] = 28,
   ["semantic.size.icon.medium"] = 16,
@@ -81,6 +82,13 @@ local function dependencies(options)
       return { events = {} }
     end },
     action_bar = { draw = function(bar_options)
+      if bar_options.id and bar_options.id:find("-actions$") then
+        calls.bars = calls.bars or {}
+        calls.bars[bar_options.id] = { options = bar_options, y = cursor.y }
+        advance(28)
+        if options.click == bar_options.id then return { events = {}, action = bar_options.actions[1].id } end
+        return { events = {} }
+      end
       calls.footer = bar_options; calls.footer_y = cursor.y; advance(options.footer_height or 28)
       if options.click == "footer" then return { events = {}, action = "publish" } end
       return { events = {} }
@@ -237,8 +245,8 @@ function tests.sections_follow_the_body_each_behind_a_separator()
   equal(calls.headings[1].id, "c-registered", "heading id")
   equal(calls.headings[1].gap_above, false, "no gap above the heading")
   equal(calls.headings[2].title, "Selected", "second heading")
-  -- first section: heading 20 + 8, text 16 → bottom; then block gap, separator, padding
-  equal(calls.headings[2].y, calls.headings[1].y + 28 + 16 + 16 + 12, "second section after its separator")
+  -- first section: heading 20 + stack.tight 10, text 16 → bottom; then block gap, separator, padding
+  equal(calls.headings[2].y, calls.headings[1].y + 30 + 16 + 16 + 12, "second section after its separator")
   equal(order[1], "registered", "sections render in order")
   equal(order[2], "selected", "second section renders")
 end
@@ -262,6 +270,18 @@ function tests.section_action_surfaces_as_card_action()
   equal(result.action, "register_selected", "section action")
   equal(result.events[1].type, "card.action_selected", "event type")
   equal(result.events[1].action, "register_selected", "event action")
+end
+
+function tests.section_actions_sit_below_the_content()
+  local ImGui, adapter, deps, calls = dependencies({ click = "c-selected-actions" })
+  local result = card_module.create(ImGui, "ctx", adapter, deps).draw({ id = "c", title = "Reference",
+    sections = { { id = "selected", heading = "Selected", actions = { { id = "register", label = "Register" } },
+      render = function() ImGui.TextWrapped("ctx", "Snare") end } } })
+  local bar = calls.bars["c-selected-actions"]
+  -- heading 20 + stack.tight 10, text 16 + stack.tight 10
+  equal(bar.y, calls.headings[1].y + 30 + 26, "actions after the content")
+  equal(bar.options.actions[1].label, "Register", "section actions")
+  equal(result.action, "register", "section action becomes the card action")
 end
 
 function tests.pinned_footer_leaves_sections_with_the_content()

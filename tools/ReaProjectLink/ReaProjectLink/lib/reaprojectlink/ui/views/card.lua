@@ -23,9 +23,9 @@ end
 -- with the muted `spec.empty` when there are none and `spec.actions` below.
 -- Group collapse state lives in `app.collapsed_groups` under
 -- "<list id>/<group id>". `render` returns `spec.lookup[row]` for a row
--- action, or the chosen action id.
+-- action.
 function M.section(env, list_id, spec)
-  return { id = spec.id, heading = spec.heading, render = function()
+  return { id = spec.id, heading = spec.heading, actions = spec.actions, render = function()
     local components, collapsed = env.design_system.components, env.app.collapsed_groups
     local action
     if #spec.items > 0 then
@@ -40,9 +40,6 @@ function M.section(env, list_id, spec)
       if result.action and spec.lookup then action = spec.lookup[result.action.row] end
     elseif spec.empty then
       env.c.muted(spec.empty)
-    end
-    if spec.actions then
-      action = components.action_bar.draw({ id = list_id .. "-actions", actions = spec.actions }).action or action
     end
     return action
   end }

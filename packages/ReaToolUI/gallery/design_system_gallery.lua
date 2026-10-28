@@ -125,7 +125,9 @@ function M.create(deps)
         for _, event in ipairs(result.events) do last_event = event.type .. " id=" .. event.id end
       else
         adapter.with_text("body", function()
-          ImGui.TextColored(ctx, adapter.resolve("semantic.color.text.secondary"), empty)
+          ImGui.PushStyleColor(ctx, ImGui.Col_Text, adapter.resolve("semantic.color.text.secondary"))
+          ImGui.TextWrapped(ctx, empty)
+          ImGui.PopStyleColor(ctx)
         end)
       end
       if actions then return action_bar.draw({ id = id .. "-actions", actions = actions }).action end

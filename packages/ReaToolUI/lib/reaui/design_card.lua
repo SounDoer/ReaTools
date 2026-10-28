@@ -145,8 +145,10 @@ function M.create(ImGui, ctx, adapter, deps)
 
     if render_body then
       begin_block()
+      local top = ImGui.GetCursorPosY(ctx)
       result.body_result = render_body()
-      end_block(item_bottom())
+      -- A body that drew nothing adds no block gap.
+      if ImGui.GetCursorPosY(ctx) ~= top then end_block(item_bottom()) end
     end
 
     for _, section in ipairs(options.sections or {}) do

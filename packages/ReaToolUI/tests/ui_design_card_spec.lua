@@ -243,6 +243,18 @@ function tests.sections_follow_the_body_each_behind_a_separator()
   equal(order[2], "selected", "second section renders")
 end
 
+function tests.empty_body_adds_no_block()
+  local status = { role = "ready", text = "Up to Date" }
+  local ImGui, adapter, deps, without = dependencies()
+  card_module.create(ImGui, "ctx", adapter, deps).draw({ id = "a", title = "Reference", status = status,
+    sections = sections(ImGui, {}) })
+  local ImGui2, adapter2, deps2, empty = dependencies()
+  local result = card_module.create(ImGui2, "ctx", adapter2, deps2).draw({ id = "b", title = "Reference",
+    status = status, sections = sections(ImGui2, {}) }, function() return "nothing" end)
+  equal(empty.headings[1].y, without.headings[1].y, "first section where it is without a body")
+  equal(result.body_result, "nothing", "body result kept")
+end
+
 function tests.section_action_surfaces_as_card_action()
   local ImGui, adapter, deps = dependencies()
   local result = card_module.create(ImGui, "ctx", adapter, deps).draw({ id = "c", title = "Reference",

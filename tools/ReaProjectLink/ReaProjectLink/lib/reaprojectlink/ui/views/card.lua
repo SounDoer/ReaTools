@@ -14,8 +14,7 @@ function M.options(model, id, icon, title, highlighted, sections)
   }
 end
 
--- Card body renderer for the note, or nil without one: an empty body would
--- still add a block gap above the first section.
+-- Card body renderer for the note, or nil without one.
 function M.body(env, model)
   if model.note then return function() env.c.small(model.note) end end
 end

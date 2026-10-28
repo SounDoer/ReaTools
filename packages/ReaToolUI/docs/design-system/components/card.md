@@ -22,7 +22,7 @@ Top to bottom:
 3. **Status slot**: optional `status = { role, text, detail?, role_label? }`,
    drawn with the `prominent` Status presentation.
 4. **Body**: the caller's `render_body` content, composed from shared blocks
-   (Stat Group, List, Notice, text).
+   (Stat Group, List, Notice, text). A body that draws nothing adds no block.
 5. **Sections**: optional ordered `sections = { { id, heading, render } }`
    (DS024), for content the card lists by name, such as what is registered
    and what is selected in the host application. Each section follows the
@@ -30,6 +30,9 @@ Top to bottom:
    `semantic.space.footer.padding_y` below the separator, then a Section
    Heading (`heading` role, `gap_above = false`) and the caller's `render`
    content, usually a compact List and, for selection actions, an Action Bar.
+   A section with nothing to list keeps its heading and shows one short empty
+   text, for example `Nothing selected`, wrapped in the `body` role with
+   `semantic.color.text.secondary`.
    A non-nil value returned by `render` becomes the card action. Sections
    stay with the content when the footer is pinned. `selection` (DS023) is
    rejected.
@@ -97,7 +100,7 @@ one faulty Gallery or product composition from corrupting later UI frames.
 Automated checks cover the fixed title row, prominent status, footer pinning,
 natural height and shrinking, trailing, menu, section, and footer actions,
 section separators and headings, section placement under a pinned footer,
-empty cards, variants, callback failures, balanced Child and style stacks, and
+empty cards and bodies, variants, callback failures, balanced Child and style stacks, and
 invalid inputs. Gallery fixtures cover default, emphasized, trailing icon,
 trailing menu, status detail, footer, filled and empty sections, and
 title-free cards in both themes.

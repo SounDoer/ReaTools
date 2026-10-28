@@ -31,9 +31,11 @@ Two presentations exist:
 - `prominent` uses the `status` typography role, for the status slot of a
   Card.
 
-An optional `detail` renders below the text in `metadata` typography and the
-secondary text color. Text and detail wrap within the parent width and stay
-aligned to the text start, not the glyph. `measure(options)` returns the
+An optional `detail` renders in `metadata` typography and the secondary text
+color. It follows the text on the same line, `semantic.space.inline.default`
+after it and bottom-aligned with it, when both fit the parent width;
+otherwise it moves below the text. Text and detail wrap within the parent
+width and stay aligned to the text start, not the glyph. `measure(options)` returns the
 single-line width (glyph, gap, and text) for layout components.
 
 `draw_glyph({ role, role_label? })` draws only the glyph, at the `body` line

@@ -43,14 +43,24 @@ function M.create(ImGui, ctx, adapter, icon_renderer)
     local font, label = validate(options)
     local color = adapter.resolve("component.status." .. options.role .. ".foreground")
     with_text(font, function()
+      local gap = adapter.resolve("semantic.space.inline.default")
       glyph(options.role, label, color)
-      ImGui.SameLine(ctx, 0, adapter.resolve("semantic.space.inline.default"))
+      ImGui.SameLine(ctx, 0, gap)
+      local available = ImGui.GetContentRegionAvail(ctx)
       ImGui.BeginGroup(ctx)
       ImGui.PushStyleColor(ctx, ImGui.Col_Text, color)
       ImGui.TextWrapped(ctx, options.text)
       ImGui.PopStyleColor(ctx)
       if options.detail then
+        local text_width = ImGui.CalcTextSize(ctx, options.text)
+        local text_height = ImGui.GetTextLineHeight(ctx)
         with_text("metadata", function()
+          -- The detail follows the text on its line when both fit; otherwise
+          -- it takes its own line below.
+          if text_width + gap + ImGui.CalcTextSize(ctx, options.detail) <= available then
+            ImGui.SameLine(ctx, 0, gap)
+            ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) + text_height - ImGui.GetTextLineHeight(ctx))
+          end
           ImGui.PushStyleColor(ctx, ImGui.Col_Text, adapter.resolve("semantic.color.text.secondary"))
           ImGui.TextWrapped(ctx, options.detail)
           ImGui.PopStyleColor(ctx)

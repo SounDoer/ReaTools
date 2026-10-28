@@ -114,12 +114,12 @@ function M.draw(env, state)
           cards.highlight == "reference",
           synchronized and reference_sections(env, env.services.reference_subscription.local_surface(env.adapter))
             or nil),
-        render_body = function() card.body(env, cards.reference) end,
+        render_body = card.body(env, cards.reference),
       },
       {
         options = card.options(cards.delivery, "source-delivery", "upload", "Delivery",
           cards.highlight == "delivery", delivery_sections(env, lanes)),
-        render_body = function() card.body(env, cards.delivery) end,
+        render_body = card.body(env, cards.delivery),
       },
     },
   })

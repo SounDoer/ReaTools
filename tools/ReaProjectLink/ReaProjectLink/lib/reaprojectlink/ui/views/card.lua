@@ -14,10 +14,10 @@ function M.options(model, id, icon, title, highlighted, sections)
   }
 end
 
--- Card body: the note, then `extra`.
-function M.body(env, model, extra)
-  if model.note then env.c.small(model.note) end
-  if extra then extra() end
+-- Card body renderer for the note, or nil without one: an empty body would
+-- still add a block gap above the first section.
+function M.body(env, model)
+  if model.note then return function() env.c.small(model.note) end end
 end
 
 -- Card section listing `spec.items` (from view_models) in a compact List,

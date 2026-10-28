@@ -7,6 +7,7 @@ local reference_publish_review = require("reaprojectlink.ui.views.reference_publ
 local delivery_publish_review = require("reaprojectlink.ui.views.delivery_publish_review")
 local reference_update_review = require("reaprojectlink.ui.views.reference_update_review")
 local delivery_sync_review = require("reaprojectlink.ui.views.delivery_sync_review")
+local card = require("reaprojectlink.ui.views.card")
 
 local function equal(actual, expected, label)
   if actual ~= expected then
@@ -459,6 +460,26 @@ function tests.master_sections_hide_kinds_when_registry_is_invalid()
   equal(contains(calls.order, "muted:Nothing registered"), false, "no empty registered text")
   equal(contains(calls.order, "muted:Nothing selected"), false, "no empty selected text")
   equal(contains(calls.order, "small:bad"), true, "error note shown")
+
+  env, calls = master_env({
+    reference_tracks = { { display_name = "Picture" } }, timeline_error = "bad",
+    selected_tracks = { { display_name = "Guide", registered = false } },
+  })
+  master_main.draw(env, MASTER_STATE)
+  for _, id in ipairs({ "master-reference-registered", "master-reference-selected" }) do
+    local groups = {}
+    for _, item in ipairs(calls.lists[id].items) do
+      if item.kind == "group" then table.insert(groups, item.id) end
+    end
+    equal(table.concat(groups, ","), "tracks", id .. " keeps only Tracks")
+  end
+end
+
+function tests.card_without_note_has_no_body()
+  local env, calls = fake_view_env()
+  equal(card.body(env, {}), nil, "no body without a note")
+  card.body(env, { note = "Hint" })()
+  equal(contains(calls.order, "small:Hint"), true, "note drawn")
 end
 
 function tests.master_deliveries_actions_route()

@@ -195,7 +195,7 @@ function M.draw(env, state)
       {
         options = card.options(cards.reference, "master-reference", "film", "Reference",
           cards.highlight == "reference", reference_sections(env, values)),
-        render_body = function() card.body(env, cards.reference) end,
+        render_body = card.body(env, cards.reference),
       },
       deliveries_entry(env, cards, chosen),
     },

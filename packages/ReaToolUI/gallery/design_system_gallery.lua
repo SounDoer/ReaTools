@@ -961,9 +961,6 @@ function M.create(deps)
     for _, event in ipairs(result.events) do
       last_event = event.type .. " id=" .. event.id .. (event.action and (" action=" .. tostring(event.action)) or "")
     end
-    if result.toggled_group then
-      scenario_values.collapsed[result.toggled_group] = not scenario_values.collapsed[result.toggled_group]
-    end
   end
   local row_menu = { accessible_label = "Delivery actions", items = {
     { id = "open", label = "Open Project" }, { id = "remove", label = "Remove..." },

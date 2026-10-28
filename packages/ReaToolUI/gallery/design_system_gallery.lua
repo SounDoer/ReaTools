@@ -94,7 +94,7 @@ function M.create(deps)
   local segmented_values = { theme_mode = "auto" }
   local scenario_values = {
     view = deps.scenario or "settings",
-    source_expanded = false,
+    collapsed = {},
     page = "connection",
     conflict_policy = "review",
   }
@@ -293,8 +293,12 @@ function M.create(deps)
       for _, event in ipairs(result.events) do
         last_event = event.type .. " id=" .. event.id .. (event.action and (" action=" .. event.action) or "")
       end
-      if result.overflow_toggled then list_values.expanded = not list_values.expanded end
+      if result.toggled_group then
+        list_values.collapsed = list_values.collapsed or {}
+        list_values.collapsed[result.toggled_group] = not list_values.collapsed[result.toggled_group]
+      end
     end
+    local function collapsed(group) return list_values.collapsed ~= nil and list_values.collapsed[group] == true end
     local row_menu = { accessible_label = "Row actions", items = { { id = "rename", label = "Rename" } } }
     card.draw({ id = "list-states-card", title = "Deliveries" }, function()
       record_list_result(list.draw({ id = "list-states", items = {
@@ -310,19 +314,17 @@ function M.create(deps)
       } }))
     end)
     local names = {
-      { kind = "group", label = "Project files" },
+      { kind = "group", id = "projects", label = "Project Files", count = 2, collapsible = true,
+        collapsed = collapsed("projects") },
       { kind = "row", id = "main", title = "Trailer_Main.rpp", action = { id = "remove", label = "Remove...", variant = "quiet" } },
       { kind = "row", id = "alt", title = "Trailer_Alt.rpp", action = { id = "remove", label = "Remove...", variant = "quiet" } },
-      { kind = "group", label = "Media" },
-      { kind = "row", id = "music", title = "Music_Bed_v3.wav", action = { id = "remove", label = "Remove...", variant = "quiet" } },
+      { kind = "group", id = "media", label = "Media Files · 3 Takes", count = 2, collapsible = true,
+        collapsed = collapsed("media") },
+      { kind = "row", id = "music", title = "Music_Bed_v3.wav", trailing_text = "1 Take" },
+      { kind = "row", id = "vo", title = "VO_Take_12.wav", trailing_text = "2 Takes" },
     }
-    if list_values.expanded then
-      names[#names + 1] = { kind = "row", id = "vo", title = "VO_Take_12.wav", action = { id = "remove", label = "Remove...", variant = "quiet" } }
-    end
     card.draw({ id = "list-compact-card", title = "Source Reference" }, function()
-      record_list_result(list.draw({ id = "list-compact", variant = "compact", items = names,
-        overflow = { label = list_values.expanded and "Showing all 4 files" or "+ 1 more file",
-          expanded = list_values.expanded == true } }))
+      record_list_result(list.draw({ id = "list-compact", variant = "compact", items = names }))
     end)
 
     ImGui.Text(ctx, "Status")
@@ -914,7 +916,9 @@ function M.create(deps)
     for _, event in ipairs(result.events) do
       last_event = event.type .. " id=" .. event.id .. (event.action and (" action=" .. tostring(event.action)) or "")
     end
-    if result.overflow_toggled then scenario_values.source_expanded = not scenario_values.source_expanded end
+    if result.toggled_group then
+      scenario_values.collapsed[result.toggled_group] = not scenario_values.collapsed[result.toggled_group]
+    end
   end
   local row_menu = { accessible_label = "Delivery actions", items = {
     { id = "open", label = "Open Project" }, { id = "remove", label = "Remove..." },
@@ -967,20 +971,17 @@ function M.create(deps)
 
   direction_c_recipes["source-main"] = function()
     main_header("recipe-source-header", "Sub_Stems_Session", "Source", "Checked just now")
-    local contents = {
-      { kind = "group", label = "Tracks" },
-      { kind = "row", id = "dialogue", title = "Dialogue Guide", action = { id = "detach", label = "Detach...", variant = "quiet" } },
-      { kind = "row", id = "picture", title = "Picture Cut v12", action = { id = "detach", label = "Detach...", variant = "quiet" } },
-    }
-    if scenario_values.source_expanded then
-      for _, name in ipairs({ "Music Temp", "Foley Guide", "VO Scratch", "Ambience Bed" }) do
-        contents[#contents + 1] = { kind = "row", id = name, title = name,
+    local contents = {}
+    local function group(id, noun, names)
+      contents[#contents + 1] = { kind = "group", id = id, label = noun, count = #names, collapsible = true,
+        collapsed = scenario_values.collapsed[id] == true }
+      for _, name in ipairs(names) do
+        contents[#contents + 1] = { kind = "row", id = id .. "-" .. name, title = name,
           action = { id = "detach", label = "Detach...", variant = "quiet" } }
       end
-      contents[#contents + 1] = { kind = "group", label = "Markers and Regions" }
-      contents[#contents + 1] = { kind = "row", id = "intro", title = "Intro",
-        action = { id = "detach", label = "Detach...", variant = "quiet" } }
     end
+    group("tracks", "Tracks", { "Dialogue Guide", "Picture Cut v12", "Music Temp" })
+    group("markers", "Marker", { "Intro" })
     record_events(card_row.draw({ id = "recipe-source-cards", cards = {
       { options = { id = "recipe-source-reference", icon = "film", title = "Reference", variant = "emphasized",
           status = { role = "warning", text = "Reference r3 Available", detail = "Synchronized r2" },
@@ -989,10 +990,7 @@ function M.create(deps)
           stat_group.draw({ id = "recipe-source-stats", stats = {
             { label = "Tracks", value = 6 }, { label = "Markers", value = 4 }, { label = "Regions", value = 3 },
           } })
-          record_events(list.draw({ id = "recipe-source-contents", variant = "compact", items = contents,
-            overflow = { expanded = scenario_values.source_expanded,
-              label = scenario_values.source_expanded and "Showing all Tracks, Markers, and Regions" or
-                "+ 4 more Tracks, 4 Markers, 3 Regions" } }))
+          record_events(list.draw({ id = "recipe-source-contents", variant = "compact", items = contents }))
         end },
       { options = { id = "recipe-source-delivery", icon = "upload", title = "Delivery",
           status = { role = "ready", text = "Last Published r12" },

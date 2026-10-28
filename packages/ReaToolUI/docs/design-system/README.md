@@ -256,8 +256,8 @@ reviewable, and testable.
 - `components/card-row.md` defines side-by-side and stacked card layout and
   equal card height.
 - `components/stat-group.md` defines equal-width metric tiles for counts.
-- `components/list.md` defines inset rows, trailing status and actions, group
-  labels, and the overflow toggle.
+- `components/list.md` defines inset rows, trailing status and actions, and
+  counted, collapsible group headers.
 - `components/status.md` defines neutral, ready, warning, and blocked conditions
   with persistent readable role cues.
 - `components/notice.md` defines actionable condition messages and responsive

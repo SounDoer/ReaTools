@@ -36,6 +36,8 @@ local function fake(options)
   local groups = {}
   local wrap_pos
   local role = "body"
+  local color_stack = {}
+  calls.trees = {}
   local LINE = options.line or LINE
   local function item(w, h)
     last = { x = cursor.x, y = cursor.y, w = w, h = h }
@@ -49,10 +51,27 @@ local function fake(options)
   end
   local ImGui = {
     Col_ChildBg = 1, Col_Text = 2, StyleVar_ChildRounding = 3, StyleVar_WindowPadding = 4,
-    StyleVar_ItemSpacing = 5, WindowFlags_NoScrollbar = 8,
+    StyleVar_ItemSpacing = 5, WindowFlags_NoScrollbar = 8, Cond_Always = 1,
+    TreeNodeFlags_SpanAvailWidth = 2, TreeNodeFlags_NoTreePushOnOpen = 4,
   }
-  function ImGui.PushStyleColor() calls.colors = calls.colors + 1 end
-  function ImGui.PopStyleColor(_, n) calls.popped_colors = calls.popped_colors + (n or 1) end
+  function ImGui.PushStyleColor(_, _, color)
+    calls.colors = calls.colors + 1
+    table.insert(color_stack, color)
+  end
+  function ImGui.PopStyleColor(_, n)
+    calls.popped_colors = calls.popped_colors + (n or 1)
+    for _ = 1, n or 1 do table.remove(color_stack) end
+  end
+  local next_open
+  function ImGui.SetNextItemOpen(_, open) next_open = open end
+  function ImGui.TreeNodeEx(_, id)
+    table.insert(calls.trees, { id = id, requested = next_open, y = cursor.y })
+    item(width, LINE)
+    if options.toggle then return not next_open end
+    return next_open
+  end
+  function ImGui.GetTreeNodeToLabelSpacing() return 20 end
+  function ImGui.SetCursorPos(_, x, y) cursor.x, cursor.y = x, y end
   function ImGui.PushStyleVar() calls.vars = calls.vars + 1 end
   function ImGui.PopStyleVar(_, n) calls.popped_vars = calls.popped_vars + (n or 1) end
   function ImGui.GetStyleVar() return 8, 8 end
@@ -84,7 +103,8 @@ local function fake(options)
     local limit = (wrap_pos or (x0 + width)) - cursor.x
     local natural = #text * CHAR
     local lines = math.max(1, math.ceil(natural / limit))
-    table.insert(calls.texts, { text = text, role = role, lines = lines, y = cursor.y })
+    table.insert(calls.texts, { text = text, role = role, lines = lines, x = cursor.x, y = cursor.y,
+      color = color_stack[#color_stack] })
     item(math.min(natural, limit), lines * LINE)
   end
   function ImGui.BeginGroup() table.insert(groups, { x = cursor.x, y = cursor.y, right = cursor.x }) end
@@ -226,9 +246,74 @@ function tests.group_labels_render_between_rows()
   local list, calls = fake()
   list.draw({ id = "refs", items = { ROWS[1], { kind = "group", label = "Dialogue" }, ROWS[2] } })
   local label
-  for _, text in ipairs(calls.texts) do if text.text == "Dialogue" and text.role == "metadata" then label = text end end
-  assert(label, "group label in metadata font")
+  for _, text in ipairs(calls.texts) do if text.text == "Dialogue" and text.role == "body" then label = text end end
+  assert(label, "group label in body font")
   equal(calls.children[2].y > calls.children[1].y + calls.children[1].height + 8, true, "label sits between rows")
+  equal(#calls.trees, 0, "plain groups do not collapse")
+end
+
+local function text_named(calls, value)
+  for _, text in ipairs(calls.texts) do if text.text == value then return text end end
+end
+
+local GROUPED = {
+  { kind = "group", id = "tracks", label = "Tracks", count = 2, collapsible = true, collapsed = true },
+  { kind = "row", id = "a", title = "Kick" },
+  { kind = "row", id = "b", title = "Snare" },
+  { kind = "group", id = "regions", label = "Region", count = 1, collapsible = true },
+  { kind = "row", id = "c", title = "Scene 1" },
+}
+
+function tests.group_header_shows_count_then_noun_in_body()
+  local list, calls = fake()
+  list.draw({ id = "refs", items = { { kind = "group", id = "tracks", label = "Tracks", count = 3,
+    collapsible = true } } })
+  local count, noun = text_named(calls, "3"), text_named(calls, "Tracks")
+  equal(count.role, "body", "count font")
+  equal(count.color, "semantic.color.text.primary", "count color")
+  equal(noun.role, "body", "noun font")
+  equal(noun.color, "semantic.color.text.secondary", "noun color")
+  equal(noun.y, count.y, "count and noun share the line")
+  assert(noun.x > count.x, "noun follows the count")
+  equal(count.x, 20, "header text starts after the disclosure arrow")
+  equal(calls.trees[1].requested, true, "expanded unless collapsed")
+end
+
+function tests.collapsed_group_hides_only_its_rows()
+  local list, calls = fake()
+  local result = list.draw({ id = "refs", items = GROUPED })
+  equal(#calls.children, 1, "only the expanded group's row")
+  equal(calls.children[1].id, "##refs-c", "the region row")
+  equal(calls.trees[1].requested, false, "collapsed group requested closed")
+  equal(result.toggled_group, nil, "nothing toggled")
+end
+
+function tests.toggling_a_group_reports_it()
+  local list = fake({ toggle = true })
+  local result = list.draw({ id = "refs", items = { GROUPED[1], GROUPED[2] } })
+  equal(result.toggled_group, "tracks", "toggled group")
+  equal(result.events[1].type, "list.group_toggled", "event type")
+  equal(result.events[1].id, "refs", "list id")
+  equal(result.events[1].group, "tracks", "event group")
+end
+
+function tests.trailing_text_sits_beside_the_title()
+  local list, calls, width = fake()
+  list.draw({ id = "refs", variant = "compact", items = {
+    { kind = "row", id = "a", title = "Kick", trailing_text = "2 Items" },
+  } })
+  local trailing = text_named(calls, "2 Items")
+  equal(trailing.role, "metadata", "trailing text font")
+  equal(trailing.color, "semantic.color.text.secondary", "trailing text color")
+  equal(trailing.x + #"2 Items" * CHAR, 12 + width, "right aligned")
+  equal(trailing.y, text_named(calls, "Kick").y, "beside the title")
+end
+
+function tests.collapsible_group_requires_id()
+  local list = fake()
+  assert(not pcall(function()
+    list.draw({ id = "refs", items = { { kind = "group", label = "Tracks", collapsible = true } } })
+  end), "id required")
 end
 
 function tests.list_ends_with_an_item_without_moving_the_cursor()
@@ -237,19 +322,6 @@ function tests.list_ends_with_an_item_without_moving_the_cursor()
   local last = calls.children[#calls.children]
   equal(calls.last, "dummy 0x0", "list ends with an item, not a cursor move")
   equal(calls.cursor_y(), last.y + last.height + 8, "cursor after the last row")
-end
-
-function tests.overflow_toggle_label_and_event()
-  local list, calls = fake({ click = "Show All" })
-  local result = list.draw({ id = "refs", items = { ROWS[1] }, overflow = { label = "+ 12 more", expanded = false } })
-  equal(calls.buttons[1].options.label, "Show All", "collapsed label")
-  equal(calls.buttons[1].options.variant, "quiet", "quiet toggle")
-  equal(result.overflow_toggled, true, "toggled")
-  equal(result.events[1].type, "list.overflow_toggled", "event")
-  equal(result.events[1].id, "refs", "list id")
-  local list2, calls2 = fake()
-  list2.draw({ id = "refs", items = { ROWS[1] }, overflow = { label = "Showing all 13", expanded = true } })
-  equal(calls2.buttons[1].options.label, "Show Less", "expanded label")
 end
 
 function tests.row_action_and_menu_events()
@@ -278,7 +350,7 @@ function tests.empty_list_renders_nothing_and_emits_nothing()
   equal(#calls.children, 0, "no rows")
   equal(#calls.texts, 0, "no text")
   equal(#result.events, 0, "no events")
-  equal(result.overflow_toggled, false, "not toggled")
+  equal(result.toggled_group, nil, "not toggled")
 end
 
 local passed = 0

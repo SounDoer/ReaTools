@@ -121,16 +121,17 @@ function tests.registers_only_unregistered_selected_tracks()
   equal(adapter.undo_depth(), 0, "balanced undo")
 end
 
-function tests.reports_selection_counts_for_selected_tracks()
-  local registered = { lane_id = "lane-1" }
-  local unregistered = { lane_id = "" }
+function tests.selected_tracks_report_registration()
   local adapter = fake_adapter({
     project_values = { project_type = "source" },
-    selected = { registered, unregistered },
+    selected = { { name = "DX", lane_id = "lane-1" }, { name = "Room Tone", lane_id = "" } },
   })
-  local counts = project_service.selection_counts(adapter)
-  equal(counts.tracks.selected, 2, "selected Track count")
-  equal(counts.tracks.registered, 1, "registered-and-selected Track count")
+  local tracks = project_service.selected_tracks(adapter)
+  equal(#tracks, 2, "selected Track count")
+  equal(tracks[1].display_name, "DX", "first name")
+  equal(tracks[1].registered, true, "registered Track")
+  equal(tracks[2].display_name, "Room Tone", "second name")
+  equal(tracks[2].registered, false, "unregistered Track")
 end
 
 function tests.scans_registered_tracks_and_reports_blockers()

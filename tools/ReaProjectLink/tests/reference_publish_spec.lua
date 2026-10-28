@@ -251,12 +251,13 @@ local function selection_fixture()
 end
 
 do
-  local sel_adapter = selection_fixture()
-  local counts, counts_err = service.selection_counts(sel_adapter)
-  assert(counts, counts_err)
-  assert(counts.tracks.selected == 2 and counts.tracks.registered == 1, "track selection counts")
-  assert(counts.markers.selected == 1 and counts.markers.registered == 0, "marker selection counts")
-  assert(counts.regions.selected == 1 and counts.regions.registered == 1, "region selection counts")
+  local sel_adapter, registered_track, unregistered_track = selection_fixture()
+  registered_track.name, unregistered_track.name = "Picture", "Guide"
+  function sel_adapter.track_name(track) return track.name end
+  local tracks = service.selected_tracks(sel_adapter)
+  assert(#tracks == 2, "selected Track count")
+  assert(tracks[1].display_name == "Picture" and tracks[1].registered == true, "registered selected Track")
+  assert(tracks[2].display_name == "Guide" and tracks[2].registered == false, "unregistered selected Track")
 end
 
 do

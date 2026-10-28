@@ -18,26 +18,30 @@ end
 -- results. `script` maps a component key to the result its draw returns.
 local function fake_view_env(script)
   script = script or {}
-  local calls = { notices = {}, block_gaps = 0, order = {} }
+  local calls = { notices = {}, block_gaps = 0, order = {}, lists = {}, action_bars = {} }
   local function recorder(key)
     return {
       draw = function(options, render_body)
         calls[key] = options
         table.insert(calls.order, key)
+        if key == "list" then calls.lists[options.id] = options end
+        if key == "action_bar" then calls.action_bars[options.id] = options end
         if key == "card_row" then
           for _, entry in ipairs(options.cards) do
             if entry.render_body then entry.render_body() end
+            for _, section in ipairs(entry.options.sections or {}) do section.render() end
           end
         elseif render_body then
           render_body()
         end
+        if key == "list" and script.lists and script.lists[options.id] then return script.lists[options.id] end
         return script[key] or { events = {}, actions = {} }
       end,
     }
   end
   local components = {}
   for _, key in ipairs({ "page_header", "card_row", "card", "list", "notice", "stat_group", "issue_item",
-    "disclosure", "checkbox", "number_field" }) do
+    "disclosure", "checkbox", "number_field", "action_bar" }) do
     components[key] = recorder(key)
   end
   components.segmented_control = {
@@ -82,6 +86,7 @@ local function fake_view_env(script)
     begin_page = function() return true end,
     end_page = function() end,
     small = function(text) table.insert(calls.order, "small:" .. text) end,
+    muted = function(text) table.insert(calls.order, "muted:" .. text) end,
     segmented = function(_, _, selected) return selected end,
     clipped = function(count, draw_row) for index = 1, count do draw_row(index) end end,
     colored = function() end,
@@ -139,15 +144,18 @@ local function fake_view_env(script)
         initialize_source = function() calls.initialized = "source"; return {} end,
         initialize_master = function() calls.initialized = "master"; return {} end,
         delivery_tracks = function() return script.lanes or {} end,
-        selection_counts = function() return script.selection or {} end,
+        selected_tracks = function() return script.selected_tracks or {} end,
       },
       reference_subscription = {
         local_surface = function() return surface end,
       },
       reference_publish = {
         reference_tracks = function() return script.reference_tracks or {} end,
-        timeline_entries = function() return {} end,
-        selection_counts = function() return {} end,
+        timeline_entries = function()
+          if script.timeline_error then return nil, script.timeline_error end
+          return script.timeline_entries or {}
+        end,
+        selected_tracks = function() return script.selected_tracks or {} end,
         review = function(_, _, options) calls.rebuilt = options; return script.rebuilt_review end,
       },
       delivery_update = {
@@ -164,6 +172,7 @@ local function fake_view_env(script)
       end,
     },
     app = {
+      collapsed_groups = {},
       checks = {
         reference = script.reference_check or { state = "done", latest = 2 },
         deliveries = script.delivery_checks or {},
@@ -268,9 +277,29 @@ local function card_options(calls, id)
   end
 end
 
-function tests.source_cards_use_card_row()
-  local selection = { tracks = { selected = 2 } }
-  local env, calls = fake_view_env({ lanes = { { item_count = 3 } }, selection = selection })
+local function section_ids(options)
+  local ids = {}
+  for index, section in ipairs(options.sections or {}) do ids[index] = section.id .. ":" .. section.heading end
+  return table.concat(ids, ",")
+end
+
+local function contains(list, value)
+  for _, entry in ipairs(list) do if entry == value then return true end end
+  return false
+end
+
+local function rows(list)
+  local titles = {}
+  for _, item in ipairs(list.items) do if item.kind == "row" then table.insert(titles, item.title) end end
+  return titles
+end
+
+function tests.source_cards_use_sections()
+  local env, calls = fake_view_env({
+    lanes = { { display_name = "SFX_Impacts", item_count = 3 } },
+    selected_tracks = { { display_name = "SFX_Impacts", registered = true },
+      { display_name = "Room Tone", registered = false } },
+  })
   source_main.draw(env, SOURCE_STATE)
   equal(calls.card_row.cards[1].options.id, "source-reference", "first card")
   equal(calls.card_row.cards[2].options.id, "source-delivery", "second card")
@@ -279,41 +308,86 @@ function tests.source_cards_use_card_row()
   equal(delivery.variant, "emphasized", "delivery emphasized")
   equal(reference.status.text, "Up to Date", "reference status")
   equal(reference.status.detail, "Reference r2", "reference status detail")
-  equal(delivery.selection.actions[1].label, "Register", "first selection action")
-  equal(delivery.selection.actions[2].label, "Unregister", "second selection action")
-  equal(delivery.selection.heading, "Selected", "selection heading")
-  equal(delivery.selection.parts[1].value, 2, "selected track count")
-  equal(reference.selection, nil, "source reference has no selection")
+  equal(section_ids(reference), "synchronized:Synchronized", "reference sections")
+  equal(section_ids(delivery), "registered:Registered,selected:Selected", "delivery sections")
+  local registered = calls.lists["source-delivery-registered"]
+  equal(registered.variant, "compact", "compact list")
+  equal(registered.items[1].label, "Track · 3 Items", "registered header")
+  equal(registered.items[2].trailing_text, "3 Items", "item count")
+  local selected = calls.lists["source-delivery-selected"]
+  equal(table.concat(rows(selected), ","), "SFX_Impacts,Room Tone", "selected names")
+  equal(selected.items[3].status.text, "Not Registered", "selected state")
+  local selection_actions = calls.action_bars["source-delivery-selected-actions"].actions
+  equal(selection_actions[1].label, "Register", "register action")
+  equal(selection_actions[2].label, "Unregister", "unregister action")
+  equal(selection_actions[1].disabled, false, "register enabled")
   local actions = delivery.footer.actions
   equal(#actions, 1, "one card action")
   equal(actions[1].label, "Review and Publish", "card action")
   equal(actions[1].variant, "primary", "card action primary")
 end
 
-function tests.source_reference_names_list()
+function tests.source_reference_lists_every_name()
   local surface = { tracks = named(6, "Track"), markers = named(2, "Marker"), regions = {} }
-  local env, calls = fake_view_env({ surface = surface, list = { events = {}, overflow_toggled = true } })
-  env.app.reference_names_expanded = false
+  local env, calls = fake_view_env({ surface = surface })
   source_main.draw(env, SOURCE_STATE)
-  equal(calls.list.variant, "compact", "compact list")
-  local rows = 0
-  for _, item in ipairs(calls.list.items) do if item.kind == "row" then rows = rows + 1 end end
-  equal(rows, 5, "five rows")
-  equal(calls.list.overflow.label, "+ 3 more", "overflow label")
-  equal(env.app.reference_names_expanded, true, "overflow toggle expands")
+  local list = calls.lists["source-reference-synchronized"]
+  equal(#rows(list), 8, "every name")
+  equal(list.overflow, nil, "no overflow")
 
-  env, calls = fake_view_env({ surface = surface, list = { events = {}, action = { row = "track-1", id = "detach" } } })
+  env, calls = fake_view_env({ surface = surface, lists = {
+    ["source-reference-synchronized"] = { events = {}, action = { row = "tracks-1", id = "detach" } },
+  }, card_row = { events = {}, actions = { ["source-reference"] = { id = "detach_track", ref = "Track1",
+    name = "Track 1", kind = "Track" } } } })
   source_main.draw(env, SOURCE_STATE)
   equal(calls.confirmation.id, "detach-reference-track", "row action requests detach confirmation")
 end
 
-function tests.source_reference_without_sync_has_no_list()
+function tests.source_reference_section_returns_the_detach_action()
+  local surface = { tracks = named(1, "Track"), markers = {}, regions = {} }
+  local env, calls = fake_view_env({ surface = surface, lists = {
+    ["source-reference-synchronized"] = { events = {}, action = { row = "tracks-1", id = "detach" } },
+  } })
+  source_main.draw(env, SOURCE_STATE)
+  local action = card_options(calls, "source-reference").sections[1].render()
+  equal(action.id, "detach_track", "detach action")
+  equal(action.ref, "Track1", "detach ref")
+end
+
+function tests.source_reference_without_sync_has_no_sections()
   local state = {}
   for key, value in pairs(SOURCE_STATE) do state[key] = value end
   state.synchronized_reference_revision = 0
   local env, calls = fake_view_env({ surface = { tracks = named(2, "Track"), markers = {}, regions = {} } })
   source_main.draw(env, state)
-  equal(calls.list, nil, "no list without synchronization")
+  equal(card_options(calls, "source-reference").sections, nil, "no sections without synchronization")
+  equal(calls.lists["source-reference-synchronized"], nil, "no list without synchronization")
+end
+
+function tests.group_toggle_flips_collapse_state()
+  local env, calls = fake_view_env({ lanes = { { display_name = "DX", item_count = 1 } }, lists = {
+    ["source-delivery-registered"] = { events = {}, toggled_group = "tracks" },
+  } })
+  source_main.draw(env, SOURCE_STATE)
+  equal(env.app.collapsed_groups["source-delivery-registered/tracks"], true, "toggle collapses")
+  equal(calls.lists["source-delivery-registered"].items[1].collapsed, false, "drawn expanded this frame")
+  calls.lists = {}
+  source_main.draw(env, SOURCE_STATE)
+  equal(calls.lists["source-delivery-registered"].items[1].collapsed, true, "next frame draws it collapsed")
+end
+
+function tests.empty_sections_show_muted_text()
+  local env, calls = fake_view_env()
+  source_main.draw(env, SOURCE_STATE)
+  equal(contains(calls.order, "muted:Nothing registered"), true, "nothing registered")
+  equal(contains(calls.order, "muted:Nothing selected"), true, "nothing selected")
+  local selection_actions = calls.action_bars["source-delivery-selected-actions"].actions
+  equal(selection_actions[1].disabled, true, "register disabled")
+  equal(selection_actions[2].disabled, true, "unregister disabled")
+
+  env, calls = fake_view_env({ surface = { tracks = {}, markers = {}, regions = {} } })
+  source_main.draw(env, SOURCE_STATE)
+  equal(contains(calls.order, "muted:Nothing synchronized"), true, "nothing synchronized")
 end
 
 local MASTER_STATE = { path = "C:/Session/Mix.rpp", reference_revision = 1 }
@@ -343,8 +417,9 @@ function tests.master_deliveries_rows_use_list()
   equal(deliveries.status.text, "2 Need Attention", "aggregate status")
   equal(deliveries.trailing.kind, "icon_button", "trailing kind")
   equal(deliveries.trailing.icon, "plus", "trailing icon")
-  local rows = calls.list.items
-  equal(calls.list.variant, "standard", "standard list")
+  local deliveries_list = calls.lists["master-deliveries-list"]
+  local rows = deliveries_list.items
+  equal(deliveries_list.variant, "standard", "standard list")
   equal(#rows, 3, "three rows")
   equal(rows[1].action.label, "Sync", "first row action")
   equal(rows[1].action.variant, "primary", "first attention row is primary")
@@ -354,6 +429,36 @@ function tests.master_deliveries_rows_use_list()
   equal(rows[1].menu.items[2].id, "remove", "row menu")
   equal(card_options(calls, "master-reference").footer.actions[1].variant, nil,
     "Reference footer has no primary when Deliveries is highlighted")
+end
+
+function tests.master_reference_lists_names_and_selection()
+  local env, calls = master_env({
+    reference_tracks = { { display_name = "Picture" } },
+    timeline_entries = {
+      { kind = "marker", name = "FFOP", registered = true, selected = true },
+      { kind = "region", name = "Scene 1", registered = false, selected = true },
+    },
+    selected_tracks = { { display_name = "Guide", registered = false } },
+    card_row = { events = {}, actions = { ["master-reference"] = "register_selected" } },
+  })
+  env.services.reference_publish.register_selected = function() calls.registered = true; return {} end
+  master_main.draw(env, MASTER_STATE)
+  local reference = card_options(calls, "master-reference")
+  equal(section_ids(reference), "registered:Registered,selected:Selected", "reference sections")
+  equal(table.concat(rows(calls.lists["master-reference-registered"]), ","), "Picture,FFOP", "registered names")
+  local selected = calls.lists["master-reference-selected"]
+  equal(table.concat(rows(selected), ","), "Guide,FFOP,Scene 1", "selected names")
+  equal(selected.items[4].status.text, "Registered", "registered marker")
+  equal(calls.registered, true, "Register routes to the service")
+end
+
+function tests.master_sections_hide_kinds_when_registry_is_invalid()
+  local env, calls = master_env({ reference_tracks = {}, timeline_error = "bad" })
+  master_main.draw(env, MASTER_STATE)
+  equal(calls.lists["master-reference-registered"], nil, "no registered groups")
+  equal(contains(calls.order, "muted:Nothing registered"), false, "no empty registered text")
+  equal(contains(calls.order, "muted:Nothing selected"), false, "no empty selected text")
+  equal(contains(calls.order, "small:bad"), true, "error note shown")
 end
 
 function tests.master_deliveries_actions_route()
@@ -374,7 +479,7 @@ end
 function tests.master_deliveries_empty_state()
   local env, calls = master_env({ subscriptions = "" })
   master_main.draw(env, MASTER_STATE)
-  equal(calls.list, nil, "no list without rows")
+  equal(calls.lists["master-deliveries-list"], nil, "no list without rows")
   local deliveries = card_options(calls, "master-deliveries")
   equal(deliveries.status.text, "No Deliveries Yet", "empty status")
   equal(deliveries.footer.actions[1].label, "Add Delivery", "empty action")

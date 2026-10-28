@@ -95,12 +95,12 @@ function tests.reset_clears_transient_state()
   equal(app.moved_items_change_count, -1, "moved-item tracking reset")
 end
 
-function tests.reset_collapses_reference_names()
+function tests.reset_expands_every_group()
   local app = app_state.new(clock)
-  equal(app.reference_names_expanded, false, "collapsed by default")
-  app.reference_names_expanded = true
+  equal(next(app.collapsed_groups), nil, "every group expanded by default")
+  app.collapsed_groups["source-delivery-registered/tracks"] = true
   app:reset()
-  equal(app.reference_names_expanded, false, "reset collapses")
+  equal(next(app.collapsed_groups), nil, "reset expands every group")
 end
 
 local passed = 0

@@ -990,6 +990,26 @@ Markers 0 · Regions 2`, with bold counts and muted zeros; `Nothing selected in
 REAPER` is no longer shown. The buttons sit on their own row below. The footer
 keeps only the card-level button, pinned to the bottom right.
 
+Amendment (2026-10-28): cards list content by name instead of counting it
+(ReaToolUI DS024). Item 3 and the 2026-10-27 amendment are replaced:
+
+- Stat tiles are removed. A `Registered` section (`Synchronized` on the Source
+  Reference, shown only after a synchronization) lists every registered name
+  in a collapsible group per kind, for example `▾ 3 Tracks`, expanded by
+  default. Kinds without names have no group; there is no `Show All`. On the
+  Source Delivery each Track row shows its Item count and the group reads
+  `3 Tracks · 5 Items`. Source Reference rows keep `Detach...`. Collapse state
+  lives in memory and resets when the project changes.
+- On the Master Reference and Source Delivery a `Selected` section lists what
+  is selected in REAPER, each row tagged `Registered` or `Not Registered`, or
+  `Nothing selected`. `Register` is disabled when every selected entry is
+  registered; `Unregister` is disabled when none is.
+- Empty sections read `Nothing registered` or `Nothing synchronized`. When the
+  Marker/Region registry is invalid, the Markers and Regions groups and the
+  empty texts are omitted.
+- The status detail, such as the revision, follows the status text on the
+  same line and wraps below only when it does not fit.
+
 ### D094 — Long operations run in the background
 
 Media hashing and copying run in background child processes so REAPER keeps

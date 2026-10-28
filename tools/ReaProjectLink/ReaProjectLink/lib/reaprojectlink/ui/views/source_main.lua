@@ -7,22 +7,14 @@ local delivery_publish_review = require("reaprojectlink.ui.views.delivery_publis
 
 local M = {}
 
-local function input(env, state, surface)
-  local lanes = env.services.project_service.delivery_tracks(env.adapter)
-  local items = 0
-  for _, lane in ipairs(lanes) do items = items + lane.item_count end
+local function input(env, state, lanes)
   return {
     subscribed = state.reference_manifest_path ~= nil and state.reference_manifest_path ~= "",
     synchronized = state.synchronized_reference_revision,
-    reference_counts = {
-      tracks = #surface.tracks, markers = #surface.markers, regions = #surface.regions,
-    },
     check = env.app.checks.reference,
     media_error = env.app.media_error,
     track_count = #lanes,
-    item_count = items,
     delivery_revision = state.delivery_revision,
-    selection_counts = env.services.project_service.selection_counts(env.adapter),
   }
 end
 
@@ -30,16 +22,29 @@ local function display_name(name, fallback)
   return name ~= nil and name ~= "" and name or fallback
 end
 
--- Returns the detach action chosen in the Reference name List, if any.
-local function draw_reference_names(env, surface)
-  local app = env.app
-  local items, overflow, lookup = view_models.reference_name_list(surface, app.reference_names_expanded)
-  if #items == 0 then return nil end
-  local result = env.design_system.components.list.draw({
-    id = "source-reference-names", variant = "compact", items = items, overflow = overflow,
-  })
-  if result.overflow_toggled then app.reference_names_expanded = not app.reference_names_expanded end
-  return result.action and lookup[result.action.row]
+local function reference_sections(env, surface)
+  local items, lookup = view_models.reference_name_list(surface)
+  return { card.section(env, "source-reference-synchronized", {
+    id = "synchronized", heading = "Synchronized", items = items, lookup = lookup, empty = "Nothing synchronized",
+  }) }
+end
+
+local function delivery_sections(env, lanes)
+  local registered, selected = {}, {}
+  for index, lane in ipairs(lanes) do
+    registered[index] = { name = lane.display_name, item_count = lane.item_count }
+  end
+  for index, track in ipairs(env.services.project_service.selected_tracks(env.adapter)) do
+    selected[index] = { name = track.display_name, registered = track.registered }
+  end
+  local selection = { tracks = selected }
+  return {
+    card.section(env, "source-delivery-registered", { id = "registered", heading = "Registered",
+      items = view_models.registered_items({ tracks = registered }), empty = "Nothing registered" }),
+    card.section(env, "source-delivery-selected", { id = "selected", heading = "Selected",
+      items = view_models.selected_items(selection), empty = "Nothing selected",
+      actions = view_models.selection_actions(selection) }),
+  }
 end
 
 local function handle_detach(env, action)
@@ -96,31 +101,29 @@ local function handle(env, action)
 end
 
 function M.draw(env, state)
-  local surface = env.services.reference_subscription.local_surface(env.adapter)
-  local values = input(env, state, surface)
+  local lanes = env.services.project_service.delivery_tracks(env.adapter)
+  local values = input(env, state, lanes)
   local cards = view_models.source_cards(values)
   header.draw(env, state, "Source")
-  local detach
+  local synchronized = (values.synchronized or 0) > 0
   local result = env.design_system.components.card_row.draw({
     id = "source-cards",
     cards = {
       {
         options = card.options(cards.reference, "source-reference", "film", "Reference",
-          cards.highlight == "reference"),
-        render_body = function()
-          card.body(env, "source-reference", cards.reference, function()
-            if (values.synchronized or 0) > 0 then detach = draw_reference_names(env, surface) end
-          end)
-        end,
+          cards.highlight == "reference",
+          synchronized and reference_sections(env, env.services.reference_subscription.local_surface(env.adapter))
+            or nil),
+        render_body = function() card.body(env, cards.reference) end,
       },
       {
         options = card.options(cards.delivery, "source-delivery", "upload", "Delivery",
-          cards.highlight == "delivery"),
-        render_body = function() card.body(env, "source-delivery", cards.delivery) end,
+          cards.highlight == "delivery", delivery_sections(env, lanes)),
+        render_body = function() card.body(env, cards.delivery) end,
       },
     },
   })
-  local action = detach or result.actions["source-reference"] or result.actions["source-delivery"]
+  local action = result.actions["source-reference"] or result.actions["source-delivery"]
   if action then handle(env, action) end
 end
 

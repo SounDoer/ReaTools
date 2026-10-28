@@ -203,8 +203,9 @@ local reviews = {
   },
 }
 
--- Populated main views: Delivery footer with three actions, the Reference
--- name List with overflow, and Delivery rows in each check state.
+-- Populated main views: Registered and Selected sections, the Reference
+-- name List with expanded and collapsed groups, and Delivery rows in each
+-- check state.
 local populated_source = {
   project_values = {
     reference_manifest_path = "C:/smoke/reference.json",
@@ -228,7 +229,9 @@ local populated_source = {
         return { { lane_id = "a", display_name = "SFX_Impacts", item_count = 4 },
           { lane_id = "b", display_name = "SFX_Whooshes", item_count = 2 } }
       end,
-      selection_counts = function() return { tracks = { selected = 1, registered = 1 } } end,
+      selected_tracks = function()
+        return { { display_name = "SFX_Impacts", registered = true }, { display_name = "Room Tone", registered = false } }
+      end,
     },
   },
 }
@@ -257,12 +260,18 @@ local populated_master = {
       end,
     },
     reference_publish = {
-      reference_tracks = function() return { {}, {}, {} } end,
-      timeline_entries = function()
-        return { { kind = "marker", registered = true }, { kind = "marker", registered = true },
-          { kind = "region", registered = true } }
+      reference_tracks = function()
+        return { { display_name = "Picture" }, { display_name = "Dialogue Guide" }, { display_name = "" } }
       end,
-      selection_counts = function() return { tracks = { selected = 2 } } end,
+      timeline_entries = function()
+        return { { kind = "marker", name = "FFOP", registered = true, selected = true },
+          { kind = "marker", name = "LFOA", registered = true },
+          { kind = "region", name = "Scene 1", registered = true },
+          { kind = "region", name = "Scene 2", selected = true } }
+      end,
+      selected_tracks = function()
+        return { { display_name = "Picture", registered = true }, { display_name = "Temp Music", registered = false } }
+      end,
     },
   },
 }
@@ -278,7 +287,8 @@ local views = {
   { project_type = "" },
   { project_type = "source" },
   with(populated_source, { project_type = "source" }),
-  with(populated_source, { project_type = "source", reference_names_expanded = true }),
+  with(populated_source, { project_type = "source",
+    collapsed_groups = { ["source-reference-synchronized/markers"] = true } }),
   with(populated_master, { project_type = "master" }),
   { project_type = "source", view = "settings" },
   { project_type = "source", review = reviews.reference_update },

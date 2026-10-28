@@ -38,6 +38,9 @@ function M.create(ImGui, ctx, design_system)
   function c.small(text)
     secondary(function() with_text("metadata", function() ImGui.TextWrapped(ctx, text) end) end)
   end
+  function c.muted(text)
+    secondary(function() with_text("body", function() ImGui.TextWrapped(ctx, text) end) end)
+  end
 
   function c.button(label, kind)
     local visible, id = split_label(label)

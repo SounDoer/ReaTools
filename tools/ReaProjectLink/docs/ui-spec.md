@@ -82,15 +82,23 @@ remaining setup.
 
 Every card is a ReaToolUI Card with the same anatomy: icon + title + optional
 trailing icon button; one status line (status glyph + text) with an optional
-secondary detail such as the revision; stat tiles for the counts; an optional
-note; and a footer Action Bar. On a card with registerable content, a
-selection section follows the counts behind a divider: a `Selected` heading,
-the selected count for every kind the card registers (Tracks **4** · Markers
-**0** · Regions **2** on the Master Reference; Tracks only on the Source
-Delivery; zero counts are muted), and a row with two secondary buttons,
-`Register` and `Unregister`, that act on whatever is selected in REAPER
-(D093). The footer holds only the card-level
-button, pinned to the bottom right and primary only on the highlighted card.
+secondary detail such as the revision, on the same line when it fits; an
+optional note; content sections; and a footer Action Bar. Each section sits
+behind a divider (D093):
+
+- `Registered` (`Synchronized` on the Source Reference) lists every name in a
+  collapsible group per kind, for example `▾ 3 Tracks`, expanded by default.
+  Kinds without names have no group. An empty section reads `Nothing
+  registered` or `Nothing synchronized`.
+- `Selected` (Master Reference and Source Delivery) lists what is selected in
+  REAPER, each row tagged `Registered` or `Not Registered`, or reads `Nothing
+  selected`. A row of two secondary buttons, `Register` and `Unregister`,
+  acts on the selection; `Register` is disabled when everything selected is
+  registered and `Unregister` when nothing selected is.
+
+Group collapse state resets when the project changes. The footer holds only
+the card-level button, pinned to the bottom right and primary only on the
+highlighted card.
 
 ### 2.1 Source · Reference
 
@@ -104,37 +112,37 @@ button, pinned to the bottom right and primary only on the highlighted card.
 | Newer available | `Reference rN Available` (warning), detail `Synchronized rM` | Tracks, Markers, and Regions currently in the project | `Review Update` |
 | Up to date | `Up to Date` (ready), detail `Reference rN` | Tracks, Markers, and Regions currently in the project | — |
 
-Before the first synchronization those three counts are omitted. They describe the revision already in the project, including while a newer revision is available.
-
 The "synchronized but not reviewed" state no longer exists (D086).
 
-When a Reference revision is already in the project, a compact List below the counts names the Tracks, Markers, and Regions, each with its own `Detach...`. It shows the first 5 names in total, in the order Tracks, Markers, Regions, with a group label per kind; the rest collapse behind a `+ N more` row with `Show All`, which expands in place and offers `Show Less` (D093). The list shows at every window width and collapses again when the project changes. There is no separate Contents section. Detach leaves the object in the project and stops later synchronizations from changing it. The next synchronization adds a new managed copy. Detaching a Track also detaches the Reference Items on it; those Items are not listed separately. There is no `···` menu on this card.
+When a Reference revision is already in the project, a `Synchronized` section lists its Tracks, Markers, and Regions in one collapsible group per kind, each name with its own `Detach...` (D093). It describes the revision already in the project, including while a newer revision is available; before the first synchronization the section is omitted. There is no separate Contents section. Detach leaves the object in the project and stops later synchronizations from changing it. The next synchronization adds a new managed copy. Detaching a Track also detaches the Reference Items on it; those Items are not listed separately. There is no `···` menu on this card.
 
 ### 2.2 Source · Delivery
 
-The selection section and its `Register` / `Unregister` buttons act on
-whatever Tracks are selected in REAPER. There is no `···` menu on this card.
+The `Registered` section lists the Delivery Tracks with their Item counts
+(`3 Tracks · 5 Items`). The `Selected` section and its `Register` /
+`Unregister` buttons act on whatever Tracks are selected in REAPER. There is
+no `···` menu on this card.
 
 | State | Status line | Info | Button |
 |---|---|---|---|
-| No tracks | `No Delivery Tracks` (warning) | "Select tracks in REAPER first."; stats show `Tracks 0`, `Items 0` | — |
-| Never published | `Not Published Yet` (neutral) | `Tracks` and `Items` stats | `Review and Publish` |
-| Published | `Last Published rN` (ready) | `Tracks` and `Items` stats | `Review and Publish` |
+| No tracks | `No Delivery Tracks` (warning) | "Select tracks in REAPER first."; `Nothing registered` | — |
+| Never published | `Not Published Yet` (neutral) | Registered Tracks | `Review and Publish` |
+| Published | `Last Published rN` (ready) | Registered Tracks | `Review and Publish` |
 
 When the Delivery card is not highlighted because a newer Reference is pending,
 the button stays enabled and a hint reads `Will record Reference rN`.
 
 ### 2.3 Master · Reference
 
-The footer's selection context and `Register` / `Unregister` buttons register
-or unregister whatever Tracks, Markers, or Regions are selected in REAPER.
+The `Selected` section's `Register` / `Unregister` buttons register or
+unregister whatever Tracks, Markers, or Regions are selected in REAPER.
 
 | State | Status line | Info | Button |
 |---|---|---|---|
 | Nothing registered | `Nothing Registered` (warning) | "Select Tracks, Markers, or Regions in REAPER, then register them." | — |
-| Never published | `Not Published Yet` (warning) | `Tracks`, `Markers`, and `Regions` stats | `Review and Publish` |
-| Published | `Published rN` (neutral) | `Tracks`, `Markers`, and `Regions` stats | `Review and Publish` |
-| Package Missing | `Package Missing` (blocked) | Stats; note explains published files weren't found | `Review and Publish` |
+| Never published | `Not Published Yet` (warning) | Registered Tracks, Markers, and Regions | `Review and Publish` |
+| Published | `Published rN` (neutral) | Registered Tracks, Markers, and Regions | `Review and Publish` |
+| Package Missing | `Package Missing` (blocked) | Registered content; note explains published files weren't found | `Review and Publish` |
 
 There is no `···` menu on this card.
 

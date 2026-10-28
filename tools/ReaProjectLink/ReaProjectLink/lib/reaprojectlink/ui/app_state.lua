@@ -17,7 +17,7 @@ function M.new(clock)
     self.check_phase = nil
     self.checked_at = nil
     self.moved_items_change_count = -1
-    self.reference_names_expanded = false
+    self.collapsed_groups = {}
   end
 
   function app:open_review(kind, fields)

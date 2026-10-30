@@ -2,7 +2,7 @@
 
 ReaProjectLink 是一个 REAPER 脚本，用来在多个工程之间同步画面和交付音频：Master Project 把画面和 Marker 发给各部门，各部门把做好的音频交回 Master Project。各工程互不直接修改，每次更新都由接收的一方确认后再同步。
 
-本手册对应 ReaProjectLink 【待发布版本】。界面是英文的，手册中的按钮、状态名称都按界面原样书写。
+本手册对应 ReaProjectLink 0.3.0。界面是英文的，手册中的按钮、状态名称都按界面原样书写。
 
 ## 开始之前
 

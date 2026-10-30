@@ -92,6 +92,10 @@ ReaTools 发布新版本后，需要手动同步：
 2. ReaPack 会下载所有已安装包的新版本，并在完成后列出更新内容。
 3. 如果 ReaProjectLink 窗口开着，先关掉再重新打开，新版本才会生效。
 
+![同步完成后的更新内容](images/install-sync-report.png)
+
+`Installed` 下的 `[v0.2.0 -> v0.3.0]` 表示从哪个版本升级到了哪个版本，下面是这个版本的更新说明。
+
 > 如果这次同步也更新了 ReaImGui，需要重启 REAPER。
 
 ## 6. 查看版本与回滚

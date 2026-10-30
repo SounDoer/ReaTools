@@ -121,7 +121,8 @@ function M.draw(env)
     header = workflow.job_header(review, {
       title = string.format("Publish Reference r%d", data.reference_revision),
       summary = view_models.count(#data.lanes, "track") .. " · " ..
-        view_models.count(#data.markers + #data.regions, "marker"),
+        view_models.count(#data.markers, "marker") .. " · " ..
+        view_models.count(#data.regions, "region"),
     }),
     footer = { summary = summary, role = level, complete_label = publishing and "Publishing..." or "Publish",
       enabled = not publishing and not stale and issues == 0 },

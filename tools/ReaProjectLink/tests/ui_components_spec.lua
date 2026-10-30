@@ -76,6 +76,42 @@ function tests.toast_rises_above_review_footer()
   assert(y == 570, "toast clears the Review footer: " .. tostring(y))
 end
 
+function tests.dropdown_popup_uses_inset_padding_instead_of_page_padding()
+  local ImGui = { StyleVar_FramePadding = 1, StyleVar_WindowPadding = 2 }
+  local pushed, popped, window_padding = 0, 0, nil
+  function ImGui.CreateListClipper() return {} end
+  function ImGui.Attach() end
+  function ImGui.SetNextItemWidth() end
+  function ImGui.PushStyleColor() end
+  function ImGui.PopStyleColor() end
+  function ImGui.GetStyleVar() return 8, 4 end
+  function ImGui.GetFontSize() return 14 end
+  function ImGui.PushStyleVar(_, var, x, y)
+    pushed = pushed + 1
+    if var == ImGui.StyleVar_WindowPadding then window_padding = { x, y } end
+  end
+  function ImGui.PopStyleVar(_, count) popped = popped + (count or 1) end
+  function ImGui.BeginCombo() return true end
+  function ImGui.Selectable() return false end
+  function ImGui.Separator() end
+  function ImGui.EndCombo() end
+  local tokens = {
+    ["semantic.size.control.medium"] = 32,
+    ["semantic.space.inset.padding_x"] = 12,
+    ["semantic.space.inset.padding_y"] = 8,
+  }
+  local c = components.create(ImGui, "context", {
+    adapter = { resolve = function(id) return tokens[id] or 0 end },
+    components = {}, patterns = {},
+  })
+
+  c.dropdown("lane", "New Track", { { id = "create", label = "New Track" }, { separator = true } })
+
+  assert(window_padding, "popup padding is set")
+  assert(window_padding[1] == 12 and window_padding[2] == 8, "popup uses inset padding")
+  assert(popped == pushed, "style var stack is balanced")
+end
+
 local passed = 0
 for name, test in pairs(tests) do
   local ok, err = pcall(test)

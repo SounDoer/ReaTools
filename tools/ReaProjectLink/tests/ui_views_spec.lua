@@ -687,6 +687,27 @@ function tests.reference_update_shift_decision()
   equal(calls.review_shell.footer.enabled, true, "footer enabled")
 end
 
+function tests.reference_publish_summary_counts_regions_separately()
+  local data = reference_publish_data({ lanes = { {} }, markers = { {}, {}, {} }, regions = { {}, {} } })
+  local env, calls = fake_view_env({ review = { data = data, options = {} } })
+  reference_publish_review.draw(env)
+  equal(calls.review_shell.header.summary, "1 track · 3 markers · 2 regions", "scope summary")
+end
+
+function tests.reference_update_summary_names_synchronized_revision_only_after_first_sync()
+  local status = { latest_revision = 1, synchronized_revision = 0, available = true, snapshot = {},
+    alignment_mode = "mirror" }
+  local env, calls = fake_view_env({ review = { status = status, shift_entire_project = false } })
+  reference_update_review.draw(env)
+  equal(calls.review_shell.header.summary, nil, "no summary before the first sync")
+
+  status = { latest_revision = 3, synchronized_revision = 2, available = true, snapshot = {},
+    alignment_mode = "mirror" }
+  env, calls = fake_view_env({ review = { status = status, shift_entire_project = false } })
+  reference_update_review.draw(env)
+  equal(calls.review_shell.header.summary, "Synchronized r2", "synchronized revision summary")
+end
+
 function tests.stale_review_passes_stale()
   local data = reference_publish_data({ project_change_count = 5 })
   local env, calls = fake_view_env({

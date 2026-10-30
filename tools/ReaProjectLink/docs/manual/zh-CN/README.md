@@ -10,7 +10,9 @@ ReaProjectLink 是一个 REAPER 脚本，用来在多个工程之间同步画面
 
 ## 阅读顺序
 
-所有人都建议先读：
+只想快速用起来：读 [快速上手](quick-start.md) 一篇就够了。
+
+想完整了解，建议先读：
 
 1. [ReaProjectLink 解决什么问题](01-what-it-solves.md)
 2. [核心概念](02-concepts.md)

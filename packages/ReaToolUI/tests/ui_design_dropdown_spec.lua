@@ -15,14 +15,19 @@ local function dependencies()
     Col_FrameBg = 1, Col_FrameBgHovered = 2, Col_FrameBgActive = 3,
     Col_Text = 4, Col_Border = 5, Col_Header = 6, Col_HeaderHovered = 7,
     Col_HeaderActive = 8, Col_Button = 9, Col_ButtonHovered = 10, Col_ButtonActive = 11,
-    StyleVar_FramePadding = 1,
+    StyleVar_FramePadding = 1, StyleVar_WindowPadding = 2,
   }
+  calls.style_vars = {}
   function ImGui.SetNextItemWidth(_, width) calls.width = width end
   function ImGui.PushStyleColor(_, index) calls.colors = calls.colors + 1; calls.pushed[index] = true end
   function ImGui.PopStyleColor(_, count) calls.popped = calls.popped + count end
   function ImGui.GetStyleVar() return 8, 4 end
   function ImGui.GetFontSize() return 14 end
-  function ImGui.PushStyleVar(_, _, x, y) calls.vars = calls.vars + 1; calls.padding = { x, y } end
+  function ImGui.PushStyleVar(_, var, x, y)
+    calls.vars = calls.vars + 1
+    calls.style_vars[var] = { x, y }
+    if var == ImGui.StyleVar_FramePadding then calls.padding = { x, y } end
+  end
   function ImGui.PopStyleVar(_, count) calls.vars_popped = calls.vars_popped + (count or 1) end
   function ImGui.BeginDisabled() calls.disabled_begin = calls.disabled_begin + 1 end
   function ImGui.EndDisabled() calls.disabled_end = calls.disabled_end + 1 end
@@ -40,6 +45,8 @@ local function dependencies()
   function ImGui.SetItemDefaultFocus() calls.default_focus = true end
   local adapter = { resolve = function(id)
     if id == "semantic.size.control.medium" then return 32 end
+    if id == "semantic.space.inset.padding_x" then return 12 end
+    if id == "semantic.space.inset.padding_y" then return 8 end
     return 0x112233ff
   end }
   local shell = {}
@@ -78,6 +85,18 @@ function tests.arrow_button_and_height_match_inputs()
   equal(calls.padding[1], 8, "horizontal padding kept")
   equal(calls.padding[2], 9, "padding reaches the medium control height")
   equal(calls.popped, calls.colors, "color stack")
+  equal(calls.vars_popped, calls.vars, "style var stack")
+end
+
+function tests.popup_uses_inset_padding_instead_of_page_padding()
+  local ImGui, adapter, shell, calls = dependencies()
+  calls.open = true
+  local dropdown = dropdown_module.create(ImGui, "ctx", adapter, shell)
+  dropdown.draw({ id = "policy", value = "replace", options = OPTIONS })
+  local padding = calls.style_vars[ImGui.StyleVar_WindowPadding]
+  assert(padding, "popup padding is set")
+  equal(padding[1], 12, "popup horizontal padding")
+  equal(padding[2], 8, "popup vertical padding")
   equal(calls.vars_popped, calls.vars, "style var stack")
 end
 

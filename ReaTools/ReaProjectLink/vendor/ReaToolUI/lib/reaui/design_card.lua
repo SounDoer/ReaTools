@@ -3,6 +3,7 @@ local button_module = require("reaui.design_button")
 local status_module = require("reaui.design_status")
 local menu_module = require("reaui.design_menu")
 local action_bar_module = require("reaui.design_action_bar")
+local section_heading_module = require("reaui.design_section_heading")
 local layout_module = require("reaui.design_layout")
 
 local M = {}
@@ -32,6 +33,7 @@ function M.create(ImGui, ctx, adapter, deps)
   local action_bar = deps.action_bar or action_bar_module.create(ImGui, ctx, adapter, button)
   local icons = deps.icons or default_icons
   local layout = deps.layout or layout_module.create(ImGui, ctx, adapter)
+  local section_heading = deps.section_heading or section_heading_module.create(ImGui, ctx, adapter, layout)
   local component = {}
   -- Heights measured on the previous frame, keyed by card id.
   local natural, footer_heights = {}, {}
@@ -55,6 +57,15 @@ function M.create(ImGui, ctx, adapter, deps)
     if options.title ~= nil then required_string(options.title, "card title") end
     if options.trailing ~= nil and not TRAILING_KINDS[options.trailing.kind] then
       error("unsupported card trailing kind " .. tostring(options.trailing.kind))
+    end
+    if options.selection ~= nil then error("card selection was replaced by card sections") end
+    for _, section in ipairs(options.sections or {}) do
+      required_string(section.id, "card section id")
+      required_string(section.heading, "card section heading")
+      if type(section.render) ~= "function" then error("card section render must be a function") end
+      if section.actions ~= nil and type(section.actions) ~= "table" then
+        error("card section actions must be a table")
+      end
     end
   end
 
@@ -137,7 +148,25 @@ function M.create(ImGui, ctx, adapter, deps)
 
     if render_body then
       begin_block()
+      local top = ImGui.GetCursorPosY(ctx)
       result.body_result = render_body()
+      -- A body that drew nothing adds no block gap.
+      if ImGui.GetCursorPosY(ctx) ~= top then end_block(item_bottom()) end
+    end
+
+    for _, section in ipairs(options.sections or {}) do
+      begin_block()
+      local top = ImGui.GetCursorPosY(ctx)
+      ImGui.Separator(ctx)
+      ImGui.SetCursorPosY(ctx, top + resolve("semantic.space.footer.padding_y"))
+      section_heading.draw({ id = options.id .. "-" .. section.id, title = section.heading, gap_above = false })
+      local stack_gap = resolve("semantic.space.stack.tight")
+      ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + stack_gap)
+      choose(section.render())
+      if section.actions then
+        ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + stack_gap)
+        choose(action_bar.draw({ id = options.id .. "-" .. section.id .. "-actions", actions = section.actions }).action)
+      end
       end_block(item_bottom())
     end
 

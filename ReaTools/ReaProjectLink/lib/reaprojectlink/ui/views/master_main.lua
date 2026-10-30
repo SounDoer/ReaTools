@@ -15,14 +15,21 @@ local ROW_MENU = {
 
 local function input(env, state)
   local services, adapter, app = env.services, env.adapter, env.app
-  local tracks = services.reference_publish.reference_tracks(adapter)
-  local timeline_entries, marker_error = services.reference_publish.timeline_entries(adapter)
-  local markers, regions = 0, 0
+  local publish = services.reference_publish
+  local timeline_entries, marker_error = publish.timeline_entries(adapter)
+  -- Without a readable registry the Marker and Region kinds stay unknown.
+  local registered = { tracks = {}, markers = timeline_entries and {}, regions = timeline_entries and {} }
+  local selected = { tracks = {}, markers = timeline_entries and {}, regions = timeline_entries and {} }
+  for _, track in ipairs(publish.reference_tracks(adapter)) do
+    table.insert(registered.tracks, { name = track.display_name })
+  end
+  for _, track in ipairs(publish.selected_tracks(adapter)) do
+    table.insert(selected.tracks, { name = track.display_name, registered = track.registered })
+  end
   for _, entry in ipairs(timeline_entries or {}) do
-    if entry.registered then
-      if entry.kind == "region" then regions = regions + 1
-      else markers = markers + 1 end
-    end
+    local key = entry.kind == "region" and "regions" or "markers"
+    if entry.registered then table.insert(registered[key], { name = entry.name }) end
+    if entry.selected then table.insert(selected[key], { name = entry.name, registered = entry.registered }) end
   end
   local rows = {}
   for _, entry in ipairs(checks.subscriptions(adapter)) do
@@ -39,14 +46,27 @@ local function input(env, state)
     })
   end
   return {
-    track_count = #tracks,
-    marker_count = markers,
-    region_count = regions,
+    track_count = #registered.tracks,
+    marker_count = #(registered.markers or {}),
+    region_count = #(registered.regions or {}),
     marker_error = marker_error,
     reference_revision = state.reference_revision,
     package_check = app.checks.reference,
-    selection_counts = services.reference_publish.selection_counts(adapter),
+    registered = registered,
+    selected = selected,
     rows = rows,
+  }
+end
+
+-- While the registry is unreadable, empty texts would claim nothing is there.
+local function reference_sections(env, values)
+  local known = values.marker_error == nil
+  return {
+    card.section(env, "master-reference-registered", { id = "registered", heading = "Registered",
+      items = view_models.registered_items(values.registered), empty = known and "Nothing registered" or nil }),
+    card.section(env, "master-reference-selected", { id = "selected", heading = "Selected",
+      items = view_models.selected_items(values.selected), empty = known and "Nothing selected" or nil,
+      actions = view_models.selection_actions(values.selected) }),
   }
 end
 
@@ -174,8 +194,8 @@ function M.draw(env, state)
     cards = {
       {
         options = card.options(cards.reference, "master-reference", "film", "Reference",
-          cards.highlight == "reference"),
-        render_body = function() card.body(env, "master-reference", cards.reference) end,
+          cards.highlight == "reference", reference_sections(env, values)),
+        render_body = card.body(env, cards.reference),
       },
       deliveries_entry(env, cards, chosen),
     },

@@ -41,7 +41,8 @@ function M.draw(env)
     id = "reference-update",
     header = {
       title = string.format("Update Reference to r%d", status.latest_revision),
-      summary = string.format("Synchronized r%d", status.synchronized_revision),
+      summary = (status.synchronized_revision or 0) > 0
+        and string.format("Synchronized r%d", status.synchronized_revision) or nil,
     },
     footer = { summary = summary, role = status.available and "neutral" or "blocked",
       complete_label = "Synchronize", enabled = ready },

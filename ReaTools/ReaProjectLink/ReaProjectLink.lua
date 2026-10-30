@@ -1,10 +1,14 @@
 -- @description ReaProjectLink
--- @version 0.2.0
+-- @version 0.3.0
 -- @author ReaProjectLink contributors
 -- @changelog
---   Redesigned interface built on the shared ReaToolUI system.
---   Copy, publish, update, and sync operations run in the background with
---   progress and cancel, without blocking REAPER.
+--   Reference and Delivery cards list registered and selected Tracks, Markers,
+--   and Regions by name, grouped and collapsible.
+--   Selecting content in REAPER shows its registration state in a Selected
+--   section, with Register and Unregister.
+--   Publish Reference Review counts Markers and Regions separately.
+--   Dropdown menus have consistent padding; list rows and card spacing are
+--   aligned.
 -- @about
 --   Source-Master project coordination for REAPER on shared storage.
 --

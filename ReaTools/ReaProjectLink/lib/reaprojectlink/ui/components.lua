@@ -38,6 +38,9 @@ function M.create(ImGui, ctx, design_system)
   function c.small(text)
     secondary(function() with_text("metadata", function() ImGui.TextWrapped(ctx, text) end) end)
   end
+  function c.muted(text)
+    secondary(function() with_text("body", function() ImGui.TextWrapped(ctx, text) end) end)
+  end
 
   function c.button(label, kind)
     local visible, id = split_label(label)
@@ -130,6 +133,9 @@ function M.create(ImGui, ctx, design_system)
     local padding_x = ImGui.GetStyleVar(ctx, ImGui.StyleVar_FramePadding)
     ImGui.PushStyleVar(ctx, ImGui.StyleVar_FramePadding, padding_x,
       (resolve("semantic.size.control.medium") - ImGui.GetFontSize(ctx)) / 2)
+    -- The option popup would otherwise inherit the page padding.
+    ImGui.PushStyleVar(ctx, ImGui.StyleVar_WindowPadding,
+      resolve("semantic.space.inset.padding_x"), resolve("semantic.space.inset.padding_y"))
     if ImGui.BeginCombo(ctx, "##" .. id, preview) then
       for index, option in ipairs(options) do
         if option.separator then ImGui.Separator(ctx)
@@ -139,7 +145,7 @@ function M.create(ImGui, ctx, design_system)
       end
       ImGui.EndCombo(ctx)
     end
-    ImGui.PopStyleVar(ctx)
+    ImGui.PopStyleVar(ctx, 2)
     ImGui.PopStyleColor(ctx, 8)
     return chosen
   end

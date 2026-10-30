@@ -213,7 +213,7 @@ function M.create(deps)
     theme:use(scenario.theme)
     fixed_width = scenario.width
     env.app:reset()
-    env.app.reference_names_expanded = scenario.reference_names_expanded == true
+    for key, value in pairs(scenario.collapsed_groups or {}) do env.app.collapsed_groups[key] = value end
     settings_view:reset()
     env.app:request_check()
     -- Force the "shown" phase so the pointer check runs during this scenario's

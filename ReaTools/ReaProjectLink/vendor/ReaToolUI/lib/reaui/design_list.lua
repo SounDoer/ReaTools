@@ -49,6 +49,8 @@ function M.create(ImGui, ctx, adapter, deps)
     for _, item in ipairs(options.items) do
       if item.kind == "group" then
         required_string(item.label, "list group label")
+        if item.collapsible then required_string(item.id, "collapsible list group id") end
+        if item.count ~= nil and math.type(item.count) ~= "integer" then error("list group count must be an integer") end
       elseif item.kind == "row" then
         required_string(item.id, "list row id")
         required_string(item.title, "list row title")
@@ -57,12 +59,14 @@ function M.create(ImGui, ctx, adapter, deps)
         error("unsupported list item kind " .. tostring(item.kind))
       end
     end
-    if options.overflow ~= nil then required_string(options.overflow.label, "list overflow label") end
     return variant == "compact"
   end
 
   local function trailing_parts(row)
     local parts = {}
+    if row.trailing_text then
+      table.insert(parts, { kind = "text", width = text_width("metadata", row.trailing_text) })
+    end
     if row.status then
       table.insert(parts, { kind = "status", width = status.measure({ role = row.status.role, text = row.status.text }) })
     end
@@ -71,7 +75,7 @@ function M.create(ImGui, ctx, adapter, deps)
     return parts
   end
 
-  local function draw_row_contents(key, row, compact, muted, top, choose)
+  local function draw_row_contents(key, row, compact, top, choose)
     local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
     local control_height = resolve("semantic.size.control.compact")
     local gap = layout.gap()
@@ -92,17 +96,27 @@ function M.create(ImGui, ctx, adapter, deps)
     ImGui.SetCursorPosY(ctx, top + (line - group_height) / 2)
     ImGui.PushTextWrapPos(ctx, left + width)
     ImGui.BeginGroup(ctx)
-    wrapped("body", muted and "semantic.color.text.secondary" or "semantic.color.text.primary", row.title)
+    wrapped("body", "semantic.color.text.primary", row.title)
     if row.detail then wrapped("metadata", "semantic.color.text.secondary", row.detail) end
     ImGui.EndGroup(ctx)
     ImGui.PopTextWrapPos(ctx)
 
+    -- Trailing parts shorter than the control line still occupy all of it.
+    local bottom = top + line
     if #parts > 0 then
       local moved = layout.trailing(trailing_width)
       local base = moved and ImGui.GetCursorPosY(ctx) or top + (line - control_height) / 2
+      bottom = math.max(bottom, base + control_height)
       for index, part in ipairs(parts) do
         if index > 1 then ImGui.SameLine(ctx, 0, gap) end
-        if part.kind == "status" then
+        if part.kind == "text" then
+          ImGui.SetCursorPosY(ctx, base + (control_height - line_height("metadata")) / 2)
+          with_text("metadata", function()
+            ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("semantic.color.text.secondary"))
+            ImGui.TextWrapped(ctx, row.trailing_text)
+            ImGui.PopStyleColor(ctx)
+          end)
+        elseif part.kind == "status" then
           ImGui.SetCursorPosY(ctx, base + (control_height - body_height) / 2)
           status.draw({ role = row.status.role, text = row.status.text, presentation = "inline" })
         elseif part.kind == "action" then
@@ -123,10 +137,10 @@ function M.create(ImGui, ctx, adapter, deps)
         end
       end
     end
-    content_heights[key] = ImGui.GetCursorPosY(ctx) - spacing_y - top
+    content_heights[key] = math.max(ImGui.GetCursorPosY(ctx) - spacing_y, bottom) - top
   end
 
-  local function draw_row(key, row, compact, muted, choose)
+  local function draw_row(key, row, compact, choose)
     local control_height = resolve("semantic.size.control.compact")
     local padding_x = resolve("semantic.space.inset.padding_x")
     local padding_y = resolve("semantic.space.inset.padding_y")
@@ -149,45 +163,63 @@ function M.create(ImGui, ctx, adapter, deps)
     -- Whole pixels: ImGui truncates line advances, so a fractional top would
     -- change the measured height and make the rows oscillate frame to frame.
     local top = math.floor(padding_y + (previous and math.max(0, (height - padding_y * 2 - previous) / 2) or 0) + 0.5)
-    local ok, err = pcall(draw_row_contents, key, row, compact, muted, top, choose)
+    local ok, err = pcall(draw_row_contents, key, row, compact, top, choose)
     ImGui.EndChild(ctx)
     if not ok then error(err, 0) end
+  end
+
+  -- Group header: the count in the primary text color, then the label in the
+  -- secondary one. A collapsible header is a full-width tree node whose open
+  -- state the caller owns.
+  local function draw_group(list_id, group, toggled)
+    with_text("body", function()
+      if group.collapsible then
+        local x, y = ImGui.GetCursorPosX(ctx), ImGui.GetCursorPosY(ctx)
+        local open = not group.collapsed
+        ImGui.SetNextItemOpen(ctx, open, ImGui.Cond_Always)
+        ImGui.PushStyleColor(ctx, ImGui.Col_Text, resolve("semantic.color.text.secondary"))
+        local now_open = ImGui.TreeNodeEx(ctx, "##group-" .. list_id .. "-" .. group.id, "",
+          ImGui.TreeNodeFlags_SpanAvailWidth | ImGui.TreeNodeFlags_NoTreePushOnOpen)
+        ImGui.PopStyleColor(ctx)
+        if now_open ~= open then toggled() end
+        ImGui.SameLine(ctx, 0, 0)
+        ImGui.SetCursorPos(ctx, x + ImGui.GetTreeNodeToLabelSpacing(ctx), y)
+      end
+      if group.count then
+        wrapped("body", "semantic.color.text.primary", tostring(group.count))
+        ImGui.SameLine(ctx, 0, (ImGui.CalcTextSize(ctx, " ")))
+      end
+      wrapped("body", "semantic.color.text.secondary", group.label)
+    end)
   end
 
   function component.draw(options)
     options = options or {}
     local compact = validate(options)
-    local result = { events = {}, action = nil, overflow_toggled = false }
+    local result = { events = {}, action = nil, toggled_group = nil }
     local _, spacing_y = ImGui.GetStyleVar(ctx, ImGui.StyleVar_ItemSpacing)
-    local gap = resolve("semantic.space.list.gap")
     local first = true
-    local function separate()
-      if not first then ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + gap) end
+    local function separate(token)
+      if not first then ImGui.SetCursorPosY(ctx, ImGui.GetCursorPosY(ctx) - spacing_y + resolve(token)) end
       first = false
     end
 
+    local hidden = false
     for _, item in ipairs(options.items) do
-      separate()
       if item.kind == "group" then
-        wrapped("metadata", "semantic.color.text.secondary", item.label)
-      else
-        draw_row(options.id .. "-" .. item.id, item, compact, false, function(action)
+        separate("semantic.space.section.default")
+        draw_group(options.id, item, function()
+          result.toggled_group = item.id
+          table.insert(result.events, { type = "list.group_toggled", id = options.id, group = item.id })
+        end)
+        hidden = item.collapsible == true and item.collapsed == true
+      elseif not hidden then
+        separate("semantic.space.list.gap")
+        draw_row(options.id .. "-" .. item.id, item, compact, function(action)
           result.action = { row = item.id, id = action }
           table.insert(result.events, { type = "list.row_action", id = options.id, row = item.id, action = action })
         end)
       end
-    end
-
-    if options.overflow then
-      separate()
-      local overflow = options.overflow
-      draw_row(options.id .. "-overflow", {
-        id = "overflow", title = overflow.label,
-        action = { id = "toggle", label = overflow.expanded and "Show Less" or "Show All", variant = "quiet" },
-      }, true, true, function()
-        result.overflow_toggled = true
-        table.insert(result.events, { type = "list.overflow_toggled", id = options.id })
-      end)
     end
     layout.settle()
     return result

@@ -247,29 +247,15 @@ function M.create(dependencies)
   function service.unregister_selected_markers(adapter) return unregister_selected_kind(adapter, "marker") end
   function service.unregister_selected_regions(adapter) return unregister_selected_kind(adapter, "region") end
 
-  function service.selection_counts(adapter)
-    local counts = {
-      tracks = { selected = 0, registered = 0 },
-      markers = { selected = 0, registered = 0 },
-      regions = { selected = 0, registered = 0 },
-    }
+  function service.selected_tracks(adapter)
+    local tracks = {}
     for _, track in ipairs(adapter.selected_tracks()) do
-      counts.tracks.selected = counts.tracks.selected + 1
       local lane_id = adapter.get_track_reference_lane_id(track)
-      if lane_id and lane_id ~= "" then
-        counts.tracks.registered = counts.tracks.registered + 1
-      end
+      table.insert(tracks, {
+        display_name = adapter.track_name(track), registered = lane_id ~= nil and lane_id ~= "",
+      })
     end
-    local entries, entries_error = service.timeline_entries(adapter)
-    if not entries then return nil, entries_error end
-    for _, entry in ipairs(entries) do
-      if entry.selected then
-        local bucket = entry.kind == "region" and counts.regions or counts.markers
-        bucket.selected = bucket.selected + 1
-        if entry.registered then bucket.registered = bucket.registered + 1 end
-      end
-    end
-    return counts
+    return tracks
   end
 
   function service.register_selected(adapter)

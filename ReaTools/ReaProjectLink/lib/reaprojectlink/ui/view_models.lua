@@ -31,47 +31,10 @@ function M.blocked_summary(count, verb)
   return string.format("Fix %s to %s", M.count(count, "issue"), verb)
 end
 
-local SELECTION_ORDER = { "tracks", "markers", "regions" }
-local SELECTION_NOUNS = { tracks = "Track", markers = "Marker", regions = "Region" }
-local SELECTION_ACTIONS = {
-  { id = "register_selected", label = "Register" },
-  { id = "unregister_selected", label = "Unregister" },
-}
-
-local function join_list(parts)
-  if #parts == 1 then return parts[1] end
-  return table.concat(parts, ", ", 1, #parts - 1) .. " and " .. parts[#parts]
-end
-
--- "Selected: 2 Tracks, 1 Region" style summary of what's selected in REAPER,
--- read from the `.selected` counts of the shape reference_publish/project_service
--- `selection_counts` return.
-function M.selection_text(counts)
-  local parts = {}
-  for _, key in ipairs(SELECTION_ORDER) do
-    local bucket = counts[key]
-    local n = bucket and bucket.selected or 0
-    if n > 0 then table.insert(parts, M.count(n, SELECTION_NOUNS[key])) end
-  end
-  if #parts == 0 then return "Nothing selected in REAPER" end
-  return "Selected: " .. join_list(parts)
-end
-
-local function count_stats(tracks, middle_label, middle, last_label, last)
-  local stats = { { label = "Tracks", value = tracks or 0 }, { label = middle_label, value = middle or 0 } }
-  if last_label then table.insert(stats, { label = last_label, value = last or 0 }) end
-  return stats
-end
-
 function M.source_reference(input)
   local check = input.check or { state = "idle" }
   local synchronized = input.synchronized or 0
-  local stats, detail
-  if synchronized > 0 then
-    local counts = input.reference_counts or {}
-    stats = count_stats(counts.tracks, "Markers", counts.markers, "Regions", counts.regions)
-    detail = "Synchronized r" .. synchronized
-  end
+  local detail = synchronized > 0 and ("Synchronized r" .. synchronized) or nil
   if not input.subscribed then
     return {
       state = "unsubscribed", status = "Not Connected", level = "warning",
@@ -83,49 +46,45 @@ function M.source_reference(input)
   if check.state == "unreachable" then
     return {
       state = "unreachable", status = "Couldn't Reach Shared Storage", level = "blocked",
-      status_detail = detail, stats = stats, action = { id = "retry", label = "Retry" }, attention = true,
+      status_detail = detail, action = { id = "retry", label = "Retry" }, attention = true,
     }
   end
   if check.state == "invalid" then
     return {
       state = "invalid", status = "Couldn't Read the Reference", level = "blocked", note = check.error,
-      status_detail = detail, stats = stats, action = { id = "retry", label = "Retry" }, attention = true,
+      status_detail = detail, action = { id = "retry", label = "Retry" }, attention = true,
     }
   end
   if input.media_error then
     return {
-      state = "blocked", status = input.media_error, level = "blocked", status_detail = detail, stats = stats,
+      state = "blocked", status = input.media_error, level = "blocked", status_detail = detail,
       action = { id = "review_update", label = "Review Update" }, attention = true,
     }
   end
   if check.state ~= "done" then
-    return { state = "checking", status = "Checking...", level = "neutral", status_detail = detail, stats = stats,
+    return { state = "checking", status = "Checking...", level = "neutral", status_detail = detail,
       attention = false }
   end
   if check.latest > synchronized then
     return {
       state = "newer", status = string.format("Reference r%d Available", check.latest),
-      level = "warning", status_detail = detail, stats = stats,
+      level = "warning", status_detail = detail,
       action = { id = "review_update", label = "Review Update" }, attention = true,
     }
   end
   return {
     state = "current", status = "Up to Date", level = "ready",
-    status_detail = synchronized > 0 and ("Reference r" .. synchronized) or nil, stats = stats,
+    status_detail = synchronized > 0 and ("Reference r" .. synchronized) or nil,
     attention = false,
   }
 end
 
 function M.source_delivery(input, pending_reference)
   local track_count = input.track_count or 0
-  local stats = count_stats(track_count, "Items", input.item_count)
-  local selection_note = M.selection_text(input.selection_counts or {})
   if track_count == 0 then
     return {
       state = "unconfigured", status = "No Delivery Tracks", level = "warning",
       note = "Select tracks in REAPER first.",
-      stats = stats,
-      selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
       attention = true,
     }
   end
@@ -134,9 +93,7 @@ function M.source_delivery(input, pending_reference)
     state = revision > 0 and "published" or "unpublished",
     status = revision > 0 and ("Last Published r" .. revision) or "Not Published Yet",
     level = revision > 0 and "ready" or "neutral",
-    stats = stats,
     note = pending_reference and string.format("Will record Reference r%d", pending_reference) or nil,
-    selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
     action = { id = "review_publish", label = "Review and Publish" },
     attention = true,
   }
@@ -157,38 +114,32 @@ function M.master_reference(input)
   local track_count = input.track_count or 0
   local marker_count = input.marker_count or 0
   local region_count = input.region_count or 0
-  local stats = count_stats(track_count, "Markers", marker_count, "Regions", region_count)
-  local selection_note = M.selection_text(input.selection_counts or {})
   if track_count == 0 and marker_count == 0 and region_count == 0 then
     return {
-      state = "unregistered", status = "Nothing Registered", level = "warning", stats = stats,
+      state = "unregistered", status = "Nothing Registered", level = "warning",
       note = "Select Tracks, Markers, or Regions in REAPER, then register them.",
-      selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
       attention = true,
     }
   end
   local revision = input.reference_revision or 0
   if revision == 0 then
     return {
-      state = "unpublished", status = "Not Published Yet", level = "warning", stats = stats,
-      selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
+      state = "unpublished", status = "Not Published Yet", level = "warning",
       action = { id = "review_publish", label = "Review and Publish" }, attention = true,
     }
   end
   local package_check = input.package_check
   if package_check and package_check.state == "missing" then
     return {
-      state = "package_missing", status = "Package Missing", level = "blocked", stats = stats,
+      state = "package_missing", status = "Package Missing", level = "blocked",
       note = string.format(
         "Published files for Reference r%d weren't found. Publish again to restore them.", revision
       ),
-      selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
       action = { id = "review_publish", label = "Review and Publish" }, attention = true,
     }
   end
   return {
-    state = "published", status = "Published r" .. revision, level = "neutral", stats = stats,
-    selection_note = selection_note, selection_actions = SELECTION_ACTIONS,
+    state = "published", status = "Published r" .. revision, level = "neutral",
     action = { id = "review_publish", label = "Review and Publish" }, attention = false,
   }
 end
@@ -254,19 +205,12 @@ function M.master_cards(input)
   }
 end
 
--- Card footer for the Action Bar: selection actions first, then the card
--- action, which is the view's primary button on the highlighted card.
+-- Card footer for the Action Bar: the card action, which is the view's
+-- primary button on the highlighted card.
 function M.card_footer(card, highlighted)
-  local actions = {}
-  for _, action in ipairs(card.selection_actions or {}) do
-    table.insert(actions, { id = action.id, label = action.label })
-  end
-  if card.action then
-    table.insert(actions, { id = card.action.id, label = card.action.label,
-      variant = highlighted and "primary" or nil })
-  end
-  if #actions == 0 and not card.selection_note then return nil end
-  return { context = card.selection_note, actions = actions }
+  if not card.action then return nil end
+  return { actions = { { id = card.action.id, label = card.action.label,
+    variant = highlighted and "primary" or nil } } }
 end
 
 function M.deliveries_status(rows)
@@ -286,13 +230,70 @@ function M.deliveries_status(rows)
   return { role = "ready", text = "All Up to Date" }
 end
 
-M.REFERENCE_NAME_LIMIT = 5
-
 local NAME_KINDS = {
-  { key = "tracks", prefix = "track", group = "Tracks", fallback = "Unnamed Track" },
-  { key = "markers", prefix = "marker", group = "Markers", fallback = "Unnamed Marker" },
-  { key = "regions", prefix = "region", group = "Regions", fallback = "Unnamed Region" },
+  { key = "tracks", noun = "Track" },
+  { key = "markers", noun = "Marker" },
+  { key = "regions", noun = "Region" },
 }
+
+-- List items for named entries, `entries = { tracks?, markers?, regions? }`:
+-- per kind a collapsible group headed by its count (a kind without entries
+-- has none), then one row per entry from `row(kind, entry, id, title)`.
+local function grouped_items(entries, row, label)
+  local items = {}
+  for _, kind in ipairs(NAME_KINDS) do
+    local list = entries[kind.key] or {}
+    if #list > 0 then
+      local noun = #list == 1 and kind.noun or kind.noun .. "s"
+      table.insert(items, { kind = "group", id = kind.key, count = #list, collapsible = true,
+        label = label and label(kind, list, noun) or noun })
+      for index, entry in ipairs(list) do
+        local name = entry.name ~= nil and entry.name ~= "" and entry.name or "Unnamed " .. kind.noun
+        table.insert(items, row(kind, entry, kind.key .. "-" .. index, name))
+      end
+    end
+  end
+  return items
+end
+
+-- Registered entries `{ name, item_count? }`. Entries with item counts show
+-- them per row and summed in the group header.
+function M.registered_items(entries)
+  return grouped_items(entries, function(_, entry, id, title)
+    return { kind = "row", id = id, title = title,
+      trailing_text = entry.item_count and M.count(entry.item_count, "Item") or nil }
+  end, function(_, list, noun)
+    if not list[1].item_count then return noun end
+    local total = 0
+    for _, entry in ipairs(list) do total = total + entry.item_count end
+    return noun .. " · " .. M.count(total, "Item")
+  end)
+end
+
+local REGISTERED = { role = "ready", text = "Registered" }
+local NOT_REGISTERED = { role = "neutral", text = "Not Registered" }
+
+-- Selected entries `{ name, registered }`, each tagged with its state.
+function M.selected_items(entries)
+  return grouped_items(entries, function(_, entry, id, title)
+    return { kind = "row", id = id, title = title, status = entry.registered and REGISTERED or NOT_REGISTERED }
+  end)
+end
+
+-- Register and Unregister, each disabled when the selection gives it nothing
+-- to do.
+function M.selection_actions(entries)
+  local registered, unregistered = false, false
+  for _, kind in ipairs(NAME_KINDS) do
+    for _, entry in ipairs(entries[kind.key] or {}) do
+      if entry.registered then registered = true else unregistered = true end
+    end
+  end
+  return {
+    { id = "register_selected", label = "Register", disabled = not unregistered },
+    { id = "unregister_selected", label = "Unregister", disabled = not registered },
+  }
+end
 
 local function detach_action(kind, entry)
   if kind.key == "tracks" then
@@ -302,33 +303,15 @@ local function detach_action(kind, entry)
   return { id = "detach_entry", entry_id = entry.entry_id, kind = noun, name = entry.name }
 end
 
--- List items for the Source Reference names (D093): Tracks, Markers, then
--- Regions, the first REFERENCE_NAME_LIMIT in total unless expanded.
-function M.reference_name_list(surface, expanded)
-  local items, lookup, total, shown = {}, {}, 0, 0
-  for _, kind in ipairs(NAME_KINDS) do total = total + #(surface[kind.key] or {}) end
-  local limit = expanded and total or M.REFERENCE_NAME_LIMIT
-  for _, kind in ipairs(NAME_KINDS) do
-    local grouped = false
-    for index, entry in ipairs(surface[kind.key] or {}) do
-      if shown >= limit then break end
-      if not grouped then
-        table.insert(items, { kind = "group", label = kind.group })
-        grouped = true
-      end
-      local id = kind.prefix .. "-" .. index
-      local name = entry.name ~= nil and entry.name ~= "" and entry.name or kind.fallback
-      table.insert(items, { kind = "row", id = id, title = name, action = { id = "detach", label = "Detach..." } })
-      lookup[id] = detach_action(kind, entry)
-      shown = shown + 1
-    end
-  end
-  local overflow
-  if total > M.REFERENCE_NAME_LIMIT then
-    overflow = expanded and { label = string.format("Showing all %d", total), expanded = true }
-      or { label = string.format("+ %d more", total - shown), expanded = false }
-  end
-  return items, overflow, lookup
+-- List items for the Source Reference names (D093), with the detach action
+-- each row's id maps to in `lookup`.
+function M.reference_name_list(surface)
+  local lookup = {}
+  local items = grouped_items(surface, function(kind, entry, id, title)
+    lookup[id] = detach_action(kind, entry)
+    return { kind = "row", id = id, title = title, action = { id = "detach", label = "Detach..." } }
+  end)
+  return items, lookup
 end
 
 function M.lane_mapping_options(lane)

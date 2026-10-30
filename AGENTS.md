@@ -7,6 +7,8 @@ their shared UI system.
 
 - Code, identifiers, comments, tests, schemas, branches, commits, and repository
   documentation are English.
+- User manuals under `docs/manual/` and `tools/*/docs/manual/` are written in
+  Chinese; UI labels and technical names stay in their original form.
 - Conversation and status updates default to Chinese.
 - Keep technical names, API names, commands, and error messages in their
   original form.
